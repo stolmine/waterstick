@@ -1,0 +1,1 @@
+Working on creating a vst3 with Claude AI. My goal is a clone of rainmaker.
