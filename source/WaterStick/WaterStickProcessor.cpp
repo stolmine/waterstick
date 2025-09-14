@@ -47,9 +47,17 @@ WaterStickProcessor::WaterStickProcessor()
         combTaps[i].lpState[1] = 0.0;
     }
 
-    // Initialize density compressor state
-    densityCompressorState[0] = 0.0;
-    densityCompressorState[1] = 0.0;
+    // Initialize density compressor and RMS tracking state
+    densityCompressorState[0] = 1.0;
+    densityCompressorState[1] = 1.0;
+    inputRMSState[0] = 0.0;
+    inputRMSState[1] = 0.0;
+    outputRMSState[0] = 0.0;
+    outputRMSState[1] = 0.0;
+
+    // Initialize smooth parameter tracking
+    smoothCombSize = combSize;
+    smoothCombDensity = combDensity;
 }
 
 WaterStickProcessor::~WaterStickProcessor()
@@ -336,7 +344,11 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
 
     for (int32 sample = 0; sample < sampleFrames; ++sample)
     {
-        // Update crossfade if needed
+        // Smooth parameter updates per-sample to prevent jumps
+        smoothCombSize = smoothCombSize * kSmoothingFactor + combSize * (1.0 - kSmoothingFactor);
+        smoothCombDensity = smoothCombDensity * kSmoothingFactor + combDensity * (1.0 - kSmoothingFactor);
+
+        // Update crossfade if needed - but use smoothed parameters
         if (needsCrossfade)
         {
             updateCrossfade();
@@ -381,6 +393,10 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
                 }
             }
 
+            // Track input and pre-compression RMS for makeup gain
+            Vst::Sample64 absInput = fabs(input);
+            inputRMSState[channel] = inputRMSState[channel] * 0.999 + (absInput * absInput) * 0.001;
+
             // Apply density-based dynamics processing to prevent resonant frequency buildup
             Vst::Sample64 processedOutput = output;
             if (activeTapCount > 8) // Apply compression when density is high
@@ -406,14 +422,32 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
                 }
 
                 processedOutput = output * densityCompressorState[channel];
+
+                // Track output RMS and apply makeup gain
+                Vst::Sample64 absOutput = fabs(processedOutput);
+                outputRMSState[channel] = outputRMSState[channel] * 0.999 + (absOutput * absOutput) * 0.001;
+
+                // Calculate makeup gain to maintain similar level to input
+                double inputRMS = sqrt(inputRMSState[channel] + 1e-10);
+                double outputRMS = sqrt(outputRMSState[channel] + 1e-10);
+                double makeupGain = std::min(4.0, inputRMS / (outputRMS + 1e-10)); // Limit to 12dB gain
+
+                processedOutput *= makeupGain;
             }
 
-            // Write to comb buffer (input + feedback) with tanh limiting
+            // Write to comb buffer (input + feedback) with adaptive tanh limiting
             Vst::Sample64 feedbackSignal = feedbackSum * combFeedback;
             Vst::Sample64 totalSignal = input + feedbackSignal;
 
-            // Apply tanh limiting to prevent clipping and runaway feedback
-            combBuffers[channel][combWritePos] = tanh(totalSignal * 0.7) / 0.7;
+            // Adaptive tanh scaling based on density and size to prevent runaway feedback
+            double densityFactor = static_cast<double>(activeTapCount) / kMaxCombTaps;
+            double sizeFactor = smoothCombSize; // Larger comb sizes need more limiting
+
+            // More aggressive limiting with higher density and larger sizes
+            double tanhDrive = 0.5 + densityFactor * 0.3 + sizeFactor * 0.2; // 0.5 to 1.0 range
+            double tanhGain = 1.0 / tanhDrive; // Compensate for the drive
+
+            combBuffers[channel][combWritePos] = tanh(totalSignal * tanhDrive) * tanhGain;
 
             // Output is the processed signal (with density compression if needed)
             outputs[channel][sample] = static_cast<Vst::Sample32>(processedOutput);
@@ -462,12 +496,12 @@ void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** o
 
 void WaterStickProcessor::updateCombTaps()
 {
-    // Calculate number of target active taps based on density (0.0-1.0 -> 1-64 taps)
-    targetActiveTapCount = static_cast<int32>(1 + (combDensity * (kMaxCombTaps - 1)));
+    // Calculate number of target active taps based on SMOOTHED density (0.0-1.0 -> 1-64 taps)
+    targetActiveTapCount = static_cast<int32>(1 + (smoothCombDensity * (kMaxCombTaps - 1)));
     targetActiveTapCount = std::max(1, std::min(targetActiveTapCount, kMaxCombTaps));
 
-    // Base delay time in milliseconds (2ms-100ms based on combSize)
-    double baseDelayMs = 2.0 + (combSize * 98.0);
+    // Base delay time in milliseconds (2ms-100ms based on SMOOTHED combSize)
+    double baseDelayMs = 2.0 + (smoothCombSize * 98.0);
     double baseDelaySamples = baseDelayMs * 0.001 * processSetup.sampleRate;
 
     // Configure target tap delays using Fibonacci-like distribution for natural resonance

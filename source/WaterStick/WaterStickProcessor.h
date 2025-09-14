@@ -83,7 +83,14 @@ protected:
 
     // Dynamics processing for density control
     Steinberg::Vst::Sample64 densityCompressorState[2]; // Per-channel compressor envelope
+    Steinberg::Vst::Sample64 inputRMSState[2];          // Input RMS tracking for makeup gain
+    Steinberg::Vst::Sample64 outputRMSState[2];         // Output RMS tracking for makeup gain
     static constexpr Steinberg::Vst::Sample64 kDensityThreshold = 0.7; // Compression threshold
+
+    // Smooth parameter tracking to prevent jumps
+    Steinberg::Vst::ParamValue smoothCombSize;
+    Steinberg::Vst::ParamValue smoothCombDensity;
+    static constexpr Steinberg::Vst::Sample64 kSmoothingFactor = 0.999; // Very slow parameter smoothing
 
     // Parameters
     Steinberg::Vst::ParamValue delayTime;
