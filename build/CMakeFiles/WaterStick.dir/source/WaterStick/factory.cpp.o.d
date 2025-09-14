@@ -779,8 +779,6 @@ CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstattributes.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsthostapplication.h \
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/utility/processcontextrequirements.h \
-  /Users/why/repos/waterstick/source/WaterStick/WaterStickController.h \
-  /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vsteditcontroller.h \
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vstparameters.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsteditcontroller.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstunits.h \
@@ -811,6 +809,9 @@ CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/default_searcher.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/not_fn.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/perfect_forward.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickController.h \
+  /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vsteditcontroller.h \
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/common/pluginview.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/gui/iplugview.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/typesizecheck.h \
