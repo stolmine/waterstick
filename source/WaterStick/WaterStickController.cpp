@@ -79,6 +79,7 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     if (!streamer.readDouble(delayTime)) return kResultFalse;
     if (!streamer.readDouble(delayFeedback)) return kResultFalse;
     if (!streamer.readDouble(delayMix)) return kResultFalse;
+
     if (!streamer.readDouble(combSize)) return kResultFalse;
     if (!streamer.readDouble(combFeedback)) return kResultFalse;
     if (!streamer.readDouble(combDamping)) return kResultFalse;

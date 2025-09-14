@@ -173,6 +173,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         }
     }
 
+
     // Check if we have audio input and output
     if (data.numInputs == 0 || data.numOutputs == 0)
         return kResultOk;
@@ -197,7 +198,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         return kResultOk;
     }
 
-    // Process audio
+    // TEST: Call processAudio but with exact working commit logic
     processAudio(input, output, numChannels, sampleFrames);
 
     return kResultOk;
@@ -313,7 +314,7 @@ void WaterStickProcessor::processDelay(Vst::Sample32** inputs, Vst::Sample32** o
     if (!delayBuffers || delayBufferSize == 0)
         return;
 
-    // Calculate delay samples
+    // Calculate delay samples - EXACT working version
     int32 delaySamples = static_cast<int32>(delayTime * processSetup.sampleRate);
     delaySamples = std::min(delaySamples, delayBufferSize - 1);
 
