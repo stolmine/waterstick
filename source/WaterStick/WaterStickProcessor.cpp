@@ -18,6 +18,9 @@ WaterStickProcessor::WaterStickProcessor()
 , combBufferSize(0)
 , combWritePos(0)
 , activeTapCount(8)    // Default to 8 active taps
+, targetActiveTapCount(8)
+, needsCrossfade(false)
+, crossfadeSamples(0)
 , delayTime(0.25)      // 250ms default
 , delayFeedback(0.3)   // 30% feedback
 , delayMix(0.5)        // 50% mix
@@ -35,9 +38,12 @@ WaterStickProcessor::WaterStickProcessor()
     for (int32 i = 0; i < kMaxCombTaps; ++i)
     {
         combTaps[i].delaySamples = 0;
+        combTaps[i].targetDelaySamples = 0;
         combTaps[i].gain = 0.0;
+        combTaps[i].targetGain = 0.0;
         combTaps[i].lpState[0] = 0.0;
         combTaps[i].lpState[1] = 0.0;
+        combTaps[i].crossfade = 1.0; // Start fully crossfaded to current
     }
 }
 
@@ -322,6 +328,12 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
 
     for (int32 sample = 0; sample < sampleFrames; ++sample)
     {
+        // Update crossfade if needed
+        if (needsCrossfade)
+        {
+            updateCrossfade();
+        }
+
         for (int32 channel = 0; channel < std::min(numChannels, 2); ++channel)
         {
             // Get input sample
@@ -329,30 +341,46 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
             Vst::Sample64 output = 0.0;
             Vst::Sample64 feedbackSum = 0.0;
 
-            // Process all active taps
-            for (int32 tap = 0; tap < activeTapCount; ++tap)
+            // Process all potentially active taps (current and target)
+            int32 maxTaps = std::max(activeTapCount, targetActiveTapCount);
+            for (int32 tap = 0; tap < maxTaps; ++tap)
             {
-                if (combTaps[tap].delaySamples > 0)
+                Vst::Sample64 tapOutput = 0.0;
+
+                // Process current tap position (if active)
+                if (tap < activeTapCount && combTaps[tap].delaySamples > 0)
                 {
-                    // Calculate read position for this tap
                     int32 readPos = combWritePos - combTaps[tap].delaySamples;
                     if (readPos < 0)
                         readPos += combBufferSize;
 
-                    // Get delayed sample from comb buffer
                     Vst::Sample64 delayedSample = combBuffers[channel][readPos];
-
-                    // Apply per-tap damping (low-pass filter)
                     combTaps[tap].lpState[channel] = combTaps[tap].lpState[channel] +
                         dampingCoeff * (delayedSample - combTaps[tap].lpState[channel]);
                     Vst::Sample64 dampedSample = combTaps[tap].lpState[channel];
 
-                    // Add tap contribution to output
-                    output += dampedSample * combTaps[tap].gain;
-
-                    // Add to feedback sum
-                    feedbackSum += dampedSample * combTaps[tap].gain;
+                    // Apply current gain with crossfade
+                    tapOutput += dampedSample * combTaps[tap].gain * combTaps[tap].crossfade;
                 }
+
+                // Process target tap position (if different and crossfading)
+                if (needsCrossfade && tap < targetActiveTapCount &&
+                    combTaps[tap].targetDelaySamples > 0 &&
+                    combTaps[tap].targetDelaySamples != combTaps[tap].delaySamples)
+                {
+                    int32 targetReadPos = combWritePos - combTaps[tap].targetDelaySamples;
+                    if (targetReadPos < 0)
+                        targetReadPos += combBufferSize;
+
+                    Vst::Sample64 targetDelayedSample = combBuffers[channel][targetReadPos];
+                    Vst::Sample64 targetDampedSample = targetDelayedSample; // Simplified for target
+
+                    // Apply target gain with inverse crossfade
+                    tapOutput += targetDampedSample * combTaps[tap].targetGain * (1.0 - combTaps[tap].crossfade);
+                }
+
+                output += tapOutput;
+                feedbackSum += tapOutput;
             }
 
             // Write to comb buffer (input + feedback)
@@ -399,39 +427,85 @@ void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** o
 
 void WaterStickProcessor::updateCombTaps()
 {
-    // Calculate number of active taps based on density (0.0-1.0 -> 1-64 taps)
-    activeTapCount = static_cast<int32>(1 + (combDensity * (kMaxCombTaps - 1)));
-    activeTapCount = std::max(1, std::min(activeTapCount, kMaxCombTaps));
+    // Calculate number of target active taps based on density (0.0-1.0 -> 1-64 taps)
+    targetActiveTapCount = static_cast<int32>(1 + (combDensity * (kMaxCombTaps - 1)));
+    targetActiveTapCount = std::max(1, std::min(targetActiveTapCount, kMaxCombTaps));
 
     // Base delay time in milliseconds (2ms-100ms based on combSize)
     double baseDelayMs = 2.0 + (combSize * 98.0);
     double baseDelaySamples = baseDelayMs * 0.001 * processSetup.sampleRate;
 
-    // Configure tap delays using Fibonacci-like distribution for natural resonance
-    double tapSpacing = baseDelaySamples / (activeTapCount + 1);
+    // Configure target tap delays using Fibonacci-like distribution for natural resonance
+    double tapSpacing = baseDelaySamples / (targetActiveTapCount + 1);
 
-    for (int32 tap = 0; tap < activeTapCount; ++tap)
+    // Set target values for crossfade
+    for (int32 tap = 0; tap < targetActiveTapCount; ++tap)
     {
-        // Distribute taps with slight random variation for more natural sound
+        // Distribute taps with golden ratio spacing
         double tapMultiplier = 1.0 + (tap * 0.618); // Golden ratio spacing
-        combTaps[tap].delaySamples = static_cast<int32>(tapSpacing * tapMultiplier);
-        combTaps[tap].delaySamples = std::max(1, std::min(combTaps[tap].delaySamples, combBufferSize - 1));
+        combTaps[tap].targetDelaySamples = static_cast<int32>(tapSpacing * tapMultiplier);
+        combTaps[tap].targetDelaySamples = std::max(1, std::min(combTaps[tap].targetDelaySamples, combBufferSize - 1));
 
-        // Set tap gain with slight decay for later taps
-        combTaps[tap].gain = 1.0 / sqrt(activeTapCount) * (1.0 - tap * 0.05);
-
-        // Reset filter states
-        combTaps[tap].lpState[0] = 0.0;
-        combTaps[tap].lpState[1] = 0.0;
+        // Set target tap gain with slight decay for later taps
+        combTaps[tap].targetGain = 1.0 / sqrt(targetActiveTapCount) * (1.0 - tap * 0.05);
     }
 
-    // Clear unused taps
-    for (int32 tap = activeTapCount; tap < kMaxCombTaps; ++tap)
+    // Clear target values for unused taps
+    for (int32 tap = targetActiveTapCount; tap < kMaxCombTaps; ++tap)
     {
-        combTaps[tap].delaySamples = 0;
-        combTaps[tap].gain = 0.0;
-        combTaps[tap].lpState[0] = 0.0;
-        combTaps[tap].lpState[1] = 0.0;
+        combTaps[tap].targetDelaySamples = 0;
+        combTaps[tap].targetGain = 0.0;
+    }
+
+    // Initialize crossfade
+    needsCrossfade = true;
+    crossfadeSamples = kCrossfadeLength;
+
+    // Reset crossfade values for all taps
+    for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
+    {
+        combTaps[tap].crossfade = 1.0; // Start with current values
+    }
+}
+
+void WaterStickProcessor::updateCrossfade()
+{
+    if (!needsCrossfade || crossfadeSamples <= 0)
+        return;
+
+    // Calculate crossfade progress (0.0 = start, 1.0 = end)
+    double progress = 1.0 - (double(crossfadeSamples) / double(kCrossfadeLength));
+
+    // Apply smooth S-curve for more natural crossfade
+    double smoothProgress = progress * progress * (3.0 - 2.0 * progress); // Smoothstep
+
+    // Update crossfade values for all taps
+    for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
+    {
+        combTaps[tap].crossfade = 1.0 - smoothProgress;
+    }
+
+    crossfadeSamples--;
+
+    // Crossfade completed - commit target values
+    if (crossfadeSamples <= 0)
+    {
+        for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
+        {
+            combTaps[tap].delaySamples = combTaps[tap].targetDelaySamples;
+            combTaps[tap].gain = combTaps[tap].targetGain;
+            combTaps[tap].crossfade = 1.0;
+
+            // Reset filter states for changed taps to prevent artifacts
+            if (combTaps[tap].delaySamples != combTaps[tap].targetDelaySamples)
+            {
+                combTaps[tap].lpState[0] = 0.0;
+                combTaps[tap].lpState[1] = 0.0;
+            }
+        }
+
+        activeTapCount = targetActiveTapCount;
+        needsCrossfade = false;
     }
 }
 

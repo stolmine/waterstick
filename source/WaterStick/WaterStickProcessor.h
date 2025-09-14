@@ -65,12 +65,21 @@ protected:
 
     // Multitap comb structures
     struct CombTap {
-        Steinberg::int32 delaySamples;    // Delay length in samples
-        Steinberg::Vst::Sample64 gain;    // Tap gain
+        Steinberg::int32 delaySamples;     // Current delay length in samples
+        Steinberg::int32 targetDelaySamples; // Target delay length for crossfade
+        Steinberg::Vst::Sample64 gain;     // Tap gain
+        Steinberg::Vst::Sample64 targetGain; // Target gain for crossfade
         Steinberg::Vst::Sample64 lpState[2]; // Per-tap damping filter state
+        Steinberg::Vst::Sample64 crossfade;  // Crossfade amount (0.0-1.0)
     };
     CombTap combTaps[kMaxCombTaps];
     Steinberg::int32 activeTapCount;
+    Steinberg::int32 targetActiveTapCount;
+
+    // Crossfade parameters
+    bool needsCrossfade;
+    Steinberg::int32 crossfadeSamples;
+    static const Steinberg::int32 kCrossfadeLength = 512; // 512 samples ~= 10ms at 48kHz
 
     // Parameters
     Steinberg::Vst::ParamValue delayTime;
@@ -96,6 +105,7 @@ private:
     void processAudio(Steinberg::Vst::Sample32** inputs, Steinberg::Vst::Sample32** outputs,
                      Steinberg::int32 numChannels, Steinberg::int32 sampleFrames);
     void updateCombTaps();
+    void updateCrossfade();
 };
 
 } // namespace WaterStick
