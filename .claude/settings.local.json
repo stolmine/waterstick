@@ -14,7 +14,11 @@
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
       "Bash(make:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:christianfloisand.wordpress.com)",
+      "WebFetch(domain:dsp.stackexchange.com)",
+      "WebFetch(domain:www.kvraudio.com)"
     ],
     "deny": [],
     "ask": []

@@ -66,6 +66,12 @@ WaterStickProcessor::WaterStickProcessor()
     outputRMSState[0] = 0.0;
     outputRMSState[1] = 0.0;
 
+    // Initialize anti-zipper filter and parameter smoothing (KVR forum solution)
+    antiZipperState[0] = 0.0;
+    antiZipperState[1] = 0.0;
+    smoothedCombSize = combSize;
+    smoothedCombDensity = combDensity;
+
 }
 
 WaterStickProcessor::~WaterStickProcessor()
@@ -347,6 +353,10 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
     if (!combBuffers || combBufferSize == 0)
         return;
 
+    // Smooth parameter changes to eliminate zipper noise (KVR forum optimization)
+    smoothedCombSize = kParamSmoothing * smoothedCombSize + (1.0 - kParamSmoothing) * combSize;
+    smoothedCombDensity = kParamSmoothing * smoothedCombDensity + (1.0 - kParamSmoothing) * combDensity;
+
     // Calculate damping coefficient (0.0-1.0)
     double dampingCoeff = combDamping * 0.3; // Scale to reasonable range
 
@@ -480,8 +490,13 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
 
             combBuffers[channel][combWritePos] = tanh(totalSignal * tanhDrive) * tanhGain;
 
-            // Output is the processed signal (with density compression if needed)
-            outputs[channel][sample] = static_cast<Vst::Sample32>(processedOutput);
+            // Apply anti-zipper high-frequency low-pass filter (KVR forum solution)
+            // This eliminates high-frequency artifacts from parameter changes
+            antiZipperState[channel] = kAntiZipperCutoff * antiZipperState[channel] +
+                                      (1.0 - kAntiZipperCutoff) * processedOutput;
+
+            // Output is the filtered signal (eliminates zipper noise)
+            outputs[channel][sample] = static_cast<Vst::Sample32>(antiZipperState[channel]);
         }
 
         // Advance write position
@@ -527,12 +542,13 @@ void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** o
 
 void WaterStickProcessor::updateCombTaps()
 {
-    // Calculate number of target active taps based on density (0.0-1.0 -> 1-64 taps)
-    targetActiveTapCount = static_cast<int32>(1 + (combDensity * (kMaxCombTaps - 1)));
+    // Use smoothed parameters to prevent zipper noise (KVR forum solution)
+    // Calculate number of target active taps based on smoothed density (0.0-1.0 -> 1-64 taps)
+    targetActiveTapCount = static_cast<int32>(1 + (smoothedCombDensity * (kMaxCombTaps - 1)));
     targetActiveTapCount = std::max(1, std::min(targetActiveTapCount, kMaxCombTaps));
 
-    // Base delay time in milliseconds (2ms-100ms based on combSize)
-    double baseDelayMs = 2.0 + (combSize * 98.0);
+    // Base delay time in milliseconds (2ms-100ms based on smoothed combSize)
+    double baseDelayMs = 2.0 + (smoothedCombSize * 98.0);
     double baseDelaySamples = baseDelayMs * 0.001 * processSetup.sampleRate;
 
     // Configure target tap delays using Fibonacci-like distribution for natural resonance

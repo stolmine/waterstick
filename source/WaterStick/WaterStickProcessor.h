@@ -93,10 +93,17 @@ protected:
     Steinberg::Vst::Sample64 outputRMSState[2];         // Output RMS tracking for makeup gain
     static constexpr Steinberg::Vst::Sample64 kDensityThreshold = 0.7; // Compression threshold
 
-    // One-pole smoothing for delay time changes (based on DSP research)
+    // Anti-zipper noise filtering (KVR forum solution)
+    Steinberg::Vst::Sample64 antiZipperState[2];        // High-frequency LPF state per channel
+    static constexpr Steinberg::Vst::Sample64 kAntiZipperCutoff = 0.85; // Aggressive HF rolloff
+
+    // Exponential parameter smoothing (KVR forum optimization)
     Steinberg::Vst::Sample64 smoothedDelayTime[kMaxCombTaps]; // Per-tap smoothed delay time
-    static constexpr Steinberg::Vst::Sample64 kDelaySmoothing = 0.9999; // One-pole smoothing coefficient
-    static constexpr Steinberg::Vst::Sample64 kFadeSpeed = 0.99; // Tap fade in/out speed
+    Steinberg::Vst::Sample64 smoothedCombSize;                // Smoothed comb size parameter
+    Steinberg::Vst::Sample64 smoothedCombDensity;             // Smoothed density parameter
+    static constexpr Steinberg::Vst::Sample64 kParamSmoothing = 0.9995; // Aggressive parameter smoothing
+    static constexpr Steinberg::Vst::Sample64 kDelaySmoothing = 0.998;  // Slightly faster delay smoothing
+    static constexpr Steinberg::Vst::Sample64 kFadeSpeed = 0.995; // Faster tap fade in/out speed
 
     // Parameters
     Steinberg::Vst::ParamValue delayTime;
