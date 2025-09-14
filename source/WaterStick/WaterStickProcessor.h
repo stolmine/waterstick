@@ -73,6 +73,10 @@ protected:
         Steinberg::Vst::Sample64 fadeLevel;          // Tap fade in/out level (0.0-1.0)
         Steinberg::Vst::Sample64 targetFadeLevel;    // Target fade level for density changes
         Steinberg::Vst::Sample64 lpState[2];         // Per-tap damping filter state
+
+        // Thiran allpass filter states for smooth delay interpolation
+        Steinberg::Vst::Sample64 thiranState[2];     // Input delay state for allpass
+        Steinberg::Vst::Sample64 thiranOutput[2];    // Output state for allpass
     };
     CombTap combTaps[kMaxCombTaps];
     Steinberg::int32 activeTapCount;

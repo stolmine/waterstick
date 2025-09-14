@@ -48,6 +48,12 @@ WaterStickProcessor::WaterStickProcessor()
         combTaps[i].lpState[0] = 0.0;
         combTaps[i].lpState[1] = 0.0;
 
+        // Initialize Thiran allpass filter states
+        combTaps[i].thiranState[0] = 0.0;
+        combTaps[i].thiranState[1] = 0.0;
+        combTaps[i].thiranOutput[0] = 0.0;
+        combTaps[i].thiranOutput[1] = 0.0;
+
         // Initialize per-tap smoothed delay times
         smoothedDelayTime[i] = 0.0;
     }
@@ -376,19 +382,34 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
                 // Only process taps that have some fade level (avoids processing inactive taps)
                 if (smoothedDelayTime[tap] > 0.0 && combTaps[tap].fadeLevel > 0.001)
                 {
-                    // Floating-point delay read with linear interpolation
-                    double exactReadPos = combWritePos - smoothedDelayTime[tap];
-                    if (exactReadPos < 0.0)
-                        exactReadPos += combBufferSize;
+                    // Thiran allpass interpolation for smooth delay line modulation
+                    double delay = smoothedDelayTime[tap];
+                    double integerDelay = floor(delay);
+                    double fractionalDelay = delay - integerDelay;
 
-                    // Linear interpolation between two samples
-                    int32 readPos1 = static_cast<int32>(exactReadPos);
-                    int32 readPos2 = (readPos1 + 1) % combBufferSize;
-                    double fraction = exactReadPos - readPos1;
+                    // Get integer delay sample
+                    int32 intDelayPos = combWritePos - static_cast<int32>(integerDelay);
+                    if (intDelayPos < 0)
+                        intDelayPos += combBufferSize;
+                    Vst::Sample64 intDelaySample = combBuffers[channel][intDelayPos];
 
-                    Vst::Sample64 sample1 = combBuffers[channel][readPos1];
-                    Vst::Sample64 sample2 = combBuffers[channel][readPos2];
-                    Vst::Sample64 delayedSample = sample1 + fraction * (sample2 - sample1);
+                    // Apply 1st-order Thiran allpass for fractional delay
+                    Vst::Sample64 delayedSample;
+                    if (fractionalDelay < 0.001) {
+                        // No fractional delay needed
+                        delayedSample = intDelaySample;
+                    } else {
+                        // Thiran allpass coefficient for 1st-order filter
+                        double a1 = (1.0 - fractionalDelay) / (1.0 + fractionalDelay);
+
+                        // Apply Thiran allpass: y[n] = a1*x[n] + x[n-1] - a1*y[n-1]
+                        delayedSample = a1 * intDelaySample + combTaps[tap].thiranState[channel] -
+                                       a1 * combTaps[tap].thiranOutput[channel];
+
+                        // Update filter states
+                        combTaps[tap].thiranState[channel] = intDelaySample;
+                        combTaps[tap].thiranOutput[channel] = delayedSample;
+                    }
 
                     // Apply per-tap damping (low-pass filter)
                     combTaps[tap].lpState[channel] = combTaps[tap].lpState[channel] +
@@ -601,6 +622,10 @@ void WaterStickProcessor::updateCrossfade()
             // Reset filter states when taps change significantly to prevent artifacts
             combTaps[tap].lpState[0] = 0.0;
             combTaps[tap].lpState[1] = 0.0;
+            combTaps[tap].thiranState[0] = 0.0;
+            combTaps[tap].thiranState[1] = 0.0;
+            combTaps[tap].thiranOutput[0] = 0.0;
+            combTaps[tap].thiranOutput[1] = 0.0;
         }
 
         activeTapCount = targetActiveTapCount;
