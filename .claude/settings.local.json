@@ -21,7 +21,8 @@
       "WebFetch(domain:dsp.stackexchange.com)",
       "WebFetch(domain:www.kvraudio.com)",
       "Bash(git switch:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
