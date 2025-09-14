@@ -42,6 +42,8 @@ protected:
         kCombSize,
         kCombFeedback,
         kCombDamping,
+        kCombDensity,
+        kCombMix,
 
         // Global
         kInputGain,
@@ -56,6 +58,53 @@ protected:
     Steinberg::int32 delayBufferSize;
     Steinberg::int32 delayWritePos;
 
+    // Comb resonator state
+    static const Steinberg::int32 kMaxCombTaps = 64;
+    Steinberg::Vst::Sample64** combBuffers;
+    Steinberg::int32 combBufferSize;
+    Steinberg::int32 combWritePos;
+
+    // Multitap comb structures
+    struct CombTap {
+        Steinberg::Vst::Sample64 delaySamples;       // Current delay length in samples (float for interpolation)
+        Steinberg::Vst::Sample64 targetDelaySamples; // Target delay length for crossfade
+        Steinberg::Vst::Sample64 gain;               // Current tap gain
+        Steinberg::Vst::Sample64 targetGain;         // Target gain for crossfade
+        Steinberg::Vst::Sample64 fadeLevel;          // Tap fade in/out level (0.0-1.0)
+        Steinberg::Vst::Sample64 targetFadeLevel;    // Target fade level for density changes
+        Steinberg::Vst::Sample64 lpState[2];         // Per-tap damping filter state
+
+        // Thiran allpass filter states for smooth delay interpolation
+        Steinberg::Vst::Sample64 thiranState[2];     // Input delay state for allpass
+        Steinberg::Vst::Sample64 thiranOutput[2];    // Output state for allpass
+    };
+    CombTap combTaps[kMaxCombTaps];
+    Steinberg::int32 activeTapCount;
+    Steinberg::int32 targetActiveTapCount;
+
+    // Crossfade parameters
+    bool needsCrossfade;
+    Steinberg::int32 crossfadeSamples;
+    static const Steinberg::int32 kCrossfadeLength = 512; // 512 samples ~= 10ms at 48kHz
+
+    // Dynamics processing for density control
+    Steinberg::Vst::Sample64 densityCompressorState[2]; // Per-channel compressor envelope
+    Steinberg::Vst::Sample64 inputRMSState[2];          // Input RMS tracking for makeup gain
+    Steinberg::Vst::Sample64 outputRMSState[2];         // Output RMS tracking for makeup gain
+    static constexpr Steinberg::Vst::Sample64 kDensityThreshold = 0.7; // Compression threshold
+
+    // Anti-zipper noise filtering (KVR forum solution)
+    Steinberg::Vst::Sample64 antiZipperState[2];        // High-frequency LPF state per channel
+    static constexpr Steinberg::Vst::Sample64 kAntiZipperCutoff = 0.85; // Aggressive HF rolloff
+
+    // Exponential parameter smoothing (KVR forum optimization)
+    Steinberg::Vst::Sample64 smoothedDelayTime[kMaxCombTaps]; // Per-tap smoothed delay time
+    Steinberg::Vst::Sample64 smoothedCombSize;                // Smoothed comb size parameter
+    Steinberg::Vst::Sample64 smoothedCombDensity;             // Smoothed density parameter
+    static constexpr Steinberg::Vst::Sample64 kParamSmoothing = 0.9995; // Aggressive parameter smoothing
+    static constexpr Steinberg::Vst::Sample64 kDelaySmoothing = 0.998;  // Slightly faster delay smoothing
+    static constexpr Steinberg::Vst::Sample64 kFadeSpeed = 0.995; // Faster tap fade in/out speed
+
     // Parameters
     Steinberg::Vst::ParamValue delayTime;
     Steinberg::Vst::ParamValue delayFeedback;
@@ -63,6 +112,8 @@ protected:
     Steinberg::Vst::ParamValue combSize;
     Steinberg::Vst::ParamValue combFeedback;
     Steinberg::Vst::ParamValue combDamping;
+    Steinberg::Vst::ParamValue combDensity;
+    Steinberg::Vst::ParamValue combMix;
     Steinberg::Vst::ParamValue inputGain;
     Steinberg::Vst::ParamValue outputGain;
     Steinberg::Vst::ParamValue bypass;
@@ -70,8 +121,16 @@ protected:
 private:
     void allocateDelayBuffers();
     void deallocateDelayBuffers();
+    void allocateCombBuffers();
+    void deallocateCombBuffers();
     void processDelay(Steinberg::Vst::Sample32** inputs, Steinberg::Vst::Sample32** outputs,
                      Steinberg::int32 numChannels, Steinberg::int32 sampleFrames);
+    void processComb(Steinberg::Vst::Sample32** inputs, Steinberg::Vst::Sample32** outputs,
+                    Steinberg::int32 numChannels, Steinberg::int32 sampleFrames);
+    void processAudio(Steinberg::Vst::Sample32** inputs, Steinberg::Vst::Sample32** outputs,
+                     Steinberg::int32 numChannels, Steinberg::int32 sampleFrames);
+    void updateCombTaps();
+    void updateCrossfade();
 };
 
 } // namespace WaterStick

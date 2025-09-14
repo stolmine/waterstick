@@ -19,6 +19,8 @@ This project is a VST3 clone of the Intellijel Rainmaker Eurorack module - a sop
 - When implementing features, create the real DSP processing, not placeholder objects
 - If a feature requires complex DSP (like pitch shifting), implement it properly using Max/MSP objects
 - Don't create "mock" or "simplified" versions for testing
+- Always ensure we are in the repo's proper directory when running git commands, e.g.: '/Users/why/repos/waterstick'
+
 - **NEVER DISABLE BLOCK PROCESSING**: Block processing must NEVER be disabled under any circumstance
   - Modulation and other features must work WITHIN block processing, not bypass it
   - Apply modulation before or inside processBlock, never disable block processing

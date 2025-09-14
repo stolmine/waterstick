@@ -36,6 +36,8 @@ protected:
         kCombSize,
         kCombFeedback,
         kCombDamping,
+        kCombDensity,
+        kCombMix,
 
         // Global
         kInputGain,
