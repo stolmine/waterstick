@@ -785,6 +785,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o: /Users/w
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stdint.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickController.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fdebug.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fobject.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h \
@@ -1593,6 +1594,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: /Users/wh
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stddef.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stdint.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fdebug.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fobject.h \
@@ -2407,6 +2409,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: /Users/why/repos/wate
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stdint.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickController.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.h \
   /Users/why/repos/waterstick/source/WaterStick/version.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fdebug.h \
@@ -4825,6 +4828,8 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/AvailabilityMacros.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/swap_allocator.h:
+
+/Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/arm/_endian.h:
 
