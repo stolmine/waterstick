@@ -39,13 +39,17 @@ WaterStickProcessor::WaterStickProcessor()
     // Initialize multitap comb structures
     for (int32 i = 0; i < kMaxCombTaps; ++i)
     {
-        combTaps[i].delaySamples = 0;
-        combTaps[i].targetDelaySamples = 0;
+        combTaps[i].delaySamples = 0.0;
+        combTaps[i].targetDelaySamples = 0.0;
         combTaps[i].gain = 0.0;
         combTaps[i].targetGain = 0.0;
         combTaps[i].lpState[0] = 0.0;
         combTaps[i].lpState[1] = 0.0;
     }
+
+    // Initialize density compressor state
+    densityCompressorState[0] = 0.0;
+    densityCompressorState[1] = 0.0;
 }
 
 WaterStickProcessor::~WaterStickProcessor()
@@ -345,19 +349,24 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
             Vst::Sample64 output = 0.0;
             Vst::Sample64 feedbackSum = 0.0;
 
-            // Simple approach: always use current tap configuration
-            // Crossfade is handled by smoothly updating the tap parameters over time
+            // Process taps with floating-point interpolation for smooth delay changes
             for (int32 tap = 0; tap < activeTapCount; ++tap)
             {
-                if (combTaps[tap].delaySamples > 0)
+                if (combTaps[tap].delaySamples > 0.0)
                 {
-                    // Calculate read position for this tap
-                    int32 readPos = combWritePos - combTaps[tap].delaySamples;
-                    if (readPos < 0)
-                        readPos += combBufferSize;
+                    // Floating-point delay read with linear interpolation (tape-style)
+                    double exactReadPos = combWritePos - combTaps[tap].delaySamples;
+                    if (exactReadPos < 0.0)
+                        exactReadPos += combBufferSize;
 
-                    // Get delayed sample from comb buffer
-                    Vst::Sample64 delayedSample = combBuffers[channel][readPos];
+                    // Linear interpolation between two samples
+                    int32 readPos1 = static_cast<int32>(exactReadPos);
+                    int32 readPos2 = (readPos1 + 1) % combBufferSize;
+                    double fraction = exactReadPos - readPos1;
+
+                    Vst::Sample64 sample1 = combBuffers[channel][readPos1];
+                    Vst::Sample64 sample2 = combBuffers[channel][readPos2];
+                    Vst::Sample64 delayedSample = sample1 + fraction * (sample2 - sample1);
 
                     // Apply per-tap damping (low-pass filter)
                     combTaps[tap].lpState[channel] = combTaps[tap].lpState[channel] +
@@ -372,6 +381,33 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
                 }
             }
 
+            // Apply density-based dynamics processing to prevent resonant frequency buildup
+            Vst::Sample64 processedOutput = output;
+            if (activeTapCount > 8) // Apply compression when density is high
+            {
+                // Calculate compression based on tap density and signal level
+                double densityFactor = static_cast<double>(activeTapCount) / kMaxCombTaps;
+                double compressionRatio = 1.0 + densityFactor * 3.0; // Up to 4:1 compression
+
+                // Simple peak detection and gain reduction
+                Vst::Sample64 absSignal = fabs(output);
+                if (absSignal > kDensityThreshold)
+                {
+                    // Attack: fast compression
+                    double targetGain = kDensityThreshold / (absSignal + 1e-10);
+                    targetGain = pow(targetGain, 1.0 / compressionRatio);
+
+                    densityCompressorState[channel] = densityCompressorState[channel] * 0.7 + targetGain * 0.3;
+                }
+                else
+                {
+                    // Release: slow release
+                    densityCompressorState[channel] = densityCompressorState[channel] * 0.999 + 1.0 * 0.001;
+                }
+
+                processedOutput = output * densityCompressorState[channel];
+            }
+
             // Write to comb buffer (input + feedback) with tanh limiting
             Vst::Sample64 feedbackSignal = feedbackSum * combFeedback;
             Vst::Sample64 totalSignal = input + feedbackSignal;
@@ -379,8 +415,8 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
             // Apply tanh limiting to prevent clipping and runaway feedback
             combBuffers[channel][combWritePos] = tanh(totalSignal * 0.7) / 0.7;
 
-            // Output is the sum of all active taps
-            outputs[channel][sample] = static_cast<Vst::Sample32>(output);
+            // Output is the processed signal (with density compression if needed)
+            outputs[channel][sample] = static_cast<Vst::Sample32>(processedOutput);
         }
 
         // Advance write position
@@ -442,8 +478,8 @@ void WaterStickProcessor::updateCombTaps()
     {
         // Distribute taps with golden ratio spacing
         double tapMultiplier = 1.0 + (tap * 0.618); // Golden ratio spacing
-        combTaps[tap].targetDelaySamples = static_cast<int32>(tapSpacing * tapMultiplier);
-        combTaps[tap].targetDelaySamples = std::max(1, std::min(combTaps[tap].targetDelaySamples, combBufferSize - 1));
+        combTaps[tap].targetDelaySamples = tapSpacing * tapMultiplier;
+        combTaps[tap].targetDelaySamples = std::max(1.0, std::min(combTaps[tap].targetDelaySamples, static_cast<double>(combBufferSize - 1)));
 
         // Set target tap gain with slight decay for later taps
         combTaps[tap].targetGain = 1.0 / sqrt(targetActiveTapCount) * (1.0 - tap * 0.05);
@@ -452,7 +488,7 @@ void WaterStickProcessor::updateCombTaps()
     // Clear target values for unused taps
     for (int32 tap = targetActiveTapCount; tap < kMaxCombTaps; ++tap)
     {
-        combTaps[tap].targetDelaySamples = 0;
+        combTaps[tap].targetDelaySamples = 0.0;
         combTaps[tap].targetGain = 0.0;
     }
 
@@ -492,10 +528,10 @@ void WaterStickProcessor::updateCrossfade()
     // Gradually interpolate tap parameters toward targets
     for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
     {
-        // Interpolate delay samples (with rounding to integer)
+        // Interpolate delay samples (floating-point for tape-style smooth changes)
         double currentDelay = combTaps[tap].delaySamples;
         double targetDelay = combTaps[tap].targetDelaySamples;
-        combTaps[tap].delaySamples = static_cast<int32>(currentDelay + (targetDelay - currentDelay) * smoothProgress);
+        combTaps[tap].delaySamples = currentDelay + (targetDelay - currentDelay) * smoothProgress;
 
         // Interpolate gain
         double currentGain = combTaps[tap].gain;

@@ -66,11 +66,11 @@ protected:
 
     // Multitap comb structures
     struct CombTap {
-        Steinberg::int32 delaySamples;       // Current delay length in samples
-        Steinberg::int32 targetDelaySamples; // Target delay length for crossfade
-        Steinberg::Vst::Sample64 gain;       // Current tap gain
-        Steinberg::Vst::Sample64 targetGain; // Target gain for crossfade
-        Steinberg::Vst::Sample64 lpState[2]; // Per-tap damping filter state
+        Steinberg::Vst::Sample64 delaySamples;       // Current delay length in samples (float for interpolation)
+        Steinberg::Vst::Sample64 targetDelaySamples; // Target delay length for crossfade
+        Steinberg::Vst::Sample64 gain;               // Current tap gain
+        Steinberg::Vst::Sample64 targetGain;         // Target gain for crossfade
+        Steinberg::Vst::Sample64 lpState[2];         // Per-tap damping filter state
     };
     CombTap combTaps[kMaxCombTaps];
     Steinberg::int32 activeTapCount;
@@ -80,6 +80,10 @@ protected:
     bool needsCrossfade;
     Steinberg::int32 crossfadeSamples;
     static const Steinberg::int32 kCrossfadeLength = 512; // 512 samples ~= 10ms at 48kHz
+
+    // Dynamics processing for density control
+    Steinberg::Vst::Sample64 densityCompressorState[2]; // Per-channel compressor envelope
+    static constexpr Steinberg::Vst::Sample64 kDensityThreshold = 0.7; // Compression threshold
 
     // Parameters
     Steinberg::Vst::ParamValue delayTime;
