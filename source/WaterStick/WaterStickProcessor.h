@@ -43,6 +43,7 @@ protected:
         kCombFeedback,
         kCombDamping,
         kCombDensity,
+        kCombMix,
 
         // Global
         kInputGain,
@@ -89,6 +90,7 @@ protected:
     Steinberg::Vst::ParamValue combFeedback;
     Steinberg::Vst::ParamValue combDamping;
     Steinberg::Vst::ParamValue combDensity;
+    Steinberg::Vst::ParamValue combMix;
     Steinberg::Vst::ParamValue inputGain;
     Steinberg::Vst::ParamValue outputGain;
     Steinberg::Vst::ParamValue bypass;

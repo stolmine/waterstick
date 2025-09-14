@@ -28,6 +28,7 @@ WaterStickProcessor::WaterStickProcessor()
 , combFeedback(0.4)    // 40% comb feedback
 , combDamping(0.5)     // Medium damping
 , combDensity(0.125)   // 8/64 = 0.125 (8 active taps default)
+, combMix(0.5)         // 50% comb mix
 , inputGain(1.0)       // Unity gain
 , outputGain(1.0)      // Unity gain
 , bypass(0.0)          // Not bypassed
@@ -136,6 +137,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kCombFeedback: combFeedback = value; break;
                         case kCombDamping: combDamping = value; break;
                         case kCombDensity: combDensity = value; updateCombTaps(); break;
+                        case kCombMix: combMix = value; break;
                         case kInputGain: inputGain = value; break;
                         case kOutputGain: outputGain = value; break;
                         case kBypass: bypass = value; break;
@@ -190,6 +192,7 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeDouble(combFeedback);
     streamer.writeDouble(combDamping);
     streamer.writeDouble(combDensity);
+    streamer.writeDouble(combMix);
     streamer.writeDouble(inputGain);
     streamer.writeDouble(outputGain);
     streamer.writeDouble(bypass);
@@ -212,6 +215,7 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
     if (!streamer.readDouble(combFeedback)) return kResultFalse;
     if (!streamer.readDouble(combDamping)) return kResultFalse;
     if (!streamer.readDouble(combDensity)) return kResultFalse;
+    if (!streamer.readDouble(combMix)) return kResultFalse;
     if (!streamer.readDouble(inputGain)) return kResultFalse;
     if (!streamer.readDouble(outputGain)) return kResultFalse;
     if (!streamer.readDouble(bypass)) return kResultFalse;
@@ -399,30 +403,36 @@ void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** o
                                       int32 numChannels, int32 sampleFrames)
 {
     // Temporary buffers for routing between delay and comb
-    Vst::Sample32* tempBuffers[2];
-    tempBuffers[0] = new Vst::Sample32[sampleFrames];
-    tempBuffers[1] = new Vst::Sample32[sampleFrames];
-    Vst::Sample32** tempOutputs = tempBuffers;
+    Vst::Sample32* delayOutputs[2];
+    Vst::Sample32* combOutputs[2];
+    delayOutputs[0] = new Vst::Sample32[sampleFrames];
+    delayOutputs[1] = new Vst::Sample32[sampleFrames];
+    combOutputs[0] = new Vst::Sample32[sampleFrames];
+    combOutputs[1] = new Vst::Sample32[sampleFrames];
 
     // Process delay first
-    processDelay(inputs, tempOutputs, numChannels, sampleFrames);
+    processDelay(inputs, delayOutputs, numChannels, sampleFrames);
 
-    // Then process comb (using delay output as input)
-    processComb(tempOutputs, outputs, numChannels, sampleFrames);
+    // Process comb (using delay output as input)
+    processComb(delayOutputs, combOutputs, numChannels, sampleFrames);
 
-    // Mix delay and comb outputs
+    // Mix delay and comb outputs with comb mix parameter
     for (int32 channel = 0; channel < std::min(numChannels, 2); ++channel)
     {
         for (int32 sample = 0; sample < sampleFrames; ++sample)
         {
-            // Blend delay and comb outputs (50/50 mix for now)
-            outputs[channel][sample] = (tempOutputs[channel][sample] * 0.5f) + (outputs[channel][sample] * 0.5f);
+            // Blend delay (dry) and comb (wet) outputs using combMix parameter
+            Vst::Sample32 drySignal = delayOutputs[channel][sample];
+            Vst::Sample32 wetSignal = combOutputs[channel][sample];
+            outputs[channel][sample] = drySignal * (1.0f - static_cast<float>(combMix)) + wetSignal * static_cast<float>(combMix);
         }
     }
 
     // Clean up temporary buffers
-    delete[] tempBuffers[0];
-    delete[] tempBuffers[1];
+    delete[] delayOutputs[0];
+    delete[] delayOutputs[1];
+    delete[] combOutputs[0];
+    delete[] combOutputs[1];
 }
 
 void WaterStickProcessor::updateCombTaps()
@@ -457,14 +467,32 @@ void WaterStickProcessor::updateCombTaps()
         combTaps[tap].targetGain = 0.0;
     }
 
-    // Initialize crossfade
-    needsCrossfade = true;
-    crossfadeSamples = kCrossfadeLength;
+    // Check if this is initial setup or a parameter change
+    bool isInitialSetup = (activeTapCount == 0);
 
-    // Reset crossfade values for all taps
-    for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
+    if (isInitialSetup)
     {
-        combTaps[tap].crossfade = 1.0; // Start with current values
+        // Initial setup - set current values directly (no crossfade needed)
+        for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
+        {
+            combTaps[tap].delaySamples = combTaps[tap].targetDelaySamples;
+            combTaps[tap].gain = combTaps[tap].targetGain;
+            combTaps[tap].crossfade = 1.0;
+        }
+        activeTapCount = targetActiveTapCount;
+        needsCrossfade = false;
+    }
+    else
+    {
+        // Parameter change - initialize crossfade
+        needsCrossfade = true;
+        crossfadeSamples = kCrossfadeLength;
+
+        // Reset crossfade values for all taps
+        for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
+        {
+            combTaps[tap].crossfade = 1.0; // Start with current values
+        }
     }
 }
 
@@ -496,12 +524,9 @@ void WaterStickProcessor::updateCrossfade()
             combTaps[tap].gain = combTaps[tap].targetGain;
             combTaps[tap].crossfade = 1.0;
 
-            // Reset filter states for changed taps to prevent artifacts
-            if (combTaps[tap].delaySamples != combTaps[tap].targetDelaySamples)
-            {
-                combTaps[tap].lpState[0] = 0.0;
-                combTaps[tap].lpState[1] = 0.0;
-            }
+            // Reset filter states for newly configured taps to prevent artifacts
+            combTaps[tap].lpState[0] = 0.0;
+            combTaps[tap].lpState[1] = 0.0;
         }
 
         activeTapCount = targetActiveTapCount;
