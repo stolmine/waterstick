@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmake:*)",
+      "Bash(/Users/why/repos/waterstick/build/bin/Release/validator /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3)",
+      "Bash(nm:*)",
+      "Read(//Users/why/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/**)",
+      "Read(//Users/why/Library/Audio/Plug-Ins/VST3/**)",
+      "Bash(/Users/why/repos/waterstick/build/bin/Release/validator:*)",
+      "Read(//Users/why/Library/**)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git submodule add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(make:*)",
+      "Bash(git reset:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
