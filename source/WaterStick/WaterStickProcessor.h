@@ -42,6 +42,7 @@ protected:
         kCombSize,
         kCombFeedback,
         kCombDamping,
+        kCombDensity,
 
         // Global
         kInputGain,
@@ -61,7 +62,15 @@ protected:
     Steinberg::Vst::Sample64** combBuffers;
     Steinberg::int32 combBufferSize;
     Steinberg::int32 combWritePos;
-    Steinberg::Vst::Sample64 combLPState[2];  // Low-pass filter state for damping
+
+    // Multitap comb structures
+    struct CombTap {
+        Steinberg::int32 delaySamples;    // Delay length in samples
+        Steinberg::Vst::Sample64 gain;    // Tap gain
+        Steinberg::Vst::Sample64 lpState[2]; // Per-tap damping filter state
+    };
+    CombTap combTaps[kMaxCombTaps];
+    Steinberg::int32 activeTapCount;
 
     // Parameters
     Steinberg::Vst::ParamValue delayTime;
@@ -70,6 +79,7 @@ protected:
     Steinberg::Vst::ParamValue combSize;
     Steinberg::Vst::ParamValue combFeedback;
     Steinberg::Vst::ParamValue combDamping;
+    Steinberg::Vst::ParamValue combDensity;
     Steinberg::Vst::ParamValue inputGain;
     Steinberg::Vst::ParamValue outputGain;
     Steinberg::Vst::ParamValue bypass;
@@ -85,6 +95,7 @@ private:
                     Steinberg::int32 numChannels, Steinberg::int32 sampleFrames);
     void processAudio(Steinberg::Vst::Sample32** inputs, Steinberg::Vst::Sample32** outputs,
                      Steinberg::int32 numChannels, Steinberg::int32 sampleFrames);
+    void updateCombTaps();
 };
 
 } // namespace WaterStick

@@ -17,21 +17,28 @@ WaterStickProcessor::WaterStickProcessor()
 , combBuffers(nullptr)
 , combBufferSize(0)
 , combWritePos(0)
+, activeTapCount(8)    // Default to 8 active taps
 , delayTime(0.25)      // 250ms default
 , delayFeedback(0.3)   // 30% feedback
 , delayMix(0.5)        // 50% mix
 , combSize(0.5)        // Medium comb size
 , combFeedback(0.4)    // 40% comb feedback
 , combDamping(0.5)     // Medium damping
+, combDensity(0.125)   // 8/64 = 0.125 (8 active taps default)
 , inputGain(1.0)       // Unity gain
 , outputGain(1.0)      // Unity gain
 , bypass(0.0)          // Not bypassed
 {
     setControllerClass(kWaterStickControllerUID);
 
-    // Initialize comb LP filter state
-    combLPState[0] = 0.0;
-    combLPState[1] = 0.0;
+    // Initialize multitap comb structures
+    for (int32 i = 0; i < kMaxCombTaps; ++i)
+    {
+        combTaps[i].delaySamples = 0;
+        combTaps[i].gain = 0.0;
+        combTaps[i].lpState[0] = 0.0;
+        combTaps[i].lpState[1] = 0.0;
+    }
 }
 
 WaterStickProcessor::~WaterStickProcessor()
@@ -84,6 +91,9 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
     // Calculate comb buffer size (max 100ms at any sample rate for comb resonator)
     combBufferSize = static_cast<int32>(0.1 * newSetup.sampleRate);
 
+    // Update comb tap configuration with new sample rate
+    updateCombTaps();
+
     return AudioEffect::setupProcessing(newSetup);
 }
 
@@ -116,9 +126,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kDelayTime: delayTime = value; break;
                         case kDelayFeedback: delayFeedback = value; break;
                         case kDelayMix: delayMix = value; break;
-                        case kCombSize: combSize = value; break;
+                        case kCombSize: combSize = value; updateCombTaps(); break;
                         case kCombFeedback: combFeedback = value; break;
                         case kCombDamping: combDamping = value; break;
+                        case kCombDensity: combDensity = value; updateCombTaps(); break;
                         case kInputGain: inputGain = value; break;
                         case kOutputGain: outputGain = value; break;
                         case kBypass: bypass = value; break;
@@ -172,6 +183,7 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeDouble(combSize);
     streamer.writeDouble(combFeedback);
     streamer.writeDouble(combDamping);
+    streamer.writeDouble(combDensity);
     streamer.writeDouble(inputGain);
     streamer.writeDouble(outputGain);
     streamer.writeDouble(bypass);
@@ -193,6 +205,7 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
     if (!streamer.readDouble(combSize)) return kResultFalse;
     if (!streamer.readDouble(combFeedback)) return kResultFalse;
     if (!streamer.readDouble(combDamping)) return kResultFalse;
+    if (!streamer.readDouble(combDensity)) return kResultFalse;
     if (!streamer.readDouble(inputGain)) return kResultFalse;
     if (!streamer.readDouble(outputGain)) return kResultFalse;
     if (!streamer.readDouble(bypass)) return kResultFalse;
@@ -304,12 +317,6 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
     if (!combBuffers || combBufferSize == 0)
         return;
 
-    // Calculate comb delay length (in samples) based on combSize parameter
-    // combSize range 0.0-1.0 maps to 2ms-100ms delay
-    double combDelayMs = 2.0 + (combSize * 98.0);
-    int32 combDelaySamples = static_cast<int32>(combDelayMs * 0.001 * processSetup.sampleRate);
-    combDelaySamples = std::max(1, std::min(combDelaySamples, combBufferSize - 1));
-
     // Calculate damping coefficient (0.0-1.0)
     double dampingCoeff = combDamping * 0.3; // Scale to reasonable range
 
@@ -319,24 +326,40 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
         {
             // Get input sample
             Vst::Sample64 input = inputs[channel][sample];
+            Vst::Sample64 output = 0.0;
+            Vst::Sample64 feedbackSum = 0.0;
 
-            // Calculate read position for comb delay
-            int32 readPos = combWritePos - combDelaySamples;
-            if (readPos < 0)
-                readPos += combBufferSize;
+            // Process all active taps
+            for (int32 tap = 0; tap < activeTapCount; ++tap)
+            {
+                if (combTaps[tap].delaySamples > 0)
+                {
+                    // Calculate read position for this tap
+                    int32 readPos = combWritePos - combTaps[tap].delaySamples;
+                    if (readPos < 0)
+                        readPos += combBufferSize;
 
-            // Get delayed sample from comb buffer
-            Vst::Sample64 delayedSample = combBuffers[channel][readPos];
+                    // Get delayed sample from comb buffer
+                    Vst::Sample64 delayedSample = combBuffers[channel][readPos];
 
-            // Apply damping (simple low-pass filter)
-            combLPState[channel] = combLPState[channel] + dampingCoeff * (delayedSample - combLPState[channel]);
-            Vst::Sample64 dampedSample = combLPState[channel];
+                    // Apply per-tap damping (low-pass filter)
+                    combTaps[tap].lpState[channel] = combTaps[tap].lpState[channel] +
+                        dampingCoeff * (delayedSample - combTaps[tap].lpState[channel]);
+                    Vst::Sample64 dampedSample = combTaps[tap].lpState[channel];
+
+                    // Add tap contribution to output
+                    output += dampedSample * combTaps[tap].gain;
+
+                    // Add to feedback sum
+                    feedbackSum += dampedSample * combTaps[tap].gain;
+                }
+            }
 
             // Write to comb buffer (input + feedback)
-            combBuffers[channel][combWritePos] = input + (dampedSample * combFeedback);
+            combBuffers[channel][combWritePos] = input + (feedbackSum * combFeedback);
 
-            // Output is the delayed/damped sample
-            outputs[channel][sample] = static_cast<Vst::Sample32>(dampedSample);
+            // Output is the sum of all active taps
+            outputs[channel][sample] = static_cast<Vst::Sample32>(output);
         }
 
         // Advance write position
@@ -372,6 +395,44 @@ void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** o
     // Clean up temporary buffers
     delete[] tempBuffers[0];
     delete[] tempBuffers[1];
+}
+
+void WaterStickProcessor::updateCombTaps()
+{
+    // Calculate number of active taps based on density (0.0-1.0 -> 1-64 taps)
+    activeTapCount = static_cast<int32>(1 + (combDensity * (kMaxCombTaps - 1)));
+    activeTapCount = std::max(1, std::min(activeTapCount, kMaxCombTaps));
+
+    // Base delay time in milliseconds (2ms-100ms based on combSize)
+    double baseDelayMs = 2.0 + (combSize * 98.0);
+    double baseDelaySamples = baseDelayMs * 0.001 * processSetup.sampleRate;
+
+    // Configure tap delays using Fibonacci-like distribution for natural resonance
+    double tapSpacing = baseDelaySamples / (activeTapCount + 1);
+
+    for (int32 tap = 0; tap < activeTapCount; ++tap)
+    {
+        // Distribute taps with slight random variation for more natural sound
+        double tapMultiplier = 1.0 + (tap * 0.618); // Golden ratio spacing
+        combTaps[tap].delaySamples = static_cast<int32>(tapSpacing * tapMultiplier);
+        combTaps[tap].delaySamples = std::max(1, std::min(combTaps[tap].delaySamples, combBufferSize - 1));
+
+        // Set tap gain with slight decay for later taps
+        combTaps[tap].gain = 1.0 / sqrt(activeTapCount) * (1.0 - tap * 0.05);
+
+        // Reset filter states
+        combTaps[tap].lpState[0] = 0.0;
+        combTaps[tap].lpState[1] = 0.0;
+    }
+
+    // Clear unused taps
+    for (int32 tap = activeTapCount; tap < kMaxCombTaps; ++tap)
+    {
+        combTaps[tap].delaySamples = 0;
+        combTaps[tap].gain = 0.0;
+        combTaps[tap].lpState[0] = 0.0;
+        combTaps[tap].lpState[1] = 0.0;
+    }
 }
 
 } // namespace WaterStick

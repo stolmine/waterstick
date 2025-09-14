@@ -40,6 +40,9 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Comb Damping"), STR16("%"), 0, 0.5,
                            Vst::ParameterInfo::kCanAutomate, kCombDamping);
 
+    parameters.addParameter(STR16("Comb Density"), STR16(""), 0, 0.125,
+                           Vst::ParameterInfo::kCanAutomate, kCombDensity);
+
     parameters.addParameter(STR16("Input Gain"), STR16("dB"), 0, 1.0,
                            Vst::ParameterInfo::kCanAutomate, kInputGain);
 
@@ -67,7 +70,7 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     IBStreamer streamer(state, kLittleEndian);
 
     double delayTime, delayFeedback, delayMix;
-    double combSize, combFeedback, combDamping;
+    double combSize, combFeedback, combDamping, combDensity;
     double inputGain, outputGain, bypass;
 
     if (!streamer.readDouble(delayTime)) return kResultFalse;
@@ -76,6 +79,7 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     if (!streamer.readDouble(combSize)) return kResultFalse;
     if (!streamer.readDouble(combFeedback)) return kResultFalse;
     if (!streamer.readDouble(combDamping)) return kResultFalse;
+    if (!streamer.readDouble(combDensity)) return kResultFalse;
     if (!streamer.readDouble(inputGain)) return kResultFalse;
     if (!streamer.readDouble(outputGain)) return kResultFalse;
     if (!streamer.readDouble(bypass)) return kResultFalse;
@@ -87,6 +91,7 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     setParamNormalized(kCombSize, combSize);
     setParamNormalized(kCombFeedback, combFeedback);
     setParamNormalized(kCombDamping, combDamping);
+    setParamNormalized(kCombDensity, combDensity);
     setParamNormalized(kInputGain, inputGain);
     setParamNormalized(kOutputGain, outputGain);
     setParamNormalized(kBypass, bypass);
