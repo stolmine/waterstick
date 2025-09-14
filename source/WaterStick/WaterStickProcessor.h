@@ -70,6 +70,8 @@ protected:
         Steinberg::Vst::Sample64 targetDelaySamples; // Target delay length for crossfade
         Steinberg::Vst::Sample64 gain;               // Current tap gain
         Steinberg::Vst::Sample64 targetGain;         // Target gain for crossfade
+        Steinberg::Vst::Sample64 fadeLevel;          // Tap fade in/out level (0.0-1.0)
+        Steinberg::Vst::Sample64 targetFadeLevel;    // Target fade level for density changes
         Steinberg::Vst::Sample64 lpState[2];         // Per-tap damping filter state
     };
     CombTap combTaps[kMaxCombTaps];
@@ -87,10 +89,10 @@ protected:
     Steinberg::Vst::Sample64 outputRMSState[2];         // Output RMS tracking for makeup gain
     static constexpr Steinberg::Vst::Sample64 kDensityThreshold = 0.7; // Compression threshold
 
-    // Smooth parameter tracking to prevent jumps
-    Steinberg::Vst::ParamValue smoothCombSize;
-    Steinberg::Vst::ParamValue smoothCombDensity;
-    static constexpr Steinberg::Vst::Sample64 kSmoothingFactor = 0.999; // Very slow parameter smoothing
+    // One-pole smoothing for delay time changes (based on DSP research)
+    Steinberg::Vst::Sample64 smoothedDelayTime[kMaxCombTaps]; // Per-tap smoothed delay time
+    static constexpr Steinberg::Vst::Sample64 kDelaySmoothing = 0.9999; // One-pole smoothing coefficient
+    static constexpr Steinberg::Vst::Sample64 kFadeSpeed = 0.99; // Tap fade in/out speed
 
     // Parameters
     Steinberg::Vst::ParamValue delayTime;

@@ -43,8 +43,13 @@ WaterStickProcessor::WaterStickProcessor()
         combTaps[i].targetDelaySamples = 0.0;
         combTaps[i].gain = 0.0;
         combTaps[i].targetGain = 0.0;
+        combTaps[i].fadeLevel = 0.0;
+        combTaps[i].targetFadeLevel = 0.0;
         combTaps[i].lpState[0] = 0.0;
         combTaps[i].lpState[1] = 0.0;
+
+        // Initialize per-tap smoothed delay times
+        smoothedDelayTime[i] = 0.0;
     }
 
     // Initialize density compressor and RMS tracking state
@@ -55,9 +60,6 @@ WaterStickProcessor::WaterStickProcessor()
     outputRMSState[0] = 0.0;
     outputRMSState[1] = 0.0;
 
-    // Initialize smooth parameter tracking
-    smoothCombSize = combSize;
-    smoothCombDensity = combDensity;
 }
 
 WaterStickProcessor::~WaterStickProcessor()
@@ -342,13 +344,12 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
     // Calculate damping coefficient (0.0-1.0)
     double dampingCoeff = combDamping * 0.3; // Scale to reasonable range
 
+    // Exponential feedback scaling for better control throw (0-1 -> 0-0.95)
+    double expFeedback = combFeedback * combFeedback * 0.95; // Exponential curve, max 95%
+
     for (int32 sample = 0; sample < sampleFrames; ++sample)
     {
-        // Smooth parameter updates per-sample to prevent jumps
-        smoothCombSize = smoothCombSize * kSmoothingFactor + combSize * (1.0 - kSmoothingFactor);
-        smoothCombDensity = smoothCombDensity * kSmoothingFactor + combDensity * (1.0 - kSmoothingFactor);
-
-        // Update crossfade if needed - but use smoothed parameters
+        // Update crossfade if needed
         if (needsCrossfade)
         {
             updateCrossfade();
@@ -361,13 +362,22 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
             Vst::Sample64 output = 0.0;
             Vst::Sample64 feedbackSum = 0.0;
 
-            // Process taps with floating-point interpolation for smooth delay changes
-            for (int32 tap = 0; tap < activeTapCount; ++tap)
+            // Process taps with one-pole delay smoothing and fade levels
+            for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
             {
-                if (combTaps[tap].delaySamples > 0.0)
+                // One-pole smoothing for delay time changes (research-based approach)
+                smoothedDelayTime[tap] = kDelaySmoothing * smoothedDelayTime[tap] +
+                                        (1.0 - kDelaySmoothing) * combTaps[tap].delaySamples;
+
+                // Update tap fade level for density changes
+                combTaps[tap].fadeLevel = kFadeSpeed * combTaps[tap].fadeLevel +
+                                         (1.0 - kFadeSpeed) * combTaps[tap].targetFadeLevel;
+
+                // Only process taps that have some fade level (avoids processing inactive taps)
+                if (smoothedDelayTime[tap] > 0.0 && combTaps[tap].fadeLevel > 0.001)
                 {
-                    // Floating-point delay read with linear interpolation (tape-style)
-                    double exactReadPos = combWritePos - combTaps[tap].delaySamples;
+                    // Floating-point delay read with linear interpolation
+                    double exactReadPos = combWritePos - smoothedDelayTime[tap];
                     if (exactReadPos < 0.0)
                         exactReadPos += combBufferSize;
 
@@ -385,8 +395,8 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
                         dampingCoeff * (delayedSample - combTaps[tap].lpState[channel]);
                     Vst::Sample64 dampedSample = combTaps[tap].lpState[channel];
 
-                    // Apply tap gain
-                    Vst::Sample64 tapOutput = dampedSample * combTaps[tap].gain;
+                    // Apply tap gain with fade level
+                    Vst::Sample64 tapOutput = dampedSample * combTaps[tap].gain * combTaps[tap].fadeLevel;
 
                     output += tapOutput;
                     feedbackSum += tapOutput;
@@ -436,12 +446,12 @@ void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** ou
             }
 
             // Write to comb buffer (input + feedback) with adaptive tanh limiting
-            Vst::Sample64 feedbackSignal = feedbackSum * combFeedback;
+            Vst::Sample64 feedbackSignal = feedbackSum * expFeedback; // Use exponential feedback
             Vst::Sample64 totalSignal = input + feedbackSignal;
 
             // Adaptive tanh scaling based on density and size to prevent runaway feedback
             double densityFactor = static_cast<double>(activeTapCount) / kMaxCombTaps;
-            double sizeFactor = smoothCombSize; // Larger comb sizes need more limiting
+            double sizeFactor = combSize; // Use current combSize directly
 
             // More aggressive limiting with higher density and larger sizes
             double tanhDrive = 0.5 + densityFactor * 0.3 + sizeFactor * 0.2; // 0.5 to 1.0 range
@@ -496,34 +506,38 @@ void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** o
 
 void WaterStickProcessor::updateCombTaps()
 {
-    // Calculate number of target active taps based on SMOOTHED density (0.0-1.0 -> 1-64 taps)
-    targetActiveTapCount = static_cast<int32>(1 + (smoothCombDensity * (kMaxCombTaps - 1)));
+    // Calculate number of target active taps based on density (0.0-1.0 -> 1-64 taps)
+    targetActiveTapCount = static_cast<int32>(1 + (combDensity * (kMaxCombTaps - 1)));
     targetActiveTapCount = std::max(1, std::min(targetActiveTapCount, kMaxCombTaps));
 
-    // Base delay time in milliseconds (2ms-100ms based on SMOOTHED combSize)
-    double baseDelayMs = 2.0 + (smoothCombSize * 98.0);
+    // Base delay time in milliseconds (2ms-100ms based on combSize)
+    double baseDelayMs = 2.0 + (combSize * 98.0);
     double baseDelaySamples = baseDelayMs * 0.001 * processSetup.sampleRate;
 
     // Configure target tap delays using Fibonacci-like distribution for natural resonance
     double tapSpacing = baseDelaySamples / (targetActiveTapCount + 1);
 
-    // Set target values for crossfade
-    for (int32 tap = 0; tap < targetActiveTapCount; ++tap)
+    // Configure all taps and set fade levels for density changes
+    for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
     {
-        // Distribute taps with golden ratio spacing
-        double tapMultiplier = 1.0 + (tap * 0.618); // Golden ratio spacing
-        combTaps[tap].targetDelaySamples = tapSpacing * tapMultiplier;
-        combTaps[tap].targetDelaySamples = std::max(1.0, std::min(combTaps[tap].targetDelaySamples, static_cast<double>(combBufferSize - 1)));
+        if (tap < targetActiveTapCount)
+        {
+            // Distribute active taps with golden ratio spacing
+            double tapMultiplier = 1.0 + (tap * 0.618); // Golden ratio spacing
+            combTaps[tap].targetDelaySamples = tapSpacing * tapMultiplier;
+            combTaps[tap].targetDelaySamples = std::max(1.0, std::min(combTaps[tap].targetDelaySamples, static_cast<double>(combBufferSize - 1)));
 
-        // Set target tap gain with slight decay for later taps
-        combTaps[tap].targetGain = 1.0 / sqrt(targetActiveTapCount) * (1.0 - tap * 0.05);
-    }
+            // Set target tap gain with slight decay for later taps
+            combTaps[tap].targetGain = 1.0 / sqrt(targetActiveTapCount) * (1.0 - tap * 0.05);
 
-    // Clear target values for unused taps
-    for (int32 tap = targetActiveTapCount; tap < kMaxCombTaps; ++tap)
-    {
-        combTaps[tap].targetDelaySamples = 0.0;
-        combTaps[tap].targetGain = 0.0;
+            // Fade in active taps
+            combTaps[tap].targetFadeLevel = 1.0;
+        }
+        else
+        {
+            // Inactive taps: keep delay/gain but fade out
+            combTaps[tap].targetFadeLevel = 0.0;
+        }
     }
 
     // Check if this is initial setup or a parameter change
@@ -536,6 +550,7 @@ void WaterStickProcessor::updateCombTaps()
         {
             combTaps[tap].delaySamples = combTaps[tap].targetDelaySamples;
             combTaps[tap].gain = combTaps[tap].targetGain;
+            combTaps[tap].fadeLevel = combTaps[tap].targetFadeLevel;
         }
         activeTapCount = targetActiveTapCount;
         needsCrossfade = false;
