@@ -138,17 +138,24 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
     const VSTGUI::CRect& rect = getViewSize();
     bool isEnabled = (getValue() > 0.5);
 
-    context->setLineWidth(2.0);
+    // Set stroke width to 5px
+    context->setLineWidth(5.0);
     context->setFrameColor(VSTGUI::kBlackCColor);
+
+    // Create drawing rect that accounts for stroke width
+    // Inset by half the stroke width to prevent clipping
+    VSTGUI::CRect drawRect = rect;
+    const double strokeInset = 2.5; // Half of 5px stroke
+    drawRect.inset(strokeInset, strokeInset);
 
     if (isEnabled) {
         // Enabled state: black fill with black stroke
         context->setFillColor(VSTGUI::kBlackCColor);
-        context->drawEllipse(rect, VSTGUI::kDrawFilled);
-        context->drawEllipse(rect, VSTGUI::kDrawStroked);
+        context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
+        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
     } else {
         // Disabled state: no fill, black stroke only
-        context->drawEllipse(rect, VSTGUI::kDrawStroked);
+        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
     }
 
     setDirty(false);
