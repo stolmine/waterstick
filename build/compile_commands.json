@@ -1,25 +1,31 @@
 [
 {
   "directory": "/Users/why/repos/waterstick/build",
-  "command": "/usr/bin/c++ -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickController.cpp",
+  "command": "/usr/bin/c++ -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++ -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickController.cpp",
   "file": "/Users/why/repos/waterstick/source/WaterStick/WaterStickController.cpp",
   "output": "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o"
 },
 {
   "directory": "/Users/why/repos/waterstick/build",
-  "command": "/usr/bin/c++ -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.cpp",
+  "command": "/usr/bin/c++ -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++ -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.cpp",
+  "file": "/Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.cpp",
+  "output": "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o"
+},
+{
+  "directory": "/Users/why/repos/waterstick/build",
+  "command": "/usr/bin/c++ -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++ -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.cpp",
   "file": "/Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.cpp",
   "output": "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o"
 },
 {
   "directory": "/Users/why/repos/waterstick/build",
-  "command": "/usr/bin/c++ -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -o CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/factory.cpp",
+  "command": "/usr/bin/c++ -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++ -o CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/factory.cpp",
   "file": "/Users/why/repos/waterstick/source/WaterStick/factory.cpp",
   "output": "CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o"
 },
 {
   "directory": "/Users/why/repos/waterstick/build",
-  "command": "/usr/bin/c++ -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -o CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/moduleentry.cpp",
+  "command": "/usr/bin/c++ -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -DWaterStick_EXPORTS -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++ -o CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/moduleentry.cpp",
   "file": "/Users/why/repos/waterstick/source/WaterStick/moduleentry.cpp",
   "output": "CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o"
 },

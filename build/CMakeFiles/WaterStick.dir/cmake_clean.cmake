@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o"
   "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o.d"
+  "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o"
+  "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o"
   "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o"

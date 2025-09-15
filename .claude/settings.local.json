@@ -23,7 +23,8 @@
       "Bash(git switch:*)",
       "Bash(rm:*)",
       "WebFetch(domain:github.com)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(codesign:*)"
     ],
     "deny": [],
     "ask": []

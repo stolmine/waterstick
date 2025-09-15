@@ -35,6 +35,8 @@ set(target WaterStick)
 smtg_add_vst3plugin(${target}
     source/WaterStick/WaterStickController.cpp
     source/WaterStick/WaterStickController.h
+    source/WaterStick/WaterStickEditor.cpp
+    source/WaterStick/WaterStickEditor.h
     source/WaterStick/WaterStickProcessor.cpp
     source/WaterStick/WaterStickProcessor.h
     source/WaterStick/WaterStickParameters.h
@@ -57,4 +59,5 @@ target_include_directories(${target} PRIVATE
 # Link with required SDK libraries
 target_link_libraries(${target} PRIVATE
     sdk
+    vstgui_support
 )

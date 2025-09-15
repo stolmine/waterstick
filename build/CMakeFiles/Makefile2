@@ -1035,6 +1035,9 @@ vst3sdk/public.sdk/source/vst/interappaudio/clean:
 # Target rules for target CMakeFiles/WaterStick.dir
 
 # All Build rule for target.
+CMakeFiles/WaterStick.dir/all: vst3sdk/CMakeFiles/vstgui_support.dir/all
+CMakeFiles/WaterStick.dir/all: vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/all
+CMakeFiles/WaterStick.dir/all: vst3sdk/VSTGUI.build/vstgui/uidescription/CMakeFiles/vstgui_uidescription.dir/all
 CMakeFiles/WaterStick.dir/all: vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/all
 CMakeFiles/WaterStick.dir/all: vst3sdk/base/CMakeFiles/base.dir/all
 CMakeFiles/WaterStick.dir/all: vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/all
@@ -1048,7 +1051,7 @@ CMakeFiles/WaterStick.dir/all: vst3sdk/public.sdk/samples/vst-utilities/modulein
 
 # Build rule for subdir invocation for target.
 CMakeFiles/WaterStick.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 24
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/WaterStick.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : CMakeFiles/WaterStick.dir/rule
@@ -1665,12 +1668,12 @@ vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/all: vst3sdk/pu
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/all: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build.make vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build.make vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=7 "Built target again-simple"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num= "Built target again-simple"
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/rule
@@ -1683,7 +1686,7 @@ again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/r
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/codegen: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/codegen: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build.make vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=7 "Finished codegen for target again-simple"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num= "Finished codegen for target again-simple"
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/codegen
 
 # clean rule for target.
@@ -1704,12 +1707,12 @@ vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accu
 vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/all: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build.make vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build.make vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=6 "Built target again-sample-accurate"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=6,7 "Built target again-sample-accurate"
 .PHONY : vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 24
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 25
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/rule
@@ -1722,7 +1725,7 @@ again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMake
 vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/codegen: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/codegen: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build.make vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=6 "Finished codegen for target again-sample-accurate"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=6,7 "Finished codegen for target again-sample-accurate"
 .PHONY : vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/codegen
 
 # clean rule for target.
@@ -1979,12 +1982,12 @@ vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/all: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build.make vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build.make vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=36 "Built target note-expression-synth"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=36,37 "Built target note-expression-synth"
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 58
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/rule
@@ -1997,7 +2000,7 @@ note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMak
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/codegen: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/codegen: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build.make vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=36 "Finished codegen for target note-expression-synth"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=36,37 "Finished codegen for target note-expression-synth"
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/codegen
 
 # clean rule for target.
@@ -2020,12 +2023,12 @@ vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-t
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/all: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build.make vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build.make vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=37,38 "Built target note-expression-text"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=38 "Built target note-expression-text"
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 58
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/rule
@@ -2038,7 +2041,7 @@ note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeF
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/codegen: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/codegen: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build.make vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=37,38 "Finished codegen for target note-expression-text"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=38 "Finished codegen for target note-expression-text"
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/codegen
 
 # clean rule for target.

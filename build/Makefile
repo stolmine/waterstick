@@ -595,6 +595,30 @@ source/WaterStick/WaterStickController.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.s
 .PHONY : source/WaterStick/WaterStickController.cpp.s
 
+source/WaterStick/WaterStickEditor.o: source/WaterStick/WaterStickEditor.cpp.o
+.PHONY : source/WaterStick/WaterStickEditor.o
+
+# target to build an object file
+source/WaterStick/WaterStickEditor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o
+.PHONY : source/WaterStick/WaterStickEditor.cpp.o
+
+source/WaterStick/WaterStickEditor.i: source/WaterStick/WaterStickEditor.cpp.i
+.PHONY : source/WaterStick/WaterStickEditor.i
+
+# target to preprocess a source file
+source/WaterStick/WaterStickEditor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.i
+.PHONY : source/WaterStick/WaterStickEditor.cpp.i
+
+source/WaterStick/WaterStickEditor.s: source/WaterStick/WaterStickEditor.cpp.s
+.PHONY : source/WaterStick/WaterStickEditor.s
+
+# target to generate assembly for a file
+source/WaterStick/WaterStickEditor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.s
+.PHONY : source/WaterStick/WaterStickEditor.cpp.s
+
 source/WaterStick/WaterStickProcessor.o: source/WaterStick/WaterStickProcessor.cpp.o
 .PHONY : source/WaterStick/WaterStickProcessor.o
 
@@ -713,6 +737,9 @@ help:
 	@echo "... source/WaterStick/WaterStickController.o"
 	@echo "... source/WaterStick/WaterStickController.i"
 	@echo "... source/WaterStick/WaterStickController.s"
+	@echo "... source/WaterStick/WaterStickEditor.o"
+	@echo "... source/WaterStick/WaterStickEditor.i"
+	@echo "... source/WaterStick/WaterStickEditor.s"
 	@echo "... source/WaterStick/WaterStickProcessor.o"
 	@echo "... source/WaterStick/WaterStickProcessor.i"
 	@echo "... source/WaterStick/WaterStickProcessor.s"

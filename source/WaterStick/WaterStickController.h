@@ -2,11 +2,12 @@
 
 #include "public.sdk/source/vst/vsteditcontroller.h"
 #include "public.sdk/source/vst/vstparameters.h"
+#include "vstgui/plugin-bindings/vst3editor.h"
 #include "WaterStickParameters.h"
 
 namespace WaterStick {
 
-class WaterStickController : public Steinberg::Vst::EditControllerEx1
+class WaterStickController : public Steinberg::Vst::EditControllerEx1, public VSTGUI::VST3EditorDelegate
 {
 public:
     WaterStickController();
@@ -30,6 +31,9 @@ public:
     Steinberg::tresult PLUGIN_API setParamNormalized(Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue value) SMTG_OVERRIDE;
     Steinberg::tresult PLUGIN_API getParamStringByValue(Steinberg::Vst::ParamID id, Steinberg::Vst::ParamValue valueNormalized, Steinberg::Vst::String128 string) SMTG_OVERRIDE;
     Steinberg::tresult PLUGIN_API getParamValueByString(Steinberg::Vst::ParamID id, Steinberg::Vst::TChar* string, Steinberg::Vst::ParamValue& valueNormalized) SMTG_OVERRIDE;
+
+    // IPlugView creation
+    Steinberg::IPlugView* PLUGIN_API createView(Steinberg::FIDString name) SMTG_OVERRIDE;
 };
 
 } // namespace WaterStick

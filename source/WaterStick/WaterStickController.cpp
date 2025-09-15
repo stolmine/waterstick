@@ -1,7 +1,10 @@
 #include "WaterStickController.h"
+#include "WaterStickEditor.h"
 #include "WaterStickCIDs.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ustring.h"
+#include "pluginterfaces/base/ibstream.h"
+#include "pluginterfaces/vst/ivstmessage.h"
 
 using namespace Steinberg;
 
@@ -163,6 +166,16 @@ tresult PLUGIN_API WaterStickController::getParamValueByString(Vst::ParamID id, 
         }
     }
     return EditControllerEx1::getParamValueByString(id, string, valueNormalized);
+}
+
+//------------------------------------------------------------------------
+IPlugView* PLUGIN_API WaterStickController::createView(FIDString name)
+{
+    if (ConstString(name) == ViewType::kEditor)
+    {
+        return new WaterStickEditor(this);
+    }
+    return nullptr;
 }
 
 } // namespace WaterStick

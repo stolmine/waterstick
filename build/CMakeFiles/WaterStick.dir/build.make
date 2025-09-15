@@ -86,10 +86,24 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.s: cmake_fo
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/why/repos/waterstick/source/WaterStick/WaterStickController.cpp -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.s
 
+CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o: CMakeFiles/WaterStick.dir/flags.make
+CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o: /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.cpp
+CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o: CMakeFiles/WaterStick.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o -MF CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o.d -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.cpp
+
+CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.cpp > CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.i
+
+CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.cpp -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.s
+
 CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: CMakeFiles/WaterStick.dir/flags.make
 CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.cpp
 CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: CMakeFiles/WaterStick.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o -MF CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o.d -o CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.cpp
 
 CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.i: cmake_force
@@ -103,7 +117,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.s: cmake_for
 CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: CMakeFiles/WaterStick.dir/flags.make
 CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: /Users/why/repos/waterstick/source/WaterStick/factory.cpp
 CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: CMakeFiles/WaterStick.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o -MF CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o.d -o CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/factory.cpp
 
 CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.i: cmake_force
@@ -117,7 +131,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.s: cmake_force
 CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: CMakeFiles/WaterStick.dir/flags.make
 CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/waterstick/source/WaterStick/moduleentry.cpp
 CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: CMakeFiles/WaterStick.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o -MF CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o.d -o CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/moduleentry.cpp
 
 CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.i: cmake_force
@@ -131,6 +145,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.s: cmake_force
 # Object files for target WaterStick
 WaterStick_OBJECTS = \
 "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o" \
+"CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o"
@@ -139,16 +154,21 @@ WaterStick_OBJECTS = \
 WaterStick_EXTERNAL_OBJECTS =
 
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/build.make
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libsdk.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libvstgui_support.a
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libsdk_common.a
-VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libbase.a
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libpluginterfaces.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libbase.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libvstgui.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libvstgui_uidescription.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX CFBundle shared module VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick"
 	/opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3/Contents/Resources
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/WaterStick.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
