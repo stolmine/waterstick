@@ -2,12 +2,41 @@
 
 #include "public.sdk/source/vst/vstaudioeffect.h"
 #include "public.sdk/source/vst/vstparameters.h"
+#include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "WaterStickParameters.h"
 #include <vector>
 #include <cmath>
 #include <algorithm>
 
 namespace WaterStick {
+
+class TempoSync {
+public:
+    TempoSync();
+    ~TempoSync();
+
+    void initialize(double sampleRate);
+    void updateTempo(double hostTempo, bool isValid);
+    void setMode(bool isSynced);
+    void setSyncDivision(int division);
+    void setFreeTime(float timeSeconds);
+
+    float getDelayTime() const;
+    const char* getDivisionText() const;
+    const char* getModeText() const;
+
+private:
+    double mSampleRate;
+    double mHostTempo;
+    bool mHostTempoValid;
+    bool mIsSynced;
+    int mSyncDivision;
+    float mFreeTime;
+
+    float calculateSyncTime() const;
+    static const char* sDivisionTexts[kNumSyncDivisions];
+    static const float sDivisionValues[kNumSyncDivisions];
+};
 
 class DualDelayLine {
 public:
@@ -129,10 +158,13 @@ private:
     float mOutputGain;
     float mDelayTime;
     float mDryWet;
+    bool mTempoSyncMode;
+    int mSyncDivision;
 
     // DSP
     DualDelayLine mDelayLineL;
     DualDelayLine mDelayLineR;
+    TempoSync mTempoSync;
     double mSampleRate;
 
     void updateParameters();

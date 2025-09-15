@@ -9,6 +9,120 @@ using namespace Steinberg;
 namespace WaterStick {
 
 //------------------------------------------------------------------------
+// TempoSync Implementation
+//------------------------------------------------------------------------
+
+// Division text lookup table
+const char* TempoSync::sDivisionTexts[kNumSyncDivisions] = {
+    "1/64", "1/32T", "1/64.", "1/32", "1/16T", "1/32.", "1/16",
+    "1/8T", "1/16.", "1/8", "1/4T", "1/8.", "1/4",
+    "1/2T", "1/4.", "1/2", "1T", "1/2.", "1", "2", "4", "8"
+};
+
+// Division values (in quarter note units)
+const float TempoSync::sDivisionValues[kNumSyncDivisions] = {
+    0.0625f,     // 1/64
+    0.08333f,    // 1/32T (1/32 triplet)
+    0.09375f,    // 1/64. (1/64 dotted)
+    0.125f,      // 1/32
+    0.16667f,    // 1/16T (1/16 triplet)
+    0.1875f,     // 1/32. (1/32 dotted)
+    0.25f,       // 1/16
+    0.33333f,    // 1/8T (1/8 triplet)
+    0.375f,      // 1/16. (1/16 dotted)
+    0.5f,        // 1/8
+    0.66667f,    // 1/4T (1/4 triplet)
+    0.75f,       // 1/8. (1/8 dotted)
+    1.0f,        // 1/4
+    1.33333f,    // 1/2T (1/2 triplet)
+    1.5f,        // 1/4. (1/4 dotted)
+    2.0f,        // 1/2
+    2.66667f,    // 1T (1 bar triplet)
+    3.0f,        // 1/2. (1/2 dotted)
+    4.0f,        // 1 (1 bar)
+    8.0f,        // 2 (2 bars)
+    16.0f,       // 4 (4 bars)
+    32.0f        // 8 (8 bars)
+};
+
+TempoSync::TempoSync()
+: mSampleRate(44100.0)
+, mHostTempo(120.0)
+, mHostTempoValid(false)
+, mIsSynced(false)
+, mSyncDivision(kSync_1_4) // Default to 1/4 note
+, mFreeTime(0.25f)         // Default to 250ms
+{
+}
+
+TempoSync::~TempoSync()
+{
+}
+
+void TempoSync::initialize(double sampleRate)
+{
+    mSampleRate = sampleRate;
+}
+
+void TempoSync::updateTempo(double hostTempo, bool isValid)
+{
+    mHostTempo = hostTempo;
+    mHostTempoValid = isValid;
+}
+
+void TempoSync::setMode(bool isSynced)
+{
+    mIsSynced = isSynced;
+}
+
+void TempoSync::setSyncDivision(int division)
+{
+    if (division >= 0 && division < kNumSyncDivisions) {
+        mSyncDivision = division;
+    }
+}
+
+void TempoSync::setFreeTime(float timeSeconds)
+{
+    mFreeTime = timeSeconds;
+}
+
+float TempoSync::getDelayTime() const
+{
+    if (mIsSynced && mHostTempoValid) {
+        return calculateSyncTime();
+    } else {
+        return mFreeTime;
+    }
+}
+
+float TempoSync::calculateSyncTime() const
+{
+    if (!mHostTempoValid || mHostTempo <= 0.0) {
+        return mFreeTime; // Fallback to free time
+    }
+
+    // Calculate time for one quarter note in seconds
+    double quarterNoteTime = 60.0 / mHostTempo;
+
+    // Get division multiplier (in quarter note units)
+    float divisionValue = sDivisionValues[mSyncDivision];
+
+    // Calculate final delay time
+    return static_cast<float>(quarterNoteTime * divisionValue);
+}
+
+const char* TempoSync::getDivisionText() const
+{
+    return sDivisionTexts[mSyncDivision];
+}
+
+const char* TempoSync::getModeText() const
+{
+    return mIsSynced ? "Synced" : "Free";
+}
+
+//------------------------------------------------------------------------
 // DualDelayLine Implementation - Crossfading STK DelayA Algorithm
 //------------------------------------------------------------------------
 
@@ -367,6 +481,8 @@ WaterStickProcessor::WaterStickProcessor()
 , mOutputGain(1.0f)
 , mDelayTime(0.1f)  // 100ms default
 , mDryWet(0.5f)     // 50% wet default
+, mTempoSyncMode(false)  // Default to free mode
+, mSyncDivision(kSync_1_4)  // Default to 1/4 note
 , mSampleRate(44100.0)
 {
     setControllerClass(kWaterStickControllerUID);
@@ -404,17 +520,39 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
     mDelayLineL.initialize(mSampleRate, 2.0);
     mDelayLineR.initialize(mSampleRate, 2.0);
 
+    // Initialize tempo sync
+    mTempoSync.initialize(mSampleRate);
+
     return AudioEffect::setupProcessing(newSetup);
 }
 
 void WaterStickProcessor::updateParameters()
 {
-    mDelayLineL.setDelayTime(mDelayTime);
-    mDelayLineR.setDelayTime(mDelayTime);
+    // Update tempo sync settings
+    mTempoSync.setMode(mTempoSyncMode);
+    mTempoSync.setSyncDivision(mSyncDivision);
+    mTempoSync.setFreeTime(mDelayTime);
+
+    // Get the final delay time (either free or synced)
+    float finalDelayTime = mTempoSync.getDelayTime();
+
+    mDelayLineL.setDelayTime(finalDelayTime);
+    mDelayLineR.setDelayTime(finalDelayTime);
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
 {
+    // Update tempo info from host
+    if (data.processContext && data.processContext->state & Vst::ProcessContext::kTempoValid)
+    {
+        double hostTempo = data.processContext->tempo;
+        mTempoSync.updateTempo(hostTempo, true);
+    }
+    else
+    {
+        mTempoSync.updateTempo(120.0, false); // Fallback tempo
+    }
+
     // Process parameter changes
     if (data.inputParameterChanges)
     {
@@ -443,6 +581,12 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             break;
                         case kDryWet:
                             mDryWet = static_cast<float>(value); // 0-1 (dry to wet)
+                            break;
+                        case kTempoSyncMode:
+                            mTempoSyncMode = value > 0.5; // Toggle: >0.5 = synced
+                            break;
+                        case kSyncDivision:
+                            mSyncDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5); // Round to nearest
                             break;
                     }
                 }
@@ -510,6 +654,8 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeFloat(mOutputGain);
     streamer.writeFloat(mDelayTime);
     streamer.writeFloat(mDryWet);
+    streamer.writeBool(mTempoSyncMode);
+    streamer.writeInt32(mSyncDivision);
 
     return kResultOk;
 }
@@ -522,6 +668,8 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
     streamer.readFloat(mOutputGain);
     streamer.readFloat(mDelayTime);
     streamer.readFloat(mDryWet);
+    streamer.readBool(mTempoSyncMode);
+    streamer.readInt32(mSyncDivision);
 
     return kResultOk;
 }

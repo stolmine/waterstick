@@ -807,4 +807,5 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o: \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/typesizecheck.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
-  /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h
+  /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h \
+  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/ustring.h

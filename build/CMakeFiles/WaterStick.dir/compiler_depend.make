@@ -799,6 +799,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o: /Users/w
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/iupdatehandler.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/smartpointer.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/typesizecheck.h \
+  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/ustring.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/gui/iplugview.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstattributes.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsteditcontroller.h \
@@ -4390,6 +4391,8 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/iterator_traits.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/result_of.h:
+
+/Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/ustring.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__iterator/istream_iterator.h:
 

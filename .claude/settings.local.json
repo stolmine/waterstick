@@ -22,7 +22,8 @@
       "WebFetch(domain:www.kvraudio.com)",
       "Bash(git switch:*)",
       "Bash(rm:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(git branch:*)"
     ],
     "deny": [],
     "ask": []
