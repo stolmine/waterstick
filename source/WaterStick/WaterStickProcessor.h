@@ -128,6 +128,46 @@ private:
     float nextOut();
 };
 
+class TapDistribution {
+public:
+    TapDistribution();
+    ~TapDistribution();
+
+    void initialize(double sampleRate);
+    void updateTempo(const TempoSync& tempoSync);
+    void setGrid(int gridValue);
+    void setTapEnable(int tapIndex, bool enabled);
+    void setTapLevel(int tapIndex, float level);
+    void setTapPan(int tapIndex, float pan);
+
+    // Calculate delay time for each tap based on current settings
+    void calculateTapTimes();
+    float getTapDelayTime(int tapIndex) const;
+    bool isTapEnabled(int tapIndex) const;
+    float getTapLevel(int tapIndex) const;
+    float getTapPan(int tapIndex) const;
+
+    // Get Grid parameter display text
+    const char* getGridText() const;
+
+private:
+    static const int NUM_TAPS = 16;
+    static const float sGridValues[kNumGridValues];
+    static const char* sGridTexts[kNumGridValues];
+
+    double mSampleRate;
+    float mBeatTime;          // Current beat time in seconds
+    int mGrid;                // Current grid setting (0-7 index)
+
+    // Per-tap settings
+    bool mTapEnabled[NUM_TAPS];
+    float mTapLevel[NUM_TAPS];
+    float mTapPan[NUM_TAPS];
+
+    // Calculated tap delay times
+    float mTapDelayTimes[NUM_TAPS];
+};
+
 class WaterStickProcessor : public Steinberg::Vst::AudioEffect
 {
 public:
@@ -160,11 +200,24 @@ private:
     float mDryWet;
     bool mTempoSyncMode;
     int mSyncDivision;
+    int mGrid;
+
+    // Per-tap parameters
+    bool mTapEnabled[16];
+    float mTapLevel[16];
+    float mTapPan[16];
 
     // DSP
-    DualDelayLine mDelayLineL;
-    DualDelayLine mDelayLineR;
+    DualDelayLine mDelayLineL;  // Keep original for legacy
+    DualDelayLine mDelayLineR;  // Keep original for legacy
+
+    // Multi-tap delay lines (16 taps, stereo)
+    static const int NUM_TAPS = 16;
+    DualDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
+    DualDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
+
     TempoSync mTempoSync;
+    TapDistribution mTapDistribution;
     double mSampleRate;
 
     void updateParameters();

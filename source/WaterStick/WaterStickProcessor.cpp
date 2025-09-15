@@ -123,6 +123,132 @@ const char* TempoSync::getModeText() const
 }
 
 //------------------------------------------------------------------------
+// TapDistribution Implementation
+//------------------------------------------------------------------------
+
+// Grid values lookup table
+const float TapDistribution::sGridValues[kNumGridValues] = {
+    1.0f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f
+};
+
+// Grid text lookup table
+const char* TapDistribution::sGridTexts[kNumGridValues] = {
+    "1", "2", "3", "4", "6", "8", "12", "16"
+};
+
+TapDistribution::TapDistribution()
+: mSampleRate(44100.0)
+, mBeatTime(0.5f)  // Default to 120 BPM (0.5s per beat)
+, mGrid(kGrid_4)   // Default to 4 taps per beat
+{
+    // Initialize all taps as enabled with unity gain and center pan
+    for (int i = 0; i < NUM_TAPS; i++) {
+        mTapEnabled[i] = true;
+        mTapLevel[i] = 1.0f;
+        mTapPan[i] = 0.5f;      // Center pan
+        mTapDelayTimes[i] = 0.0f;
+    }
+    calculateTapTimes();
+}
+
+TapDistribution::~TapDistribution()
+{
+}
+
+void TapDistribution::initialize(double sampleRate)
+{
+    mSampleRate = sampleRate;
+}
+
+void TapDistribution::updateTempo(const TempoSync& tempoSync)
+{
+    // Get beat time from tempo sync
+    mBeatTime = tempoSync.getDelayTime();
+    calculateTapTimes();
+}
+
+void TapDistribution::setGrid(int gridValue)
+{
+    if (gridValue >= 0 && gridValue < kNumGridValues) {
+        mGrid = gridValue;
+        calculateTapTimes();
+    }
+}
+
+void TapDistribution::setTapEnable(int tapIndex, bool enabled)
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        mTapEnabled[tapIndex] = enabled;
+    }
+}
+
+void TapDistribution::setTapLevel(int tapIndex, float level)
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        mTapLevel[tapIndex] = std::max(0.0f, std::min(level, 1.0f));
+    }
+}
+
+void TapDistribution::setTapPan(int tapIndex, float pan)
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        mTapPan[tapIndex] = std::max(0.0f, std::min(pan, 1.0f));
+    }
+}
+
+void TapDistribution::calculateTapTimes()
+{
+    // Rainmaker formula: tap delay time = BEAT TIME * tap number / GRID
+    float gridValue = sGridValues[mGrid];
+
+    for (int tap = 0; tap < NUM_TAPS; tap++) {
+        // Tap numbers are 1-16 (not 0-15)
+        int tapNumber = tap + 1;
+        mTapDelayTimes[tap] = mBeatTime * static_cast<float>(tapNumber) / gridValue;
+
+        // Ensure minimum delay time for stability
+        mTapDelayTimes[tap] = std::max(mTapDelayTimes[tap], 0.001f);
+    }
+}
+
+float TapDistribution::getTapDelayTime(int tapIndex) const
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        return mTapDelayTimes[tapIndex];
+    }
+    return 0.0f;
+}
+
+bool TapDistribution::isTapEnabled(int tapIndex) const
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        return mTapEnabled[tapIndex];
+    }
+    return false;
+}
+
+float TapDistribution::getTapLevel(int tapIndex) const
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        return mTapLevel[tapIndex];
+    }
+    return 0.0f;
+}
+
+float TapDistribution::getTapPan(int tapIndex) const
+{
+    if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
+        return mTapPan[tapIndex];
+    }
+    return 0.5f;
+}
+
+const char* TapDistribution::getGridText() const
+{
+    return sGridTexts[mGrid];
+}
+
+//------------------------------------------------------------------------
 // DualDelayLine Implementation - Crossfading STK DelayA Algorithm
 //------------------------------------------------------------------------
 
@@ -483,8 +609,16 @@ WaterStickProcessor::WaterStickProcessor()
 , mDryWet(0.5f)     // 50% wet default
 , mTempoSyncMode(false)  // Default to free mode
 , mSyncDivision(kSync_1_4)  // Default to 1/4 note
+, mGrid(kGrid_4)    // Default to 4 taps per beat
 , mSampleRate(44100.0)
 {
+    // Initialize tap parameters
+    for (int i = 0; i < 16; i++) {
+        mTapEnabled[i] = true;    // All taps enabled by default
+        mTapLevel[i] = 1.0f;      // Unity gain
+        mTapPan[i] = 0.5f;        // Center pan
+    }
+
     setControllerClass(kWaterStickControllerUID);
 }
 
@@ -520,8 +654,19 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
     mDelayLineL.initialize(mSampleRate, 2.0);
     mDelayLineR.initialize(mSampleRate, 2.0);
 
+    // Initialize all 16 tap delay lines with larger buffer for longer delays
+    // Need longer delays since tap 16 at grid 1 could be 16 beats long
+    double maxDelayTime = 20.0; // 20 seconds should handle very long delays
+    for (int i = 0; i < NUM_TAPS; i++) {
+        mTapDelayLinesL[i].initialize(mSampleRate, maxDelayTime);
+        mTapDelayLinesR[i].initialize(mSampleRate, maxDelayTime);
+    }
+
     // Initialize tempo sync
     mTempoSync.initialize(mSampleRate);
+
+    // Initialize tap distribution
+    mTapDistribution.initialize(mSampleRate);
 
     return AudioEffect::setupProcessing(newSetup);
 }
@@ -533,7 +678,25 @@ void WaterStickProcessor::updateParameters()
     mTempoSync.setSyncDivision(mSyncDivision);
     mTempoSync.setFreeTime(mDelayTime);
 
-    // Only update delay lines if not in sync mode (sync mode updates continuously)
+    // Update tap distribution
+    mTapDistribution.setGrid(mGrid);
+    mTapDistribution.updateTempo(mTempoSync);
+
+    // Update per-tap settings
+    for (int i = 0; i < 16; i++) {
+        mTapDistribution.setTapEnable(i, mTapEnabled[i]);
+        mTapDistribution.setTapLevel(i, mTapLevel[i]);
+        mTapDistribution.setTapPan(i, mTapPan[i]);
+    }
+
+    // Update all tap delay times based on current grid and tempo settings
+    for (int i = 0; i < NUM_TAPS; i++) {
+        float tapDelayTime = mTapDistribution.getTapDelayTime(i);
+        mTapDelayLinesL[i].setDelayTime(tapDelayTime);
+        mTapDelayLinesR[i].setDelayTime(tapDelayTime);
+    }
+
+    // Only update legacy delay lines if not in sync mode (sync mode updates continuously)
     if (!mTempoSyncMode) {
         float finalDelayTime = mTempoSync.getDelayTime();
         mDelayLineL.setDelayTime(finalDelayTime);
@@ -589,6 +752,156 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kSyncDivision:
                             mSyncDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5); // Round to nearest
                             break;
+                        case kGrid:
+                            mGrid = static_cast<int>(value * (kNumGridValues - 1) + 0.5); // Round to nearest
+                            break;
+                        // Tap enable parameters
+                        case kTap1Enable:
+                            mTapEnabled[0] = value > 0.5;
+                            break;
+                        case kTap2Enable:
+                            mTapEnabled[1] = value > 0.5;
+                            break;
+                        case kTap3Enable:
+                            mTapEnabled[2] = value > 0.5;
+                            break;
+                        case kTap4Enable:
+                            mTapEnabled[3] = value > 0.5;
+                            break;
+                        case kTap5Enable:
+                            mTapEnabled[4] = value > 0.5;
+                            break;
+                        case kTap6Enable:
+                            mTapEnabled[5] = value > 0.5;
+                            break;
+                        case kTap7Enable:
+                            mTapEnabled[6] = value > 0.5;
+                            break;
+                        case kTap8Enable:
+                            mTapEnabled[7] = value > 0.5;
+                            break;
+                        case kTap9Enable:
+                            mTapEnabled[8] = value > 0.5;
+                            break;
+                        case kTap10Enable:
+                            mTapEnabled[9] = value > 0.5;
+                            break;
+                        case kTap11Enable:
+                            mTapEnabled[10] = value > 0.5;
+                            break;
+                        case kTap12Enable:
+                            mTapEnabled[11] = value > 0.5;
+                            break;
+                        case kTap13Enable:
+                            mTapEnabled[12] = value > 0.5;
+                            break;
+                        case kTap14Enable:
+                            mTapEnabled[13] = value > 0.5;
+                            break;
+                        case kTap15Enable:
+                            mTapEnabled[14] = value > 0.5;
+                            break;
+                        case kTap16Enable:
+                            mTapEnabled[15] = value > 0.5;
+                            break;
+                        // Tap level parameters
+                        case kTap1Level:
+                            mTapLevel[0] = static_cast<float>(value);
+                            break;
+                        case kTap2Level:
+                            mTapLevel[1] = static_cast<float>(value);
+                            break;
+                        case kTap3Level:
+                            mTapLevel[2] = static_cast<float>(value);
+                            break;
+                        case kTap4Level:
+                            mTapLevel[3] = static_cast<float>(value);
+                            break;
+                        case kTap5Level:
+                            mTapLevel[4] = static_cast<float>(value);
+                            break;
+                        case kTap6Level:
+                            mTapLevel[5] = static_cast<float>(value);
+                            break;
+                        case kTap7Level:
+                            mTapLevel[6] = static_cast<float>(value);
+                            break;
+                        case kTap8Level:
+                            mTapLevel[7] = static_cast<float>(value);
+                            break;
+                        case kTap9Level:
+                            mTapLevel[8] = static_cast<float>(value);
+                            break;
+                        case kTap10Level:
+                            mTapLevel[9] = static_cast<float>(value);
+                            break;
+                        case kTap11Level:
+                            mTapLevel[10] = static_cast<float>(value);
+                            break;
+                        case kTap12Level:
+                            mTapLevel[11] = static_cast<float>(value);
+                            break;
+                        case kTap13Level:
+                            mTapLevel[12] = static_cast<float>(value);
+                            break;
+                        case kTap14Level:
+                            mTapLevel[13] = static_cast<float>(value);
+                            break;
+                        case kTap15Level:
+                            mTapLevel[14] = static_cast<float>(value);
+                            break;
+                        case kTap16Level:
+                            mTapLevel[15] = static_cast<float>(value);
+                            break;
+                        // Tap pan parameters
+                        case kTap1Pan:
+                            mTapPan[0] = static_cast<float>(value);
+                            break;
+                        case kTap2Pan:
+                            mTapPan[1] = static_cast<float>(value);
+                            break;
+                        case kTap3Pan:
+                            mTapPan[2] = static_cast<float>(value);
+                            break;
+                        case kTap4Pan:
+                            mTapPan[3] = static_cast<float>(value);
+                            break;
+                        case kTap5Pan:
+                            mTapPan[4] = static_cast<float>(value);
+                            break;
+                        case kTap6Pan:
+                            mTapPan[5] = static_cast<float>(value);
+                            break;
+                        case kTap7Pan:
+                            mTapPan[6] = static_cast<float>(value);
+                            break;
+                        case kTap8Pan:
+                            mTapPan[7] = static_cast<float>(value);
+                            break;
+                        case kTap9Pan:
+                            mTapPan[8] = static_cast<float>(value);
+                            break;
+                        case kTap10Pan:
+                            mTapPan[9] = static_cast<float>(value);
+                            break;
+                        case kTap11Pan:
+                            mTapPan[10] = static_cast<float>(value);
+                            break;
+                        case kTap12Pan:
+                            mTapPan[11] = static_cast<float>(value);
+                            break;
+                        case kTap13Pan:
+                            mTapPan[12] = static_cast<float>(value);
+                            break;
+                        case kTap14Pan:
+                            mTapPan[13] = static_cast<float>(value);
+                            break;
+                        case kTap15Pan:
+                            mTapPan[14] = static_cast<float>(value);
+                            break;
+                        case kTap16Pan:
+                            mTapPan[15] = static_cast<float>(value);
+                            break;
                     }
                 }
             }
@@ -599,6 +912,17 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
 
     // Update tempo sync delay time every process cycle (tempo can change without parameter changes)
     if (mTempoSyncMode) {
+        // Update tap distribution with current tempo
+        mTapDistribution.updateTempo(mTempoSync);
+
+        // Update all tap delay times
+        for (int i = 0; i < NUM_TAPS; i++) {
+            float tapDelayTime = mTapDistribution.getTapDelayTime(i);
+            mTapDelayLinesL[i].setDelayTime(tapDelayTime);
+            mTapDelayLinesR[i].setDelayTime(tapDelayTime);
+        }
+
+        // Update legacy delay lines too
         float finalDelayTime = mTempoSync.getDelayTime();
         mDelayLineL.setDelayTime(finalDelayTime);
         mDelayLineR.setDelayTime(finalDelayTime);
@@ -635,16 +959,38 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float gainedL = inL * mInputGain;
         float gainedR = inR * mInputGain;
 
-        // Process through delay lines
-        float delayedL, delayedR;
-        mDelayLineL.processSample(gainedL, delayedL);
-        mDelayLineR.processSample(gainedR, delayedR);
+        // Process through all 16 tap delay lines
+        float sumL = 0.0f;
+        float sumR = 0.0f;
+
+        for (int tap = 0; tap < NUM_TAPS; tap++) {
+            if (mTapDistribution.isTapEnabled(tap)) {
+                // Process through both L and R delay lines for this tap
+                float tapOutputL, tapOutputR;
+                mTapDelayLinesL[tap].processSample(gainedL, tapOutputL);
+                mTapDelayLinesR[tap].processSample(gainedR, tapOutputR);
+
+                // Apply tap level
+                float tapLevel = mTapDistribution.getTapLevel(tap);
+                tapOutputL *= tapLevel;
+                tapOutputR *= tapLevel;
+
+                // Apply stereo panning (0.0 = full left, 0.5 = center, 1.0 = full right)
+                float pan = mTapDistribution.getTapPan(tap);
+                float leftGain = 1.0f - pan;   // Left channel gain
+                float rightGain = pan;         // Right channel gain
+
+                // Pan the tap output and add to sum
+                sumL += (tapOutputL * leftGain) + (tapOutputR * leftGain);
+                sumR += (tapOutputL * rightGain) + (tapOutputR * rightGain);
+            }
+        }
 
         // Dry/wet mix
         float dryGain = 1.0f - mDryWet;
         float wetGain = mDryWet;
-        float mixedL = (inL * dryGain) + (delayedL * wetGain);
-        float mixedR = (inR * dryGain) + (delayedR * wetGain);
+        float mixedL = (inL * dryGain) + (sumL * wetGain);
+        float mixedR = (inR * dryGain) + (sumR * wetGain);
 
         // Apply output gain and write to output
         outputL[sample] = mixedL * mOutputGain;
@@ -664,6 +1010,14 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeFloat(mDryWet);
     streamer.writeBool(mTempoSyncMode);
     streamer.writeInt32(mSyncDivision);
+    streamer.writeInt32(mGrid);
+
+    // Save all tap parameters
+    for (int i = 0; i < 16; i++) {
+        streamer.writeBool(mTapEnabled[i]);
+        streamer.writeFloat(mTapLevel[i]);
+        streamer.writeFloat(mTapPan[i]);
+    }
 
     return kResultOk;
 }
@@ -678,6 +1032,14 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
     streamer.readFloat(mDryWet);
     streamer.readBool(mTempoSyncMode);
     streamer.readInt32(mSyncDivision);
+    streamer.readInt32(mGrid);
+
+    // Load all tap parameters
+    for (int i = 0; i < 16; i++) {
+        streamer.readBool(mTapEnabled[i]);
+        streamer.readFloat(mTapLevel[i]);
+        streamer.readFloat(mTapPan[i]);
+    }
 
     return kResultOk;
 }
