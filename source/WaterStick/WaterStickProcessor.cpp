@@ -1,92 +1,390 @@
 #include "WaterStickProcessor.h"
 #include "WaterStickCIDs.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
-#include "pluginterfaces/base/ustring.h"
 #include "base/source/fstreamer.h"
-#include <algorithm>
 #include <cmath>
-#include <math.h>
 
 using namespace Steinberg;
 
 namespace WaterStick {
 
-WaterStickProcessor::WaterStickProcessor()
-: delayBuffers(nullptr)
-, delayBufferSize(0)
-, delayWritePos(0)
-, combBuffers(nullptr)
-, combBufferSize(0)
-, combWritePos(0)
-, activeTapCount(8)    // Default to 8 active taps
-, targetActiveTapCount(8)
-, needsCrossfade(false)
-, crossfadeSamples(0)
-, delayTime(0.25)      // 250ms default
-, delayFeedback(0.3)   // 30% feedback
-, delayMix(0.5)        // 50% mix
-, combSize(0.5)        // Medium comb size
-, combFeedback(0.4)    // 40% comb feedback
-, combDamping(0.5)     // Medium damping
-, combDensity(0.125)   // 8/64 = 0.125 (8 active taps default)
-, combMix(0.5)         // 50% comb mix
-, inputGain(1.0)       // Unity gain
-, outputGain(1.0)      // Unity gain
-, bypass(0.0)          // Not bypassed
+//------------------------------------------------------------------------
+// DualDelayLine Implementation - Crossfading STK DelayA Algorithm
+//------------------------------------------------------------------------
+
+DualDelayLine::DualDelayLine()
+: mBufferSize(0)
+, mWriteIndexA(0)
+, mWriteIndexB(0)
+, mSampleRate(44100.0)
+, mUsingLineA(true)
+, mCrossfadeState(STABLE)
+, mTargetDelayTime(0.1f)
+, mCurrentDelayTime(0.1f)
+, mStabilityCounter(0)
+, mStabilityThreshold(2048) // ~46ms at 44.1kHz
+, mCrossfadeLength(0)
+, mCrossfadePosition(0)
+, mCrossfadeGainA(1.0f)
+, mCrossfadeGainB(0.0f)
 {
-    setControllerClass(kWaterStickControllerUID);
+    // Initialize delay states
+    mStateA.delayInSamples = 0.5f;
+    mStateA.readIndex = 0;
+    mStateA.allpassCoeff = 0.0f;
+    mStateA.apInput = 0.0f;
+    mStateA.lastOutput = 0.0f;
+    mStateA.doNextOut = true;
+    mStateA.nextOutput = 0.0f;
 
-    // Initialize multitap comb structures
-    for (int32 i = 0; i < kMaxCombTaps; ++i)
-    {
-        combTaps[i].delaySamples = 0.0;
-        combTaps[i].targetDelaySamples = 0.0;
-        combTaps[i].gain = 0.0;
-        combTaps[i].targetGain = 0.0;
-        combTaps[i].fadeLevel = 0.0;
-        combTaps[i].targetFadeLevel = 0.0;
-        combTaps[i].lpState[0] = 0.0;
-        combTaps[i].lpState[1] = 0.0;
+    mStateB = mStateA; // Copy state
+}
 
-        // Initialize Thiran allpass filter states
-        combTaps[i].thiranState[0] = 0.0;
-        combTaps[i].thiranState[1] = 0.0;
-        combTaps[i].thiranOutput[0] = 0.0;
-        combTaps[i].thiranOutput[1] = 0.0;
+DualDelayLine::~DualDelayLine()
+{
+}
 
-        // Initialize per-tap smoothed delay times
-        smoothedDelayTime[i] = 0.0;
+void DualDelayLine::initialize(double sampleRate, double maxDelaySeconds)
+{
+    mSampleRate = sampleRate;
+    mBufferSize = static_cast<int>(maxDelaySeconds * sampleRate) + 1;
+
+    mBufferA.resize(mBufferSize, 0.0f);
+    mBufferB.resize(mBufferSize, 0.0f);
+
+    mWriteIndexA = 0;
+    mWriteIndexB = 0;
+
+    // Initialize both delay line states
+    updateDelayState(mStateA, mCurrentDelayTime);
+    updateDelayState(mStateB, mCurrentDelayTime);
+
+    // Calculate stability threshold (proportional to sample rate)
+    mStabilityThreshold = static_cast<int>(sampleRate * 0.05); // 50ms
+}
+
+void DualDelayLine::setDelayTime(float delayTimeSeconds)
+{
+    if (std::abs(delayTimeSeconds - mTargetDelayTime) > 0.001f) {
+        mTargetDelayTime = delayTimeSeconds;
+        mStabilityCounter = 0; // Reset stability counter on movement
+    }
+}
+
+void DualDelayLine::updateDelayState(DelayLineState& state, float delayTime)
+{
+    float delaySamples = delayTime * static_cast<float>(mSampleRate);
+    float maxDelaySamples = static_cast<float>(mBufferSize - 1);
+
+    state.delayInSamples = std::max(0.5f, std::min(delaySamples, maxDelaySamples));
+    updateAllpassCoeff(state);
+}
+
+void DualDelayLine::updateAllpassCoeff(DelayLineState& state)
+{
+    float integerPart = floorf(state.delayInSamples);
+    float fracPart = state.delayInSamples - integerPart;
+
+    if (fracPart < 0.5f) {
+        fracPart = 0.5f;
     }
 
-    // Initialize density compressor and RMS tracking state
-    densityCompressorState[0] = 1.0;
-    densityCompressorState[1] = 1.0;
-    inputRMSState[0] = 0.0;
-    inputRMSState[1] = 0.0;
-    outputRMSState[0] = 0.0;
-    outputRMSState[1] = 0.0;
+    state.allpassCoeff = (1.0f - fracPart) / (1.0f + fracPart);
+}
 
-    // Initialize anti-zipper filter and parameter smoothing (KVR forum solution)
-    antiZipperState[0] = 0.0;
-    antiZipperState[1] = 0.0;
-    smoothedCombSize = combSize;
-    smoothedCombDensity = combDensity;
+float DualDelayLine::nextOut(DelayLineState& state, const std::vector<float>& buffer)
+{
+    if (state.doNextOut) {
+        state.nextOutput = -state.allpassCoeff * state.lastOutput;
+        state.nextOutput += state.apInput + (state.allpassCoeff * buffer[state.readIndex]);
+        state.doNextOut = false;
+    }
+    return state.nextOutput;
+}
 
+float DualDelayLine::processDelayLine(std::vector<float>& buffer, int& writeIndex, DelayLineState& state, float input)
+{
+    // Calculate integer delay part
+    int integerDelay = static_cast<int>(floorf(state.delayInSamples));
+
+    // Update read index for integer delay
+    state.readIndex = writeIndex - integerDelay;
+    if (state.readIndex < 0) state.readIndex += mBufferSize;
+    state.readIndex %= mBufferSize;
+
+    // Write input to buffer
+    buffer[writeIndex] = input;
+
+    // Get output using STK allpass interpolation
+    float output = nextOut(state, buffer);
+    state.lastOutput = output;
+    state.doNextOut = true;
+    state.apInput = buffer[state.readIndex];
+
+    // Advance write index
+    writeIndex = (writeIndex + 1) % mBufferSize;
+
+    return output;
+}
+
+int DualDelayLine::calculateCrossfadeLength(float delayTime)
+{
+    // Crossfade length proportional to delay time
+    // Short delays: 50-100ms crossfade
+    // Long delays: 200-500ms crossfade
+    float baseCrossfadeMs = 50.0f + (delayTime * 1000.0f * 0.25f);
+    baseCrossfadeMs = std::min(baseCrossfadeMs, 500.0f);
+
+    return static_cast<int>(baseCrossfadeMs * 0.001f * mSampleRate);
+}
+
+void DualDelayLine::startCrossfade()
+{
+    mCrossfadeState = CROSSFADING;
+    mCrossfadeLength = calculateCrossfadeLength(mTargetDelayTime);
+    mCrossfadePosition = 0;
+
+    // Update standby line with new delay time
+    if (mUsingLineA) {
+        updateDelayState(mStateB, mTargetDelayTime);
+    } else {
+        updateDelayState(mStateA, mTargetDelayTime);
+    }
+}
+
+void DualDelayLine::updateCrossfade()
+{
+    if (mCrossfadeState != CROSSFADING) return;
+
+    float progress = static_cast<float>(mCrossfadePosition) / static_cast<float>(mCrossfadeLength);
+    progress = std::min(progress, 1.0f);
+
+    // Smooth crossfade curve (cosine)
+    float fadeOut = 0.5f * (1.0f + cosf(progress * 3.14159265f));
+    float fadeIn = 1.0f - fadeOut;
+
+    if (mUsingLineA) {
+        mCrossfadeGainA = fadeOut;
+        mCrossfadeGainB = fadeIn;
+    } else {
+        mCrossfadeGainA = fadeIn;
+        mCrossfadeGainB = fadeOut;
+    }
+
+    mCrossfadePosition++;
+
+    if (mCrossfadePosition >= mCrossfadeLength) {
+        // Crossfade complete
+        mCrossfadeState = STABLE;
+        mUsingLineA = !mUsingLineA;
+        mCurrentDelayTime = mTargetDelayTime;
+
+        if (mUsingLineA) {
+            mCrossfadeGainA = 1.0f;
+            mCrossfadeGainB = 0.0f;
+        } else {
+            mCrossfadeGainA = 0.0f;
+            mCrossfadeGainB = 1.0f;
+        }
+    }
+}
+
+void DualDelayLine::processSample(float input, float& output)
+{
+    // Movement detection and crossfade triggering
+    if (std::abs(mTargetDelayTime - mCurrentDelayTime) > 0.001f) {
+        mStabilityCounter++;
+
+        if (mStabilityCounter >= mStabilityThreshold && mCrossfadeState == STABLE) {
+            startCrossfade();
+        }
+    } else {
+        mStabilityCounter = 0;
+    }
+
+    // Update crossfade if active
+    updateCrossfade();
+
+    // Process both delay lines
+    float outputA = processDelayLine(mBufferA, mWriteIndexA, mStateA, input);
+    float outputB = processDelayLine(mBufferB, mWriteIndexB, mStateB, input);
+
+    // Mix outputs based on crossfade state
+    if (mCrossfadeState == STABLE) {
+        output = mUsingLineA ? outputA : outputB;
+    } else {
+        output = (outputA * mCrossfadeGainA) + (outputB * mCrossfadeGainB);
+    }
+}
+
+void DualDelayLine::reset()
+{
+    std::fill(mBufferA.begin(), mBufferA.end(), 0.0f);
+    std::fill(mBufferB.begin(), mBufferB.end(), 0.0f);
+
+    mWriteIndexA = 0;
+    mWriteIndexB = 0;
+
+    mUsingLineA = true;
+    mCrossfadeState = STABLE;
+    mStabilityCounter = 0;
+    mCrossfadePosition = 0;
+    mCrossfadeGainA = 1.0f;
+    mCrossfadeGainB = 0.0f;
+
+    // Reset delay states
+    mStateA.delayInSamples = 0.5f;
+    mStateA.readIndex = 0;
+    mStateA.apInput = 0.0f;
+    mStateA.lastOutput = 0.0f;
+    mStateA.doNextOut = true;
+    mStateA.nextOutput = 0.0f;
+    updateAllpassCoeff(mStateA);
+
+    mStateB = mStateA;
+}
+
+//------------------------------------------------------------------------
+// STKDelayLine Implementation - Exact STK DelayA Algorithm (Legacy)
+//------------------------------------------------------------------------
+
+STKDelayLine::STKDelayLine()
+: mBufferSize(0)
+, mWriteIndex(0)
+, mReadIndex(0)
+, mSampleRate(44100.0)
+, mDelayInSamples(0.5f) // STK minimum delay
+, mAllpassCoeff(0.0f)
+, mApInput(0.0f)
+, mLastOutput(0.0f)
+, mDoNextOut(true)
+, mNextOutput(0.0f)
+{
+}
+
+STKDelayLine::~STKDelayLine()
+{
+}
+
+void STKDelayLine::initialize(double sampleRate, double maxDelaySeconds)
+{
+    mSampleRate = sampleRate;
+    mBufferSize = static_cast<int>(maxDelaySeconds * sampleRate) + 1;
+    mBuffer.resize(mBufferSize, 0.0f);
+    mWriteIndex = 0;
+    mReadIndex = 0;
+
+    // STK default: 0.5 samples minimum delay
+    mDelayInSamples = 0.5f;
+    updateAllpassCoeff();
+
+    mApInput = 0.0f;
+    mLastOutput = 0.0f;
+    mDoNextOut = true;
+    mNextOutput = 0.0f;
+}
+
+void STKDelayLine::setDelayTime(float delayTimeSeconds)
+{
+    // Convert to samples - STK approach: NO SMOOTHING
+    float delaySamples = delayTimeSeconds * static_cast<float>(mSampleRate);
+    float maxDelaySamples = static_cast<float>(mBufferSize - 1);
+
+    // STK range: 0.5 to maxDelay
+    mDelayInSamples = std::max(0.5f, std::min(delaySamples, maxDelaySamples));
+    updateAllpassCoeff();
+}
+
+void STKDelayLine::updateAllpassCoeff()
+{
+    // STK DelayA coefficient calculation for fractional part
+    float integerPart = floorf(mDelayInSamples);
+    float fracPart = mDelayInSamples - integerPart;
+
+    // Ensure minimum fractional delay of 0.5
+    if (fracPart < 0.5f) {
+        fracPart = 0.5f;
+    }
+
+    // STK allpass coefficient: a = (1-D)/(1+D) where D is fractional delay
+    mAllpassCoeff = (1.0f - fracPart) / (1.0f + fracPart);
+}
+
+float STKDelayLine::nextOut()
+{
+    // Exact STK DelayA nextOut implementation
+    if (mDoNextOut) {
+        // Do allpass interpolation delay
+        mNextOutput = -mAllpassCoeff * mLastOutput;
+        mNextOutput += mApInput + (mAllpassCoeff * mBuffer[mReadIndex]);
+        mDoNextOut = false;
+    }
+    return mNextOutput;
+}
+
+void STKDelayLine::processSample(float input, float& output)
+{
+    // Calculate integer delay part
+    int integerDelay = static_cast<int>(floorf(mDelayInSamples));
+
+    // Update read index for integer delay
+    mReadIndex = mWriteIndex - integerDelay;
+    if (mReadIndex < 0) mReadIndex += mBufferSize;
+    mReadIndex %= mBufferSize;
+
+    // Write input to buffer
+    mBuffer[mWriteIndex] = input;
+
+    // Get output using STK allpass interpolation
+    output = nextOut();
+    mLastOutput = output;
+    mDoNextOut = true;
+    mApInput = mBuffer[mReadIndex];
+
+    // Advance write index
+    mWriteIndex = (mWriteIndex + 1) % mBufferSize;
+}
+
+void STKDelayLine::reset()
+{
+    std::fill(mBuffer.begin(), mBuffer.end(), 0.0f);
+    mWriteIndex = 0;
+    mReadIndex = 0;
+    mDelayInSamples = 0.5f;
+    updateAllpassCoeff();
+    mApInput = 0.0f;
+    mLastOutput = 0.0f;
+    mDoNextOut = true;
+    mNextOutput = 0.0f;
+}
+
+//------------------------------------------------------------------------
+// WaterStickProcessor Implementation
+//------------------------------------------------------------------------
+
+WaterStickProcessor::WaterStickProcessor()
+: mInputGain(1.0f)
+, mOutputGain(1.0f)
+, mDelayTime(0.1f)  // 100ms default
+, mDryWet(0.5f)     // 50% wet default
+, mSampleRate(44100.0)
+{
+    setControllerClass(kWaterStickControllerUID);
 }
 
 WaterStickProcessor::~WaterStickProcessor()
 {
-    deallocateDelayBuffers();
-    deallocateCombBuffers();
 }
 
 tresult PLUGIN_API WaterStickProcessor::initialize(FUnknown* context)
 {
     tresult result = AudioEffect::initialize(context);
     if (result != kResultOk)
+    {
         return result;
+    }
 
-    // Add audio input/output buses
+    // Add audio input/output busses
     addAudioInput(STR16("Stereo In"), Vst::SpeakerArr::kStereo);
     addAudioOutput(STR16("Stereo Out"), Vst::SpeakerArr::kStereo);
 
@@ -95,47 +393,24 @@ tresult PLUGIN_API WaterStickProcessor::initialize(FUnknown* context)
 
 tresult PLUGIN_API WaterStickProcessor::terminate()
 {
-    deallocateDelayBuffers();
-    deallocateCombBuffers();
     return AudioEffect::terminate();
-}
-
-tresult PLUGIN_API WaterStickProcessor::setActive(TBool state)
-{
-    if (state)
-    {
-        allocateDelayBuffers();
-        allocateCombBuffers();
-    }
-    else
-    {
-        deallocateDelayBuffers();
-        deallocateCombBuffers();
-    }
-
-    return AudioEffect::setActive(state);
 }
 
 tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSetup)
 {
-    // Calculate delay buffer size (max 5 seconds at any sample rate)
-    delayBufferSize = static_cast<int32>(5.0 * newSetup.sampleRate);
+    mSampleRate = newSetup.sampleRate;
 
-    // Calculate comb buffer size (max 100ms at any sample rate for comb resonator)
-    combBufferSize = static_cast<int32>(0.1 * newSetup.sampleRate);
-
-    // Update comb tap configuration with new sample rate
-    updateCombTaps();
+    // Initialize delay lines with 2 second max delay
+    mDelayLineL.initialize(mSampleRate, 2.0);
+    mDelayLineR.initialize(mSampleRate, 2.0);
 
     return AudioEffect::setupProcessing(newSetup);
 }
 
-tresult PLUGIN_API WaterStickProcessor::canProcessSampleSize(int32 symbolicSampleSize)
+void WaterStickProcessor::updateParameters()
 {
-    if (symbolicSampleSize == Vst::kSample32)
-        return kResultTrue;
-
-    return kResultFalse;
+    mDelayLineL.setDelayTime(mDelayTime);
+    mDelayLineR.setDelayTime(mDelayTime);
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -144,9 +419,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
     if (data.inputParameterChanges)
     {
         int32 numParamsChanged = data.inputParameterChanges->getParameterCount();
-        for (int32 index = 0; index < numParamsChanged; index++)
+        for (int32 i = 0; i < numParamsChanged; i++)
         {
-            if (auto* paramQueue = data.inputParameterChanges->getParameterData(index))
+            Vst::IParamValueQueue* paramQueue = data.inputParameterChanges->getParameterData(i);
+            if (paramQueue)
             {
                 Vst::ParamValue value;
                 int32 sampleOffset;
@@ -156,497 +432,98 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                 {
                     switch (paramQueue->getParameterId())
                     {
-                        case kDelayTime: delayTime = value; break;
-                        case kDelayFeedback: delayFeedback = value; break;
-                        case kDelayMix: delayMix = value; break;
-                        case kCombSize: combSize = value; updateCombTaps(); break;
-                        case kCombFeedback: combFeedback = value; break;
-                        case kCombDamping: combDamping = value; break;
-                        case kCombDensity: combDensity = value; updateCombTaps(); break;
-                        case kCombMix: combMix = value; break;
-                        case kInputGain: inputGain = value; break;
-                        case kOutputGain: outputGain = value; break;
-                        case kBypass: bypass = value; break;
+                        case kInputGain:
+                            mInputGain = static_cast<float>(value);
+                            break;
+                        case kOutputGain:
+                            mOutputGain = static_cast<float>(value);
+                            break;
+                        case kDelayTime:
+                            mDelayTime = static_cast<float>(value * 2.0); // 0-2 seconds
+                            break;
+                        case kDryWet:
+                            mDryWet = static_cast<float>(value); // 0-1 (dry to wet)
+                            break;
                     }
                 }
             }
         }
     }
 
-    // Check if we have audio input and output
+    updateParameters();
+
+    // Check for valid input/output
     if (data.numInputs == 0 || data.numOutputs == 0)
-        return kResultOk;
-
-    // Get audio buffers
-    Vst::Sample32** input = data.inputs[0].channelBuffers32;
-    Vst::Sample32** output = data.outputs[0].channelBuffers32;
-
-    int32 numChannels = data.inputs[0].numChannels;
-    int32 sampleFrames = data.numSamples;
-
-    // Bypass processing
-    if (bypass > 0.5)
     {
-        for (int32 channel = 0; channel < numChannels; ++channel)
-        {
-            if (input != output)
-            {
-                memcpy(output[channel], input[channel], sampleFrames * sizeof(Vst::Sample32));
-            }
-        }
         return kResultOk;
     }
 
-    // Process audio
-    processAudio(input, output, numChannels, sampleFrames);
+    Vst::AudioBusBuffers* input = data.inputs;
+    Vst::AudioBusBuffers* output = data.outputs;
+
+    // Ensure we have stereo input/output
+    if (input->numChannels < 2 || output->numChannels < 2)
+    {
+        return kResultOk;
+    }
+
+    float* inputL = input->channelBuffers32[0];
+    float* inputR = input->channelBuffers32[1];
+    float* outputL = output->channelBuffers32[0];
+    float* outputR = output->channelBuffers32[1];
+
+    // Process samples
+    for (int32 sample = 0; sample < data.numSamples; sample++)
+    {
+        // Get input samples
+        float inL = inputL[sample];
+        float inR = inputR[sample];
+
+        // Apply input gain
+        float gainedL = inL * mInputGain;
+        float gainedR = inR * mInputGain;
+
+        // Process through delay lines
+        float delayedL, delayedR;
+        mDelayLineL.processSample(gainedL, delayedL);
+        mDelayLineR.processSample(gainedR, delayedR);
+
+        // Dry/wet mix
+        float dryGain = 1.0f - mDryWet;
+        float wetGain = mDryWet;
+        float mixedL = (inL * dryGain) + (delayedL * wetGain);
+        float mixedR = (inR * dryGain) + (delayedR * wetGain);
+
+        // Apply output gain and write to output
+        outputL[sample] = mixedL * mOutputGain;
+        outputR[sample] = mixedR * mOutputGain;
+    }
 
     return kResultOk;
 }
 
 tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
 {
-    if (!state)
-        return kResultFalse;
-
-    // Write parameters to state
     IBStreamer streamer(state, kLittleEndian);
 
-    streamer.writeDouble(delayTime);
-    streamer.writeDouble(delayFeedback);
-    streamer.writeDouble(delayMix);
-    streamer.writeDouble(combSize);
-    streamer.writeDouble(combFeedback);
-    streamer.writeDouble(combDamping);
-    streamer.writeDouble(combDensity);
-    streamer.writeDouble(combMix);
-    streamer.writeDouble(inputGain);
-    streamer.writeDouble(outputGain);
-    streamer.writeDouble(bypass);
+    streamer.writeFloat(mInputGain);
+    streamer.writeFloat(mOutputGain);
+    streamer.writeFloat(mDelayTime);
+    streamer.writeFloat(mDryWet);
 
     return kResultOk;
 }
 
 tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
 {
-    if (!state)
-        return kResultFalse;
-
-    // Read parameters from state
     IBStreamer streamer(state, kLittleEndian);
 
-    if (!streamer.readDouble(delayTime)) return kResultFalse;
-    if (!streamer.readDouble(delayFeedback)) return kResultFalse;
-    if (!streamer.readDouble(delayMix)) return kResultFalse;
-    if (!streamer.readDouble(combSize)) return kResultFalse;
-    if (!streamer.readDouble(combFeedback)) return kResultFalse;
-    if (!streamer.readDouble(combDamping)) return kResultFalse;
-    if (!streamer.readDouble(combDensity)) return kResultFalse;
-    if (!streamer.readDouble(combMix)) return kResultFalse;
-    if (!streamer.readDouble(inputGain)) return kResultFalse;
-    if (!streamer.readDouble(outputGain)) return kResultFalse;
-    if (!streamer.readDouble(bypass)) return kResultFalse;
+    streamer.readFloat(mInputGain);
+    streamer.readFloat(mOutputGain);
+    streamer.readFloat(mDelayTime);
+    streamer.readFloat(mDryWet);
 
     return kResultOk;
-}
-
-void WaterStickProcessor::allocateDelayBuffers()
-{
-    deallocateDelayBuffers();
-
-    if (delayBufferSize > 0)
-    {
-        delayBuffers = new Vst::Sample64*[2]; // Stereo
-        for (int32 channel = 0; channel < 2; ++channel)
-        {
-            delayBuffers[channel] = new Vst::Sample64[delayBufferSize];
-            memset(delayBuffers[channel], 0, delayBufferSize * sizeof(Vst::Sample64));
-        }
-        delayWritePos = 0;
-    }
-}
-
-void WaterStickProcessor::deallocateDelayBuffers()
-{
-    if (delayBuffers)
-    {
-        for (int32 channel = 0; channel < 2; ++channel)
-        {
-            delete[] delayBuffers[channel];
-        }
-        delete[] delayBuffers;
-        delayBuffers = nullptr;
-    }
-}
-
-void WaterStickProcessor::allocateCombBuffers()
-{
-    deallocateCombBuffers();
-
-    if (combBufferSize > 0)
-    {
-        combBuffers = new Vst::Sample64*[2]; // Stereo
-        for (int32 channel = 0; channel < 2; ++channel)
-        {
-            combBuffers[channel] = new Vst::Sample64[combBufferSize];
-            memset(combBuffers[channel], 0, combBufferSize * sizeof(Vst::Sample64));
-        }
-        combWritePos = 0;
-    }
-}
-
-void WaterStickProcessor::deallocateCombBuffers()
-{
-    if (combBuffers)
-    {
-        for (int32 channel = 0; channel < 2; ++channel)
-        {
-            delete[] combBuffers[channel];
-        }
-        delete[] combBuffers;
-        combBuffers = nullptr;
-    }
-}
-
-void WaterStickProcessor::processDelay(Vst::Sample32** inputs, Vst::Sample32** outputs,
-                                      int32 numChannels, int32 sampleFrames)
-{
-    if (!delayBuffers || delayBufferSize == 0)
-        return;
-
-    // Calculate delay samples
-    int32 delaySamples = static_cast<int32>(delayTime * processSetup.sampleRate);
-    delaySamples = std::min(delaySamples, delayBufferSize - 1);
-
-    for (int32 sample = 0; sample < sampleFrames; ++sample)
-    {
-        for (int32 channel = 0; channel < std::min(numChannels, 2); ++channel)
-        {
-            // Input with gain
-            Vst::Sample64 input = inputs[channel][sample] * inputGain;
-
-            // Calculate read position
-            int32 readPos = delayWritePos - delaySamples;
-            if (readPos < 0)
-                readPos += delayBufferSize;
-
-            // Get delayed sample
-            Vst::Sample64 delayedSample = delayBuffers[channel][readPos];
-
-            // Write to delay buffer (input + feedback)
-            delayBuffers[channel][delayWritePos] = input + (delayedSample * delayFeedback);
-
-            // Mix output
-            Vst::Sample64 output = input * (1.0 - delayMix) + delayedSample * delayMix;
-
-            // Apply output gain
-            outputs[channel][sample] = static_cast<Vst::Sample32>(output * outputGain);
-        }
-
-        // Advance write position
-        delayWritePos = (delayWritePos + 1) % delayBufferSize;
-    }
-}
-
-void WaterStickProcessor::processComb(Vst::Sample32** inputs, Vst::Sample32** outputs,
-                                     int32 numChannels, int32 sampleFrames)
-{
-    if (!combBuffers || combBufferSize == 0)
-        return;
-
-    // Smooth parameter changes to eliminate zipper noise (KVR forum optimization)
-    smoothedCombSize = kParamSmoothing * smoothedCombSize + (1.0 - kParamSmoothing) * combSize;
-    smoothedCombDensity = kParamSmoothing * smoothedCombDensity + (1.0 - kParamSmoothing) * combDensity;
-
-    // Calculate damping coefficient (0.0-1.0)
-    double dampingCoeff = combDamping * 0.3; // Scale to reasonable range
-
-    // Exponential feedback scaling for better control throw (0-1 -> 0-0.95)
-    double expFeedback = combFeedback * combFeedback * 0.95; // Exponential curve, max 95%
-
-    for (int32 sample = 0; sample < sampleFrames; ++sample)
-    {
-        // Update crossfade if needed
-        if (needsCrossfade)
-        {
-            updateCrossfade();
-        }
-
-        for (int32 channel = 0; channel < std::min(numChannels, 2); ++channel)
-        {
-            // Get input sample
-            Vst::Sample64 input = inputs[channel][sample];
-            Vst::Sample64 output = 0.0;
-            Vst::Sample64 feedbackSum = 0.0;
-
-            // Process taps with one-pole delay smoothing and fade levels
-            for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
-            {
-                // One-pole smoothing for delay time changes (research-based approach)
-                smoothedDelayTime[tap] = kDelaySmoothing * smoothedDelayTime[tap] +
-                                        (1.0 - kDelaySmoothing) * combTaps[tap].delaySamples;
-
-                // Update tap fade level for density changes
-                combTaps[tap].fadeLevel = kFadeSpeed * combTaps[tap].fadeLevel +
-                                         (1.0 - kFadeSpeed) * combTaps[tap].targetFadeLevel;
-
-                // Only process taps that have some fade level (avoids processing inactive taps)
-                if (smoothedDelayTime[tap] > 0.0 && combTaps[tap].fadeLevel > 0.001)
-                {
-                    // Thiran allpass interpolation for smooth delay line modulation
-                    double delay = smoothedDelayTime[tap];
-                    double integerDelay = floor(delay);
-                    double fractionalDelay = delay - integerDelay;
-
-                    // Get integer delay sample
-                    int32 intDelayPos = combWritePos - static_cast<int32>(integerDelay);
-                    if (intDelayPos < 0)
-                        intDelayPos += combBufferSize;
-                    Vst::Sample64 intDelaySample = combBuffers[channel][intDelayPos];
-
-                    // Apply 1st-order Thiran allpass for fractional delay
-                    Vst::Sample64 delayedSample;
-                    if (fractionalDelay < 0.001) {
-                        // No fractional delay needed
-                        delayedSample = intDelaySample;
-                    } else {
-                        // Thiran allpass coefficient for 1st-order filter
-                        double a1 = (1.0 - fractionalDelay) / (1.0 + fractionalDelay);
-
-                        // Apply Thiran allpass: y[n] = a1*x[n] + x[n-1] - a1*y[n-1]
-                        delayedSample = a1 * intDelaySample + combTaps[tap].thiranState[channel] -
-                                       a1 * combTaps[tap].thiranOutput[channel];
-
-                        // Update filter states
-                        combTaps[tap].thiranState[channel] = intDelaySample;
-                        combTaps[tap].thiranOutput[channel] = delayedSample;
-                    }
-
-                    // Apply per-tap damping (low-pass filter)
-                    combTaps[tap].lpState[channel] = combTaps[tap].lpState[channel] +
-                        dampingCoeff * (delayedSample - combTaps[tap].lpState[channel]);
-                    Vst::Sample64 dampedSample = combTaps[tap].lpState[channel];
-
-                    // Apply tap gain with fade level
-                    Vst::Sample64 tapOutput = dampedSample * combTaps[tap].gain * combTaps[tap].fadeLevel;
-
-                    output += tapOutput;
-                    feedbackSum += tapOutput;
-                }
-            }
-
-            // Track input and pre-compression RMS for makeup gain
-            Vst::Sample64 absInput = fabs(input);
-            inputRMSState[channel] = inputRMSState[channel] * 0.999 + (absInput * absInput) * 0.001;
-
-            // Apply density-based dynamics processing to prevent resonant frequency buildup
-            Vst::Sample64 processedOutput = output;
-            if (activeTapCount > 8) // Apply compression when density is high
-            {
-                // Calculate compression based on tap density and signal level
-                double densityFactor = static_cast<double>(activeTapCount) / kMaxCombTaps;
-                double compressionRatio = 1.0 + densityFactor * 3.0; // Up to 4:1 compression
-
-                // Simple peak detection and gain reduction
-                Vst::Sample64 absSignal = fabs(output);
-                if (absSignal > kDensityThreshold)
-                {
-                    // Attack: fast compression
-                    double targetGain = kDensityThreshold / (absSignal + 1e-10);
-                    targetGain = pow(targetGain, 1.0 / compressionRatio);
-
-                    densityCompressorState[channel] = densityCompressorState[channel] * 0.7 + targetGain * 0.3;
-                }
-                else
-                {
-                    // Release: slow release
-                    densityCompressorState[channel] = densityCompressorState[channel] * 0.999 + 1.0 * 0.001;
-                }
-
-                processedOutput = output * densityCompressorState[channel];
-
-                // Track output RMS and apply makeup gain
-                Vst::Sample64 absOutput = fabs(processedOutput);
-                outputRMSState[channel] = outputRMSState[channel] * 0.999 + (absOutput * absOutput) * 0.001;
-
-                // Calculate makeup gain to maintain similar level to input
-                double inputRMS = sqrt(inputRMSState[channel] + 1e-10);
-                double outputRMS = sqrt(outputRMSState[channel] + 1e-10);
-                double makeupGain = std::min(4.0, inputRMS / (outputRMS + 1e-10)); // Limit to 12dB gain
-
-                processedOutput *= makeupGain;
-            }
-
-            // Write to comb buffer (input + feedback) with adaptive tanh limiting
-            Vst::Sample64 feedbackSignal = feedbackSum * expFeedback; // Use exponential feedback
-            Vst::Sample64 totalSignal = input + feedbackSignal;
-
-            // Adaptive tanh scaling based on density and size to prevent runaway feedback
-            double densityFactor = static_cast<double>(activeTapCount) / kMaxCombTaps;
-            double sizeFactor = combSize; // Use current combSize directly
-
-            // More aggressive limiting with higher density and larger sizes
-            double tanhDrive = 0.5 + densityFactor * 0.3 + sizeFactor * 0.2; // 0.5 to 1.0 range
-            double tanhGain = 1.0 / tanhDrive; // Compensate for the drive
-
-            combBuffers[channel][combWritePos] = tanh(totalSignal * tanhDrive) * tanhGain;
-
-            // Apply anti-zipper high-frequency low-pass filter (KVR forum solution)
-            // This eliminates high-frequency artifacts from parameter changes
-            antiZipperState[channel] = kAntiZipperCutoff * antiZipperState[channel] +
-                                      (1.0 - kAntiZipperCutoff) * processedOutput;
-
-            // Output is the filtered signal (eliminates zipper noise)
-            outputs[channel][sample] = static_cast<Vst::Sample32>(antiZipperState[channel]);
-        }
-
-        // Advance write position
-        combWritePos = (combWritePos + 1) % combBufferSize;
-    }
-}
-
-void WaterStickProcessor::processAudio(Vst::Sample32** inputs, Vst::Sample32** outputs,
-                                      int32 numChannels, int32 sampleFrames)
-{
-    // Temporary buffers for routing between delay and comb
-    Vst::Sample32* delayOutputs[2];
-    Vst::Sample32* combOutputs[2];
-    delayOutputs[0] = new Vst::Sample32[sampleFrames];
-    delayOutputs[1] = new Vst::Sample32[sampleFrames];
-    combOutputs[0] = new Vst::Sample32[sampleFrames];
-    combOutputs[1] = new Vst::Sample32[sampleFrames];
-
-    // Process delay first
-    processDelay(inputs, delayOutputs, numChannels, sampleFrames);
-
-    // Process comb (using delay output as input)
-    processComb(delayOutputs, combOutputs, numChannels, sampleFrames);
-
-    // Mix delay and comb outputs with comb mix parameter
-    for (int32 channel = 0; channel < std::min(numChannels, 2); ++channel)
-    {
-        for (int32 sample = 0; sample < sampleFrames; ++sample)
-        {
-            // Blend delay (dry) and comb (wet) outputs using combMix parameter
-            Vst::Sample32 drySignal = delayOutputs[channel][sample];
-            Vst::Sample32 wetSignal = combOutputs[channel][sample];
-            outputs[channel][sample] = drySignal * (1.0f - static_cast<float>(combMix)) + wetSignal * static_cast<float>(combMix);
-        }
-    }
-
-    // Clean up temporary buffers
-    delete[] delayOutputs[0];
-    delete[] delayOutputs[1];
-    delete[] combOutputs[0];
-    delete[] combOutputs[1];
-}
-
-void WaterStickProcessor::updateCombTaps()
-{
-    // Use smoothed parameters to prevent zipper noise (KVR forum solution)
-    // Calculate number of target active taps based on smoothed density (0.0-1.0 -> 1-64 taps)
-    targetActiveTapCount = static_cast<int32>(1 + (smoothedCombDensity * (kMaxCombTaps - 1)));
-    targetActiveTapCount = std::max(1, std::min(targetActiveTapCount, kMaxCombTaps));
-
-    // Base delay time in milliseconds (2ms-100ms based on smoothed combSize)
-    double baseDelayMs = 2.0 + (smoothedCombSize * 98.0);
-    double baseDelaySamples = baseDelayMs * 0.001 * processSetup.sampleRate;
-
-    // Configure target tap delays using Fibonacci-like distribution for natural resonance
-    double tapSpacing = baseDelaySamples / (targetActiveTapCount + 1);
-
-    // Configure all taps and set fade levels for density changes
-    for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
-    {
-        if (tap < targetActiveTapCount)
-        {
-            // Distribute active taps with golden ratio spacing
-            double tapMultiplier = 1.0 + (tap * 0.618); // Golden ratio spacing
-            combTaps[tap].targetDelaySamples = tapSpacing * tapMultiplier;
-            combTaps[tap].targetDelaySamples = std::max(1.0, std::min(combTaps[tap].targetDelaySamples, static_cast<double>(combBufferSize - 1)));
-
-            // Set target tap gain with slight decay for later taps
-            combTaps[tap].targetGain = 1.0 / sqrt(targetActiveTapCount) * (1.0 - tap * 0.05);
-
-            // Fade in active taps
-            combTaps[tap].targetFadeLevel = 1.0;
-        }
-        else
-        {
-            // Inactive taps: keep delay/gain but fade out
-            combTaps[tap].targetFadeLevel = 0.0;
-        }
-    }
-
-    // Check if this is initial setup or a parameter change
-    bool isInitialSetup = (activeTapCount == 0);
-
-    if (isInitialSetup)
-    {
-        // Initial setup - set current values directly (no crossfade needed)
-        for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
-        {
-            combTaps[tap].delaySamples = combTaps[tap].targetDelaySamples;
-            combTaps[tap].gain = combTaps[tap].targetGain;
-            combTaps[tap].fadeLevel = combTaps[tap].targetFadeLevel;
-        }
-        activeTapCount = targetActiveTapCount;
-        needsCrossfade = false;
-    }
-    else
-    {
-        // Parameter change - initialize crossfade
-        needsCrossfade = true;
-        crossfadeSamples = kCrossfadeLength;
-    }
-}
-
-void WaterStickProcessor::updateCrossfade()
-{
-    if (!needsCrossfade || crossfadeSamples <= 0)
-        return;
-
-    // Calculate crossfade progress (0.0 = start, 1.0 = end)
-    double progress = 1.0 - (double(crossfadeSamples) / double(kCrossfadeLength));
-
-    // Apply smooth S-curve for more natural crossfade
-    double smoothProgress = progress * progress * (3.0 - 2.0 * progress); // Smoothstep
-
-    // Gradually interpolate tap parameters toward targets
-    for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
-    {
-        // Interpolate delay samples (floating-point for tape-style smooth changes)
-        double currentDelay = combTaps[tap].delaySamples;
-        double targetDelay = combTaps[tap].targetDelaySamples;
-        combTaps[tap].delaySamples = currentDelay + (targetDelay - currentDelay) * smoothProgress;
-
-        // Interpolate gain
-        double currentGain = combTaps[tap].gain;
-        double targetGain = combTaps[tap].targetGain;
-        combTaps[tap].gain = currentGain + (targetGain - currentGain) * smoothProgress;
-    }
-
-    crossfadeSamples--;
-
-    // Crossfade completed - finalize values
-    if (crossfadeSamples <= 0)
-    {
-        for (int32 tap = 0; tap < kMaxCombTaps; ++tap)
-        {
-            combTaps[tap].delaySamples = combTaps[tap].targetDelaySamples;
-            combTaps[tap].gain = combTaps[tap].targetGain;
-
-            // Reset filter states when taps change significantly to prevent artifacts
-            combTaps[tap].lpState[0] = 0.0;
-            combTaps[tap].lpState[1] = 0.0;
-            combTaps[tap].thiranState[0] = 0.0;
-            combTaps[tap].thiranState[1] = 0.0;
-            combTaps[tap].thiranOutput[0] = 0.0;
-            combTaps[tap].thiranOutput[1] = 0.0;
-        }
-
-        activeTapCount = targetActiveTapCount;
-        needsCrossfade = false;
-    }
 }
 
 } // namespace WaterStick

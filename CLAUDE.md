@@ -21,9 +21,10 @@ This project is a VST3 clone of the Intellijel Rainmaker Eurorack module - a sop
 - Don't create "mock" or "simplified" versions for testing
 - Always ensure we are in the repo's proper directory when running git commands, e.g.: '/Users/why/repos/waterstick'
 
-- **NEVER DISABLE BLOCK PROCESSING**: Block processing must NEVER be disabled under any circumstance
-  - Modulation and other features must work WITHIN block processing, not bypass it
-  - Apply modulation before or inside processBlock, never disable block processing
+- **USE SAMPLE-LEVEL PROCESSING**: Prefer sample-by-sample processing for smooth modulation
+  - Enable fractional delays with smooth interpolation for zipper-free modulation
+  - Process in small chunks (4 samples) for SIMD optimization when beneficial
+  - Prioritize audio quality over computational efficiency for modulation smoothness
 
 ## Project Structure
 - Main device file: `WaterStick.vst3`

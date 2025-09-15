@@ -37,6 +37,7 @@ smtg_add_vst3plugin(${target}
     source/WaterStick/WaterStickController.h
     source/WaterStick/WaterStickProcessor.cpp
     source/WaterStick/WaterStickProcessor.h
+    source/WaterStick/WaterStickParameters.h
     source/WaterStick/WaterStickCIDs.h
     source/WaterStick/version.h
     source/WaterStick/factory.cpp

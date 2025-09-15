@@ -19,7 +19,10 @@
       "Bash(git merge:*)",
       "WebFetch(domain:christianfloisand.wordpress.com)",
       "WebFetch(domain:dsp.stackexchange.com)",
-      "WebFetch(domain:www.kvraudio.com)"
+      "WebFetch(domain:www.kvraudio.com)",
+      "Bash(git switch:*)",
+      "Bash(rm:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
