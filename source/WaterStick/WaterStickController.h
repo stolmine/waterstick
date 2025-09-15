@@ -2,12 +2,11 @@
 
 #include "public.sdk/source/vst/vsteditcontroller.h"
 #include "public.sdk/source/vst/vstparameters.h"
-#include "vstgui/plugin-bindings/vst3editor.h"
 #include "WaterStickParameters.h"
 
 namespace WaterStick {
 
-class WaterStickController : public Steinberg::Vst::EditControllerEx1, public VSTGUI::VST3EditorDelegate
+class WaterStickController : public Steinberg::Vst::EditControllerEx1
 {
 public:
     WaterStickController();

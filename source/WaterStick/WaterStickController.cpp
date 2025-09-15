@@ -5,6 +5,7 @@
 #include "pluginterfaces/base/ustring.h"
 #include "pluginterfaces/base/ibstream.h"
 #include "pluginterfaces/vst/ivstmessage.h"
+#include "pluginterfaces/vst/vsttypes.h"
 
 using namespace Steinberg;
 
@@ -271,7 +272,7 @@ tresult PLUGIN_API WaterStickController::getParamValueByString(Vst::ParamID id, 
 //------------------------------------------------------------------------
 IPlugView* PLUGIN_API WaterStickController::createView(FIDString name)
 {
-    if (ConstString(name) == ViewType::kEditor)
+    if (FIDStringsEqual(name, Vst::ViewType::kEditor))
     {
         return new WaterStickEditor(this);
     }

@@ -1,13 +1,14 @@
 #include "WaterStickEditor.h"
 #include "vstgui/lib/cviewcontainer.h"
-#include "vstgui/lib/ctextlabel.h"
+#include "vstgui/lib/controls/ctextlabel.h"
 #include "vstgui/lib/ccolor.h"
 #include "vstgui/lib/cfont.h"
+#include "vstgui/lib/cframe.h"
 
 namespace WaterStick {
 
 WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
-: VST3Editor(controller, nullptr, nullptr)
+: VSTGUIEditor(controller)
 {
     Steinberg::ViewRect viewRect(0, 0, kEditorWidth, kEditorHeight);
     setRect(viewRect);
@@ -40,6 +41,15 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     frame->addView(container);
 
     return true;
+}
+
+void PLUGIN_API WaterStickEditor::close()
+{
+    if (frame)
+    {
+        frame->forget();
+        frame = nullptr;
+    }
 }
 
 } // namespace WaterStick
