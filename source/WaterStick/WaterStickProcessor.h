@@ -9,10 +9,69 @@
 
 namespace WaterStick {
 
-class FadeDelayLine {
+class DualDelayLine {
 public:
-    FadeDelayLine();
-    ~FadeDelayLine();
+    DualDelayLine();
+    ~DualDelayLine();
+
+    void initialize(double sampleRate, double maxDelaySeconds);
+    void setDelayTime(float delayTimeSeconds);
+    void processSample(float input, float& output);
+    void reset();
+
+private:
+    // Dual delay lines for crossfading
+    std::vector<float> mBufferA;
+    std::vector<float> mBufferB;
+    int mBufferSize;
+    int mWriteIndexA;
+    int mWriteIndexB;
+    double mSampleRate;
+
+    // Active/Standby line management
+    bool mUsingLineA;
+    enum CrossfadeState { STABLE, CROSSFADING };
+    CrossfadeState mCrossfadeState;
+
+    // Movement detection
+    float mTargetDelayTime;
+    float mCurrentDelayTime;
+    int mStabilityCounter;
+    int mStabilityThreshold;
+
+    // Crossfade control
+    int mCrossfadeLength;
+    int mCrossfadePosition;
+    float mCrossfadeGainA;
+    float mCrossfadeGainB;
+
+    // Per-line delay state
+    struct DelayLineState {
+        float delayInSamples;
+        int readIndex;
+        float allpassCoeff;
+        float apInput;
+        float lastOutput;
+        bool doNextOut;
+        float nextOutput;
+    };
+
+    DelayLineState mStateA;
+    DelayLineState mStateB;
+
+    void updateDelayState(DelayLineState& state, float delayTime);
+    void updateAllpassCoeff(DelayLineState& state);
+    float processDelayLine(std::vector<float>& buffer, int& writeIndex, DelayLineState& state, float input);
+    float nextOut(DelayLineState& state, const std::vector<float>& buffer);
+    void startCrossfade();
+    void updateCrossfade();
+    int calculateCrossfadeLength(float delayTime);
+};
+
+class STKDelayLine {
+public:
+    STKDelayLine();
+    ~STKDelayLine();
 
     void initialize(double sampleRate, double maxDelaySeconds);
     void setDelayTime(float delayTimeSeconds);
@@ -23,22 +82,21 @@ private:
     std::vector<float> mBuffer;
     int mBufferSize;
     int mWriteIndex;
-    float mCurrentDelayTime;
-    float mTargetDelayTime;
+    int mReadIndex;
     double mSampleRate;
 
-    // Fade parameters for smooth transitions (ER301 style)
-    std::vector<float> mFadeFrames;
-    int mFadeLength;
-    int mFadePosition;
-    bool mFading;
+    // Current delay in samples (STK approach - direct, no smoothing)
+    float mDelayInSamples;
 
-    // INTEGER read indices only (ER301 approach)
-    int mReadIndex0, mReadIndex1;
+    // STK allpass interpolation state
+    float mAllpassCoeff;
+    float mApInput;
+    float mLastOutput;
+    bool mDoNextOut;
+    float mNextOutput;
 
-    void startFade();
-    int quantizeToFour(int samples); // ER301: quantize to 4-sample boundaries
-    float interpolateLinear(float a, float b, float t);
+    void updateAllpassCoeff();
+    float nextOut();
 };
 
 class WaterStickProcessor : public Steinberg::Vst::AudioEffect
@@ -73,8 +131,8 @@ private:
     float mDryWet;
 
     // DSP
-    FadeDelayLine mDelayLineL;
-    FadeDelayLine mDelayLineR;
+    DualDelayLine mDelayLineL;
+    DualDelayLine mDelayLineR;
     double mSampleRate;
 
     void updateParameters();

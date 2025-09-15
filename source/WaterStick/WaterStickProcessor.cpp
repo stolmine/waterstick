@@ -9,159 +9,353 @@ using namespace Steinberg;
 namespace WaterStick {
 
 //------------------------------------------------------------------------
-// FadeDelayLine Implementation
+// DualDelayLine Implementation - Crossfading STK DelayA Algorithm
 //------------------------------------------------------------------------
 
-FadeDelayLine::FadeDelayLine()
+DualDelayLine::DualDelayLine()
+: mBufferSize(0)
+, mWriteIndexA(0)
+, mWriteIndexB(0)
+, mSampleRate(44100.0)
+, mUsingLineA(true)
+, mCrossfadeState(STABLE)
+, mTargetDelayTime(0.1f)
+, mCurrentDelayTime(0.1f)
+, mStabilityCounter(0)
+, mStabilityThreshold(2048) // ~46ms at 44.1kHz
+, mCrossfadeLength(0)
+, mCrossfadePosition(0)
+, mCrossfadeGainA(1.0f)
+, mCrossfadeGainB(0.0f)
+{
+    // Initialize delay states
+    mStateA.delayInSamples = 0.5f;
+    mStateA.readIndex = 0;
+    mStateA.allpassCoeff = 0.0f;
+    mStateA.apInput = 0.0f;
+    mStateA.lastOutput = 0.0f;
+    mStateA.doNextOut = true;
+    mStateA.nextOutput = 0.0f;
+
+    mStateB = mStateA; // Copy state
+}
+
+DualDelayLine::~DualDelayLine()
+{
+}
+
+void DualDelayLine::initialize(double sampleRate, double maxDelaySeconds)
+{
+    mSampleRate = sampleRate;
+    mBufferSize = static_cast<int>(maxDelaySeconds * sampleRate) + 1;
+
+    mBufferA.resize(mBufferSize, 0.0f);
+    mBufferB.resize(mBufferSize, 0.0f);
+
+    mWriteIndexA = 0;
+    mWriteIndexB = 0;
+
+    // Initialize both delay line states
+    updateDelayState(mStateA, mCurrentDelayTime);
+    updateDelayState(mStateB, mCurrentDelayTime);
+
+    // Calculate stability threshold (proportional to sample rate)
+    mStabilityThreshold = static_cast<int>(sampleRate * 0.05); // 50ms
+}
+
+void DualDelayLine::setDelayTime(float delayTimeSeconds)
+{
+    if (std::abs(delayTimeSeconds - mTargetDelayTime) > 0.001f) {
+        mTargetDelayTime = delayTimeSeconds;
+        mStabilityCounter = 0; // Reset stability counter on movement
+    }
+}
+
+void DualDelayLine::updateDelayState(DelayLineState& state, float delayTime)
+{
+    float delaySamples = delayTime * static_cast<float>(mSampleRate);
+    float maxDelaySamples = static_cast<float>(mBufferSize - 1);
+
+    state.delayInSamples = std::max(0.5f, std::min(delaySamples, maxDelaySamples));
+    updateAllpassCoeff(state);
+}
+
+void DualDelayLine::updateAllpassCoeff(DelayLineState& state)
+{
+    float integerPart = floorf(state.delayInSamples);
+    float fracPart = state.delayInSamples - integerPart;
+
+    if (fracPart < 0.5f) {
+        fracPart = 0.5f;
+    }
+
+    state.allpassCoeff = (1.0f - fracPart) / (1.0f + fracPart);
+}
+
+float DualDelayLine::nextOut(DelayLineState& state, const std::vector<float>& buffer)
+{
+    if (state.doNextOut) {
+        state.nextOutput = -state.allpassCoeff * state.lastOutput;
+        state.nextOutput += state.apInput + (state.allpassCoeff * buffer[state.readIndex]);
+        state.doNextOut = false;
+    }
+    return state.nextOutput;
+}
+
+float DualDelayLine::processDelayLine(std::vector<float>& buffer, int& writeIndex, DelayLineState& state, float input)
+{
+    // Calculate integer delay part
+    int integerDelay = static_cast<int>(floorf(state.delayInSamples));
+
+    // Update read index for integer delay
+    state.readIndex = writeIndex - integerDelay;
+    if (state.readIndex < 0) state.readIndex += mBufferSize;
+    state.readIndex %= mBufferSize;
+
+    // Write input to buffer
+    buffer[writeIndex] = input;
+
+    // Get output using STK allpass interpolation
+    float output = nextOut(state, buffer);
+    state.lastOutput = output;
+    state.doNextOut = true;
+    state.apInput = buffer[state.readIndex];
+
+    // Advance write index
+    writeIndex = (writeIndex + 1) % mBufferSize;
+
+    return output;
+}
+
+int DualDelayLine::calculateCrossfadeLength(float delayTime)
+{
+    // Crossfade length proportional to delay time
+    // Short delays: 50-100ms crossfade
+    // Long delays: 200-500ms crossfade
+    float baseCrossfadeMs = 50.0f + (delayTime * 1000.0f * 0.25f);
+    baseCrossfadeMs = std::min(baseCrossfadeMs, 500.0f);
+
+    return static_cast<int>(baseCrossfadeMs * 0.001f * mSampleRate);
+}
+
+void DualDelayLine::startCrossfade()
+{
+    mCrossfadeState = CROSSFADING;
+    mCrossfadeLength = calculateCrossfadeLength(mTargetDelayTime);
+    mCrossfadePosition = 0;
+
+    // Update standby line with new delay time
+    if (mUsingLineA) {
+        updateDelayState(mStateB, mTargetDelayTime);
+    } else {
+        updateDelayState(mStateA, mTargetDelayTime);
+    }
+}
+
+void DualDelayLine::updateCrossfade()
+{
+    if (mCrossfadeState != CROSSFADING) return;
+
+    float progress = static_cast<float>(mCrossfadePosition) / static_cast<float>(mCrossfadeLength);
+    progress = std::min(progress, 1.0f);
+
+    // Smooth crossfade curve (cosine)
+    float fadeOut = 0.5f * (1.0f + cosf(progress * 3.14159265f));
+    float fadeIn = 1.0f - fadeOut;
+
+    if (mUsingLineA) {
+        mCrossfadeGainA = fadeOut;
+        mCrossfadeGainB = fadeIn;
+    } else {
+        mCrossfadeGainA = fadeIn;
+        mCrossfadeGainB = fadeOut;
+    }
+
+    mCrossfadePosition++;
+
+    if (mCrossfadePosition >= mCrossfadeLength) {
+        // Crossfade complete
+        mCrossfadeState = STABLE;
+        mUsingLineA = !mUsingLineA;
+        mCurrentDelayTime = mTargetDelayTime;
+
+        if (mUsingLineA) {
+            mCrossfadeGainA = 1.0f;
+            mCrossfadeGainB = 0.0f;
+        } else {
+            mCrossfadeGainA = 0.0f;
+            mCrossfadeGainB = 1.0f;
+        }
+    }
+}
+
+void DualDelayLine::processSample(float input, float& output)
+{
+    // Movement detection and crossfade triggering
+    if (std::abs(mTargetDelayTime - mCurrentDelayTime) > 0.001f) {
+        mStabilityCounter++;
+
+        if (mStabilityCounter >= mStabilityThreshold && mCrossfadeState == STABLE) {
+            startCrossfade();
+        }
+    } else {
+        mStabilityCounter = 0;
+    }
+
+    // Update crossfade if active
+    updateCrossfade();
+
+    // Process both delay lines
+    float outputA = processDelayLine(mBufferA, mWriteIndexA, mStateA, input);
+    float outputB = processDelayLine(mBufferB, mWriteIndexB, mStateB, input);
+
+    // Mix outputs based on crossfade state
+    if (mCrossfadeState == STABLE) {
+        output = mUsingLineA ? outputA : outputB;
+    } else {
+        output = (outputA * mCrossfadeGainA) + (outputB * mCrossfadeGainB);
+    }
+}
+
+void DualDelayLine::reset()
+{
+    std::fill(mBufferA.begin(), mBufferA.end(), 0.0f);
+    std::fill(mBufferB.begin(), mBufferB.end(), 0.0f);
+
+    mWriteIndexA = 0;
+    mWriteIndexB = 0;
+
+    mUsingLineA = true;
+    mCrossfadeState = STABLE;
+    mStabilityCounter = 0;
+    mCrossfadePosition = 0;
+    mCrossfadeGainA = 1.0f;
+    mCrossfadeGainB = 0.0f;
+
+    // Reset delay states
+    mStateA.delayInSamples = 0.5f;
+    mStateA.readIndex = 0;
+    mStateA.apInput = 0.0f;
+    mStateA.lastOutput = 0.0f;
+    mStateA.doNextOut = true;
+    mStateA.nextOutput = 0.0f;
+    updateAllpassCoeff(mStateA);
+
+    mStateB = mStateA;
+}
+
+//------------------------------------------------------------------------
+// STKDelayLine Implementation - Exact STK DelayA Algorithm (Legacy)
+//------------------------------------------------------------------------
+
+STKDelayLine::STKDelayLine()
 : mBufferSize(0)
 , mWriteIndex(0)
-, mCurrentDelayTime(0.0f)
-, mTargetDelayTime(0.0f)
+, mReadIndex(0)
 , mSampleRate(44100.0)
-, mFadeLength(0)
-, mFadePosition(0)
-, mFading(false)
-, mReadIndex0(0)
-, mReadIndex1(0)
+, mDelayInSamples(0.5f) // STK minimum delay
+, mAllpassCoeff(0.0f)
+, mApInput(0.0f)
+, mLastOutput(0.0f)
+, mDoNextOut(true)
+, mNextOutput(0.0f)
 {
 }
 
-FadeDelayLine::~FadeDelayLine()
+STKDelayLine::~STKDelayLine()
 {
 }
 
-void FadeDelayLine::initialize(double sampleRate, double maxDelaySeconds)
+void STKDelayLine::initialize(double sampleRate, double maxDelaySeconds)
 {
     mSampleRate = sampleRate;
     mBufferSize = static_cast<int>(maxDelaySeconds * sampleRate) + 1;
     mBuffer.resize(mBufferSize, 0.0f);
     mWriteIndex = 0;
-    // Set minimum delay time (4 samples) to avoid reading uninitialized buffer
-    float minDelayTime = 4.0f / static_cast<float>(mSampleRate);
-    mCurrentDelayTime = minDelayTime;
-    mTargetDelayTime = minDelayTime;
+    mReadIndex = 0;
 
-    // ER301 uses 25ms fade length
-    mFadeLength = static_cast<int>(sampleRate * 0.025f);
-    mFadeFrames.resize(mFadeLength);
+    // STK default: 0.5 samples minimum delay
+    mDelayInSamples = 0.5f;
+    updateAllpassCoeff();
 
-    // Generate smooth fade curve (could be linear or curved)
-    for (int i = 0; i < mFadeLength; i++) {
-        mFadeFrames[i] = static_cast<float>(i) / static_cast<float>(mFadeLength - 1);
+    mApInput = 0.0f;
+    mLastOutput = 0.0f;
+    mDoNextOut = true;
+    mNextOutput = 0.0f;
+}
+
+void STKDelayLine::setDelayTime(float delayTimeSeconds)
+{
+    // Convert to samples - STK approach: NO SMOOTHING
+    float delaySamples = delayTimeSeconds * static_cast<float>(mSampleRate);
+    float maxDelaySamples = static_cast<float>(mBufferSize - 1);
+
+    // STK range: 0.5 to maxDelay
+    mDelayInSamples = std::max(0.5f, std::min(delaySamples, maxDelaySamples));
+    updateAllpassCoeff();
+}
+
+void STKDelayLine::updateAllpassCoeff()
+{
+    // STK DelayA coefficient calculation for fractional part
+    float integerPart = floorf(mDelayInSamples);
+    float fracPart = mDelayInSamples - integerPart;
+
+    // Ensure minimum fractional delay of 0.5
+    if (fracPart < 0.5f) {
+        fracPart = 0.5f;
     }
 
-    mFadePosition = 0;
-    mFading = false;
-    mReadIndex0 = 0;
-    mReadIndex1 = 0;
+    // STK allpass coefficient: a = (1-D)/(1+D) where D is fractional delay
+    mAllpassCoeff = (1.0f - fracPart) / (1.0f + fracPart);
 }
 
-void FadeDelayLine::setDelayTime(float delayTimeSeconds)
+float STKDelayLine::nextOut()
 {
-    // Ensure minimum delay time to avoid reading uninitialized buffer
-    float minDelayTime = 4.0f / static_cast<float>(mSampleRate); // 4 samples minimum
-    float maxDelayTime = static_cast<float>(mBufferSize) / static_cast<float>(mSampleRate);
-    float newDelayTime = std::max(minDelayTime, std::min(delayTimeSeconds, maxDelayTime));
-
-    if (std::abs(newDelayTime - mCurrentDelayTime) > 0.0001f)
-    {
-        mTargetDelayTime = newDelayTime;
-        startFade();
+    // Exact STK DelayA nextOut implementation
+    if (mDoNextOut) {
+        // Do allpass interpolation delay
+        mNextOutput = -mAllpassCoeff * mLastOutput;
+        mNextOutput += mApInput + (mAllpassCoeff * mBuffer[mReadIndex]);
+        mDoNextOut = false;
     }
+    return mNextOutput;
 }
 
-int FadeDelayLine::quantizeToFour(int samples)
+void STKDelayLine::processSample(float input, float& output)
 {
-    // ER301: quantize to multiples of 4 samples
-    return (samples / 4) * 4;
-}
+    // Calculate integer delay part
+    int integerDelay = static_cast<int>(floorf(mDelayInSamples));
 
-void FadeDelayLine::startFade()
-{
-    // Calculate delay in samples and quantize to 4-sample boundaries (ER301 style)
-    int currentDelaySamples = quantizeToFour(static_cast<int>(mCurrentDelayTime * mSampleRate));
-    int targetDelaySamples = quantizeToFour(static_cast<int>(mTargetDelayTime * mSampleRate));
+    // Update read index for integer delay
+    mReadIndex = mWriteIndex - integerDelay;
+    if (mReadIndex < 0) mReadIndex += mBufferSize;
+    mReadIndex %= mBufferSize;
 
-    // Ensure minimum delay to avoid reading uninitialized data
-    if (currentDelaySamples < 4) currentDelaySamples = 4;
-    if (targetDelaySamples < 4) targetDelaySamples = 4;
-
-    // Calculate INTEGER read indices
-    mReadIndex0 = mWriteIndex - currentDelaySamples;
-    mReadIndex1 = mWriteIndex - targetDelaySamples;
-
-    // Handle wrap-around with proper modulo
-    while (mReadIndex0 < 0) mReadIndex0 += mBufferSize;
-    while (mReadIndex1 < 0) mReadIndex1 += mBufferSize;
-
-    mReadIndex0 %= mBufferSize;
-    mReadIndex1 %= mBufferSize;
-
-    mFading = true;
-    mFadePosition = 0;
-}
-
-float FadeDelayLine::interpolateLinear(float a, float b, float t)
-{
-    return a + t * (b - a);
-}
-
-void FadeDelayLine::processSample(float input, float& output)
-{
-    if (mFading)
-    {
-        // Read from INTEGER indices BEFORE writing new input
-        float y0 = mBuffer[mReadIndex0];
-        float y1 = mBuffer[mReadIndex1];
-
-        // Get fade weight from pre-calculated fade curve
-        float fadeWeight = (mFadePosition < mFadeLength) ? mFadeFrames[mFadePosition] : 1.0f;
-        output = interpolateLinear(y0, y1, fadeWeight);
-
-        // Advance fade position
-        mFadePosition++;
-        if (mFadePosition >= mFadeLength)
-        {
-            mFading = false;
-            mCurrentDelayTime = mTargetDelayTime;
-        }
-
-        // Update INTEGER read indices to follow write index
-        mReadIndex0 = (mReadIndex0 + 1) % mBufferSize;
-        mReadIndex1 = (mReadIndex1 + 1) % mBufferSize;
-    }
-    else
-    {
-        // Normal operation - read from quantized delay time
-        int delayInSamples = quantizeToFour(static_cast<int>(mCurrentDelayTime * mSampleRate));
-
-        // Ensure minimum delay to avoid reading uninitialized data
-        if (delayInSamples < 4) delayInSamples = 4;
-
-        int readIndex = mWriteIndex - delayInSamples;
-        while (readIndex < 0) readIndex += mBufferSize;
-        readIndex %= mBufferSize;
-
-        output = mBuffer[readIndex];
-    }
-
-    // Write input to buffer AFTER reading output
+    // Write input to buffer
     mBuffer[mWriteIndex] = input;
+
+    // Get output using STK allpass interpolation
+    output = nextOut();
+    mLastOutput = output;
+    mDoNextOut = true;
+    mApInput = mBuffer[mReadIndex];
 
     // Advance write index
     mWriteIndex = (mWriteIndex + 1) % mBufferSize;
 }
 
-void FadeDelayLine::reset()
+void STKDelayLine::reset()
 {
     std::fill(mBuffer.begin(), mBuffer.end(), 0.0f);
     mWriteIndex = 0;
-    mCurrentDelayTime = 0.0f;
-    mTargetDelayTime = 0.0f;
-    mFadePosition = 0;
-    mFading = false;
-    mReadIndex0 = 0;
-    mReadIndex1 = 0;
+    mReadIndex = 0;
+    mDelayInSamples = 0.5f;
+    updateAllpassCoeff();
+    mApInput = 0.0f;
+    mLastOutput = 0.0f;
+    mDoNextOut = true;
+    mNextOutput = 0.0f;
 }
 
 //------------------------------------------------------------------------
