@@ -34,19 +34,6 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     auto container = new VSTGUI::CViewContainer(frameSize);
     container->setBackgroundColor(VSTGUI::kWhiteCColor);
 
-    // Create "WaterStick" text label
-    VSTGUI::CRect textRect(0, 0, kEditorWidth, 50);
-    textRect.centerInside(frameSize);
-
-    auto textLabel = new VSTGUI::CTextLabel(textRect);
-    textLabel->setText("WaterStick");
-    textLabel->setFont(VSTGUI::kSystemFont);
-    textLabel->setFontColor(VSTGUI::kBlackCColor);
-    textLabel->setBackColor(VSTGUI::kTransparentCColor);
-    textLabel->setHoriAlign(VSTGUI::kCenterText);
-    textLabel->setStyle(VSTGUI::kBoldFace);
-
-    container->addView(textLabel);
 
     // Create tap buttons
     createTapButtons(container);
