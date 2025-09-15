@@ -53,6 +53,77 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kSyncDivision, 0,
                            STR16("Sync"));
 
+    // Grid parameter
+    parameters.addParameter(STR16("Grid"), nullptr, kNumGridValues - 1,
+                           static_cast<Vst::ParamValue>(kGrid_4) / (kNumGridValues - 1),
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kGrid, 0,
+                           STR16("Tap"));
+
+    // Tap parameters (16 taps) - need to use individual strings for STR16 macro
+    parameters.addParameter(STR16("Tap 1 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap1Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 1 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap1Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 1 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 2 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap2Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 2 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap2Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 2 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 3 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap3Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 3 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap3Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 3 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 4 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap4Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 4 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap4Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 4 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 5 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap5Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 5 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap5Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 5 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 6 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap6Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 6 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap6Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 6 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 7 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap7Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 7 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap7Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 7 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 8 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap8Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 8 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap8Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 8 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 9 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap9Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 9 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap9Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 9 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 10 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap10Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 10 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap10Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 10 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 11 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap11Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 11 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap11Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 11 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 12 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap12Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 12 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap12Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 12 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 13 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap13Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 13 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap13Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 13 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 14 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap14Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 14 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap14Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 14 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 15 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap15Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 15 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap15Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 15 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15Pan, 0, STR16("Tap"));
+
+    parameters.addParameter(STR16("Tap 16 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 16 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap16Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 16 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16Pan, 0, STR16("Tap"));
+
     return result;
 }
 
@@ -72,7 +143,7 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
 
     float inputGain, outputGain, delayTime, dryWet;
     bool tempoSyncMode;
-    int32 syncDivision;
+    int32 syncDivision, grid;
 
     if (streamer.readFloat(inputGain) == false) return kResultFalse;
     if (streamer.readFloat(outputGain) == false) return kResultFalse;
@@ -80,6 +151,7 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     if (streamer.readFloat(dryWet) == false) return kResultFalse;
     if (streamer.readBool(tempoSyncMode) == false) return kResultFalse;
     if (streamer.readInt32(syncDivision) == false) return kResultFalse;
+    if (streamer.readInt32(grid) == false) return kResultFalse;
 
     setParamNormalized(kInputGain, inputGain);
     setParamNormalized(kOutputGain, outputGain);
@@ -87,6 +159,21 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     setParamNormalized(kDryWet, dryWet);
     setParamNormalized(kTempoSyncMode, tempoSyncMode ? 1.0 : 0.0);
     setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(syncDivision) / (kNumSyncDivisions - 1));
+    setParamNormalized(kGrid, static_cast<Vst::ParamValue>(grid) / (kNumGridValues - 1));
+
+    // Load all tap parameters
+    for (int i = 0; i < 16; i++) {
+        bool tapEnabled;
+        float tapLevel, tapPan;
+
+        if (streamer.readBool(tapEnabled) == false) return kResultFalse;
+        if (streamer.readFloat(tapLevel) == false) return kResultFalse;
+        if (streamer.readFloat(tapPan) == false) return kResultFalse;
+
+        setParamNormalized(kTap1Enable + (i * 3), tapEnabled ? 1.0 : 0.0);
+        setParamNormalized(kTap1Level + (i * 3), tapLevel);
+        setParamNormalized(kTap1Pan + (i * 3), tapPan);
+    }
 
     return kResultOk;
 }
@@ -127,6 +214,19 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
                     "1/2T", "1/4.", "1/2", "1T", "1/2.", "1", "2", "4", "8"
                 };
                 Steinberg::UString(string, 128).fromAscii(divisionTexts[division]);
+                return kResultTrue;
+            }
+            break;
+        }
+        case kGrid:
+        {
+            int grid = static_cast<int>(valueNormalized * (kNumGridValues - 1) + 0.5);
+            if (grid >= 0 && grid < kNumGridValues) {
+                // Grid text lookup table (matches TapDistribution class)
+                static const char* gridTexts[kNumGridValues] = {
+                    "1", "2", "3", "4", "6", "8", "12", "16"
+                };
+                Steinberg::UString(string, 128).fromAscii(gridTexts[grid]);
                 return kResultTrue;
             }
             break;
