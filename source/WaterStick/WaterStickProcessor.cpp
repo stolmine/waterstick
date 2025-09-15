@@ -533,11 +533,12 @@ void WaterStickProcessor::updateParameters()
     mTempoSync.setSyncDivision(mSyncDivision);
     mTempoSync.setFreeTime(mDelayTime);
 
-    // Get the final delay time (either free or synced)
-    float finalDelayTime = mTempoSync.getDelayTime();
-
-    mDelayLineL.setDelayTime(finalDelayTime);
-    mDelayLineR.setDelayTime(finalDelayTime);
+    // Only update delay lines if not in sync mode (sync mode updates continuously)
+    if (!mTempoSyncMode) {
+        float finalDelayTime = mTempoSync.getDelayTime();
+        mDelayLineL.setDelayTime(finalDelayTime);
+        mDelayLineR.setDelayTime(finalDelayTime);
+    }
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -595,6 +596,13 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
     }
 
     updateParameters();
+
+    // Update tempo sync delay time every process cycle (tempo can change without parameter changes)
+    if (mTempoSyncMode) {
+        float finalDelayTime = mTempoSync.getDelayTime();
+        mDelayLineL.setDelayTime(finalDelayTime);
+        mDelayLineR.setDelayTime(finalDelayTime);
+    }
 
     // Check for valid input/output
     if (data.numInputs == 0 || data.numOutputs == 0)

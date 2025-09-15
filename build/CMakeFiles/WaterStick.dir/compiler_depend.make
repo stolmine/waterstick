@@ -1616,6 +1616,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: /Users/wh
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsthostapplication.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstmessage.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstparameterchanges.h \
+  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstunits.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vstspeaker.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vsttypes.h \
@@ -2432,6 +2433,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: /Users/why/repos/wate
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsteditcontroller.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsthostapplication.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstmessage.h \
+  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstunits.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vstspeaker.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vsttypes.h \
@@ -3362,8 +3364,6 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/mach/machine/vm_types.h:
 
-/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/mach/machine/kern_return.h:
-
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/mach/machine/boolean.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/mach/machine.h:
@@ -3485,6 +3485,10 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vstbus.h:
 
 /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vstaudioeffect.h:
+
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/mach/machine/kern_return.h:
+
+/Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h:
 
 /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstparameterchanges.h:
 

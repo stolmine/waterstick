@@ -1618,6 +1618,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsthostapplication.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstmessage.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstparameterchanges.h
+ /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstunits.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vstspeaker.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vsttypes.h
@@ -2435,6 +2436,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsteditcontroller.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivsthostapplication.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstmessage.h
+ /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstunits.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vstspeaker.h
  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/vsttypes.h
