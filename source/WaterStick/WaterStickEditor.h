@@ -32,6 +32,18 @@ private:
     static std::set<TapButton*> dragAffectedButtons;
 };
 
+// Custom mode button class with center dot styling
+class ModeButton : public VSTGUI::CControl
+{
+public:
+    ModeButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    CLASS_METHODS(ModeButton, VSTGUI::CControl)
+};
+
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
 {
 public:
@@ -53,8 +65,12 @@ private:
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];
 
+    // Mode button reference
+    ModeButton* modeButton1;
+
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);
+    void createModeButtons(VSTGUI::CViewContainer* container);
 };
 
 } // namespace WaterStick

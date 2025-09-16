@@ -21,6 +21,9 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     for (int i = 0; i < 16; i++) {
         tapButtons[i] = nullptr;
     }
+
+    // Initialize mode button
+    modeButton1 = nullptr;
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -37,6 +40,9 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
     // Create tap buttons
     createTapButtons(container);
+
+    // Create mode buttons
+    createModeButtons(container);
 
     frame->addView(container);
 
@@ -96,6 +102,37 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
         // Add to container
         container->addView(button);
     }
+}
+
+void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
+{
+    // Button grid configuration (matching tap buttons)
+    const int buttonSize = 30;           // Button diameter
+    const int buttonSpacing = buttonSize / 2;  // Half diameter spacing
+    const int gridWidth = 8;            // 8 columns
+    const int gridHeight = 2;           // 2 rows
+
+    // Calculate total grid dimensions
+    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
+
+    // Center the grid in the window (matching tap buttons)
+    const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
+    const int tapGridTop = (kEditorHeight - (gridHeight * buttonSize + buttonSpacing)) / 2;
+
+    // Calculate mode button position
+    // Place 1.5x button spacing below the tap button grid
+    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 1.5);
+
+    // Position under column 1 (leftmost column)
+    const int modeButton1X = gridLeft;
+
+    VSTGUI::CRect modeButtonRect(modeButton1X, modeButtonY, modeButton1X + buttonSize, modeButtonY + buttonSize);
+
+    // Create mode button with temporary tag (-1 for now)
+    modeButton1 = new ModeButton(modeButtonRect, this, -1);
+
+    // Add to container
+    container->addView(modeButton1);
 }
 
 void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
@@ -243,6 +280,76 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
 {
     if (dragMode) {
         dragMode = false;
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+//------------------------------------------------------------------------
+// ModeButton Implementation
+//------------------------------------------------------------------------
+
+ModeButton::ModeButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+: VSTGUI::CControl(size, listener, tag)
+{
+    setMax(1.0);  // Binary on/off button
+    setMin(0.0);
+    setValue(0.0); // Start in unselected state
+}
+
+void ModeButton::draw(VSTGUI::CDrawContext* context)
+{
+    const VSTGUI::CRect& rect = getViewSize();
+    bool isSelected = (getValue() > 0.5);
+
+    // Set stroke width to 5px (matching tap buttons)
+    context->setLineWidth(5.0);
+    context->setFrameColor(VSTGUI::kBlackCColor);
+
+    // Create drawing rect that accounts for stroke width
+    // Inset by half the stroke width to prevent clipping
+    VSTGUI::CRect drawRect = rect;
+    const double strokeInset = 2.5; // Half of 5px stroke
+    drawRect.inset(strokeInset, strokeInset);
+
+    // Always draw the outer circle with black stroke, no fill
+    context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+
+    // Draw center dot (5px diameter)
+    const double centerDotRadius = 2.5; // 5px diameter = 2.5px radius
+    VSTGUI::CPoint center = drawRect.getCenter();
+    VSTGUI::CRect centerDotRect(
+        center.x - centerDotRadius,
+        center.y - centerDotRadius,
+        center.x + centerDotRadius,
+        center.y + centerDotRadius
+    );
+
+    if (isSelected) {
+        // Selected state: white center dot (for future implementation)
+        context->setFillColor(VSTGUI::kWhiteCColor);
+        context->drawEllipse(centerDotRect, VSTGUI::kDrawFilled);
+    } else {
+        // Unselected state: black center dot
+        context->setFillColor(VSTGUI::kBlackCColor);
+        context->drawEllipse(centerDotRect, VSTGUI::kDrawFilled);
+    }
+
+    setDirty(false);
+}
+
+VSTGUI::CMouseEventResult ModeButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (buttons & VSTGUI::kLButton) {
+        // Toggle button state
+        setValue(getValue() > 0.5 ? 0.0 : 1.0);
+        invalid();  // Trigger redraw
+
+        // Notify listener
+        if (listener) {
+            listener->valueChanged(this);
+        }
+
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
