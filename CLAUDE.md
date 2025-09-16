@@ -253,19 +253,52 @@ This specification ensures the VST3 clone captures both the sonic character and 
    - Advanced Features: Click-drag toggle functionality for efficient pattern editing
    - Why first: Essential for basic tap control and user workflow
 
-2. **Global Control Interface** (PENDING)
+### Phase 1.6: Tap Menu System ✅ COMPLETED
+**Contextual Parameter Navigation:**
+
+1. **✅ Mode Button Foundation**
+   - Visual: Custom ModeButton class with center dot styling
+   - Position: Under column 1 with proper 1.5x spacing from tap grid
+   - States: Unselected (black dot) and selected (white dot on black rounded rectangle)
+   - Rectangle: 1.5x circle size (37.5px) with 8px rounded corners, black fill only
+   - Color Inversion: Complete white circle stroke and white dot on black background
+   - Technical: Expanded view bounds (38x38px) to prevent rectangle clipping
+   - Foundation for contextual tap parameter control modes
+
+2. **Global Control Interface** (NEXT PRIORITY)
    - Target Controls: Input Gain, Output Gain, Delay Time, Dry/Wet, Sync Mode, Sync Division, Grid
    - Exclude for now: Individual tap Level/Pan controls (more complex layout)
    - Visual: Knobs and switches matching Eurorack aesthetic
    - Functionality: Real-time parameter control with host automation
-   - Why second: Provides complete basic functionality without overwhelming layout
+   - Why next: Provides complete basic functionality without overwhelming layout
 
-### Phase 2: Enhanced Tap Controls (FUTURE)
-- Individual tap level and pan controls
-- Visual meters for tap activity
-- Advanced layout with grouped controls
+### Phase 2: Tap Menu System Expansion ✅ COMPLETED
+**Multi-Mode Parameter Navigation:**
 
-### Phase 3: Advanced GUI Features (FUTURE)
+1. **✅ Additional Mode Buttons**
+   - Added mode buttons under columns 2-8 for different parameter contexts
+   - Implemented mutual exclusion (only one mode selected at a time)
+   - Applied visual consistency with first mode button design
+   - Enhanced ModeButton class with radio button behavior
+
+2. **Contextual Tap Indicators** (FUTURE)
+   - Level mode: Tap buttons show level values with visual feedback
+   - Pan mode: Tap buttons show stereo positioning
+   - Filter mode: Tap buttons show filter frequency/resonance
+   - Pitch mode: Tap buttons show granular pitch shift values
+   - Each mode changes tap button appearance and interaction
+
+3. **Mode Labels and Identification** (FUTURE)
+   - Text labels below mode buttons for clear identification
+   - Icons or symbols for quick mode recognition
+   - Extend rectangle design to accommodate labels
+
+### Phase 3: Enhanced Tap Controls (FUTURE)
+- Advanced per-tap parameter editing interfaces
+- Real-time visual meters for tap activity
+- Sophisticated parameter coupling and grouping
+
+### Phase 4: Advanced GUI Features (FUTURE)
 - Preset browser interface
 - Real-time waveform display
 - Enhanced visual feedback and animations
@@ -298,6 +331,7 @@ The foundation provides:
 - **Professional plugin standards** with full VST3 validation
 - **Crash-free GUI framework** using VSTGUIEditor for programmatic interface
 - **Professional audio behavior** with smooth fade transitions and clean buffer management
+- **Complete tap menu system** with 8 mode buttons and mutual exclusion for contextual parameter navigation
 
 ## Stretch Goals (Future Iterations)
 
