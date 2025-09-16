@@ -58,6 +58,9 @@ public:
     // Public helper for drag operations
     TapButton* getTapButtonAtPoint(const VSTGUI::CPoint& point);
 
+    // Mode button mutual exclusion
+    void handleModeButtonSelection(ModeButton* selectedButton);
+
 private:
     static constexpr int kEditorWidth = 400;
     static constexpr int kEditorHeight = 300;
@@ -65,8 +68,8 @@ private:
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];
 
-    // Mode button reference
-    ModeButton* modeButton1;
+    // Mode button references (8 total, one under each column)
+    ModeButton* modeButtons[8];
 
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);

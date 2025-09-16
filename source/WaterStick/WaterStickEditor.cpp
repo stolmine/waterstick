@@ -22,8 +22,10 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
         tapButtons[i] = nullptr;
     }
 
-    // Initialize mode button
-    modeButton1 = nullptr;
+    // Initialize mode buttons
+    for (int i = 0; i < 8; i++) {
+        modeButtons[i] = nullptr;
+    }
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -123,31 +125,46 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     // Place 1.5x button spacing below the tap button grid
     const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 1.5);
 
-    // Position under column 1 (leftmost column)
-    const int modeButton1X = gridLeft;
-
     // Calculate expanded view bounds to accommodate the rectangle
     // Circle size: 30px - 5px stroke = 25px
     // Rectangle size: 25px * 1.5 = 37.5px
     // Expansion needed: (37.5px - 30px) / 2 = 3.75px per side
     const int expansionNeeded = 4; // Round up to 4px for safety
 
-    VSTGUI::CRect modeButtonRect(
-        modeButton1X - expansionNeeded,
-        modeButtonY - expansionNeeded,
-        modeButton1X + buttonSize + expansionNeeded,
-        modeButtonY + buttonSize + expansionNeeded
-    );
+    // Create 8 mode buttons, one under each column
+    for (int i = 0; i < 8; i++) {
+        // Calculate X position for this mode button (under column i)
+        const int modeButtonX = gridLeft + i * (buttonSize + buttonSpacing);
 
-    // Create mode button with temporary tag (-1 for now)
-    modeButton1 = new ModeButton(modeButtonRect, this, -1);
+        VSTGUI::CRect modeButtonRect(
+            modeButtonX - expansionNeeded,
+            modeButtonY - expansionNeeded,
+            modeButtonX + buttonSize + expansionNeeded,
+            modeButtonY + buttonSize + expansionNeeded
+        );
 
-    // Add to container
-    container->addView(modeButton1);
+        // Create mode button with temporary tag (-1 for now, will be updated later)
+        modeButtons[i] = new ModeButton(modeButtonRect, this, -1);
+
+        // Set the first button as selected by default
+        if (i == 0) {
+            modeButtons[i]->setValue(1.0);
+        }
+
+        // Add to container
+        container->addView(modeButtons[i]);
+    }
 }
 
 void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 {
+    // Check if this is a mode button being selected
+    auto modeButton = dynamic_cast<ModeButton*>(control);
+    if (modeButton && modeButton->getValue() > 0.5) {
+        // Handle mutual exclusion for mode buttons
+        handleModeButtonSelection(modeButton);
+    }
+
     if (control && control->getTag() != -1) {
         // Update parameter in controller
         auto controller = getController();
@@ -179,6 +196,18 @@ TapButton* WaterStickEditor::getTapButtonAtPoint(const VSTGUI::CPoint& point)
         }
     }
     return nullptr;
+}
+
+void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
+{
+    // Implement mutual exclusion - only one mode button can be selected at a time
+    for (int i = 0; i < 8; i++) {
+        if (modeButtons[i] && modeButtons[i] != selectedButton) {
+            // Deselect all other mode buttons
+            modeButtons[i]->setValue(0.0);
+            modeButtons[i]->invalid(); // Trigger redraw
+        }
+    }
 }
 
 //------------------------------------------------------------------------
@@ -399,13 +428,16 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult ModeButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        // Toggle button state
-        setValue(getValue() > 0.5 ? 0.0 : 1.0);
-        invalid();  // Trigger redraw
+        // Only allow setting to selected state (1.0), don't allow deselecting
+        // The mutual exclusion system will handle deselecting other buttons
+        if (getValue() <= 0.5) {
+            setValue(1.0);
+            invalid();  // Trigger redraw
 
-        // Notify listener
-        if (listener) {
-            listener->valueChanged(this);
+            // Notify listener
+            if (listener) {
+                listener->valueChanged(this);
+            }
         }
 
         return VSTGUI::kMouseEventHandled;
