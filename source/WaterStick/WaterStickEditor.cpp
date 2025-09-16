@@ -8,6 +8,7 @@
 #include "vstgui/lib/ccolor.h"
 #include "vstgui/lib/cfont.h"
 #include "vstgui/lib/cframe.h"
+#include <cmath>
 
 namespace WaterStick {
 
@@ -329,25 +330,48 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 
         case TapContext::Volume:
         {
-            // Volume context: partial fill based on volume level
-            // Always draw the stroke
-            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
-
+            // Volume context: simulate circular clipping by drawing fill only in circle area
             if (currentValue > 0.0) {
-                // Calculate fill height based on volume (0.0 to 1.0)
-                VSTGUI::CRect fillRect = drawRect;
-                double fillHeight = drawRect.getHeight() * currentValue;
-                fillRect.top = fillRect.bottom - fillHeight;
+                // Apply intelligent scaling curve for better visual-to-audio correlation
+                double scaledValue = currentValue;
 
-                // Create a clipping path for the circle
-                context->saveGlobalState();
+                // Apply a subtle curve to prevent visual "100%" until truly at max
+                if (currentValue < 1.0) {
+                    scaledValue = currentValue * 0.95 + (currentValue * currentValue * 0.05);
+                }
 
-                // Set fill color and draw partial fill
+                // Calculate the circular area and fill height
+                VSTGUI::CPoint center = drawRect.getCenter();
+                double radius = std::min(drawRect.getWidth(), drawRect.getHeight()) / 2.0;
+                double fillHeight = drawRect.getHeight() * scaledValue;
+                double fillTop = drawRect.bottom - fillHeight;
+
+                // Draw horizontal lines to create the fill effect within the circle
                 context->setFillColor(VSTGUI::kBlackCColor);
-                context->drawRect(fillRect, VSTGUI::kDrawFilled);
 
-                context->restoreGlobalState();
+                for (double y = fillTop; y <= drawRect.bottom; y += 0.5) {
+                    // Calculate the width of the circle at this Y position
+                    double yFromCenter = y - center.y;
+                    double distanceFromCenter = std::abs(yFromCenter);
+
+                    if (distanceFromCenter < radius) {
+                        // Calculate line width using circle equation: x² + y² = r²
+                        double halfLineWidth = std::sqrt(radius * radius - distanceFromCenter * distanceFromCenter);
+
+                        VSTGUI::CRect lineRect(
+                            center.x - halfLineWidth,
+                            y,
+                            center.x + halfLineWidth,
+                            y + 0.5
+                        );
+
+                        context->drawRect(lineRect, VSTGUI::kDrawFilled);
+                    }
+                }
             }
+
+            // Always draw the circle stroke on top
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
             break;
         }
 
@@ -365,18 +389,51 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        // Start drag operation
-        dragMode = true;
+        if (currentContext == TapContext::Volume) {
+            // Volume context: Handle continuous control
+            isVolumeInteracting = true;
+            initialClickPoint = where;
+            initialVolumeValue = getValue();
 
-        // Clear the affected buttons set for this new drag operation
-        resetDragAffectedSet();
+            // For now, don't change the value - wait to see if it's a click or drag
+            return VSTGUI::kMouseEventHandled;
+        }
+        else {
+            // Enable context: Original toggle behavior
+            dragMode = true;
+            resetDragAffectedSet();
 
-        // Toggle this button (flip its current state)
-        setValue(getValue() > 0.5 ? 0.0 : 1.0);
-        invalid();  // Trigger redraw
+            setValue(getValue() > 0.5 ? 0.0 : 1.0);
+            invalid();
+            markButtonAsAffected(this);
 
-        // Mark this button as affected in this drag operation
-        markButtonAsAffected(this);
+            if (listener) {
+                listener->valueChanged(this);
+            }
+
+            return VSTGUI::kMouseEventHandled;
+        }
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (isVolumeInteracting && (buttons & VSTGUI::kLButton)) {
+        // Volume context: Handle continuous dragging
+        double deltaY = initialClickPoint.y - where.y;  // Negative deltaY = drag up = increase volume
+
+        // Scale the delta to a reasonable sensitivity
+        double sensitivity = 1.0 / 30.0;  // 30 pixels = full range (0.0 to 1.0)
+        double volumeChange = deltaY * sensitivity;
+
+        // Calculate new volume value
+        double newVolume = initialVolumeValue + volumeChange;
+        newVolume = std::max(0.0, std::min(1.0, newVolume));  // Clamp to [0.0, 1.0]
+
+        // Update value and redraw
+        setValue(newVolume);
+        invalid();
 
         // Notify listener
         if (listener) {
@@ -385,28 +442,19 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
 
         return VSTGUI::kMouseEventHandled;
     }
-    return VSTGUI::kMouseEventNotHandled;
-}
-
-VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
-{
-    if (dragMode && (buttons & VSTGUI::kLButton)) {
-        // Convert local coordinates to frame coordinates for hit testing
+    else if (dragMode && (buttons & VSTGUI::kLButton)) {
+        // Enable context: Original drag behavior
         VSTGUI::CPoint framePoint = where;
         localToFrame(framePoint);
 
-        // Get editor to find button at this point
         auto editor = dynamic_cast<WaterStickEditor*>(listener);
         if (editor) {
             auto targetButton = editor->getTapButtonAtPoint(framePoint);
             if (targetButton && !isButtonAlreadyAffected(targetButton)) {
-                // Toggle the target button's current state (flip it)
                 double newValue = targetButton->getValue() > 0.5 ? 0.0 : 1.0;
                 targetButton->setValue(newValue);
                 targetButton->invalid();
                 editor->valueChanged(targetButton);
-
-                // Mark this button as affected so it won't be toggled again
                 markButtonAsAffected(targetButton);
             }
         }
@@ -418,7 +466,40 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
 
 VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
-    if (dragMode) {
+    if (isVolumeInteracting) {
+        // Volume context: Check if this was a click or drag
+        double distance = std::sqrt(
+            std::pow(where.x - initialClickPoint.x, 2) +
+            std::pow(where.y - initialClickPoint.y, 2)
+        );
+
+        if (distance < DRAG_THRESHOLD) {
+            // This was a click - set volume based on absolute position within circle
+            const VSTGUI::CRect& rect = getViewSize();
+            VSTGUI::CRect drawRect = rect;
+            const double strokeInset = 2.5; // Half of 5px stroke
+            drawRect.inset(strokeInset, strokeInset);
+
+            // Calculate position within the circle (0.0 = bottom, 1.0 = top)
+            double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
+            relativeY = std::max(0.0, std::min(1.0, relativeY)); // Clamp to [0.0, 1.0]
+
+            // Set the volume value
+            setValue(relativeY);
+            invalid();
+
+            // Notify listener
+            if (listener) {
+                listener->valueChanged(this);
+            }
+        }
+        // If it was a drag, the value was already set during onMouseMoved
+
+        isVolumeInteracting = false;
+        return VSTGUI::kMouseEventHandled;
+    }
+    else if (dragMode) {
+        // Enable context: Original behavior
         dragMode = false;
         return VSTGUI::kMouseEventHandled;
     }
