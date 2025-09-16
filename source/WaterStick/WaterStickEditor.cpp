@@ -448,6 +448,69 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             break;
         }
 
+        case TapContext::Pan:
+        {
+            // Pan context: full-width rectangle with black fill, clipped to circle bounds
+            // All pan positions show minimum 5px height rectangle centered vertically
+            // Left pan (0.0) = 5px baseline + bottom half expansion
+            // Center pan (0.5) = 5px baseline only
+            // Right pan (1.0) = 5px baseline + top half expansion
+
+            VSTGUI::CPoint center = drawRect.getCenter();
+            double radius = std::min(drawRect.getWidth(), drawRect.getHeight()) / 2.0;
+
+            context->setFillColor(VSTGUI::kBlackCColor);
+
+            // Always start with the 5px baseline rectangle (2.5px above and below center)
+            const double baselineHalfHeight = 2.5; // 5px total baseline height
+            double fillTop = center.y - baselineHalfHeight;
+            double fillBottom = center.y + baselineHalfHeight;
+
+            if (currentValue < 0.5) {
+                // Left pan (0.0-0.5): expand downward beyond baseline
+                // Map 0.0-0.5 to 1.0-0.0 for additional fill amount
+                double fillAmount = (0.5 - currentValue) * 2.0;
+
+                // Calculate additional fill area from baseline bottom downward
+                double additionalFillHeight = ((drawRect.getHeight() / 2.0) - baselineHalfHeight) * fillAmount;
+                fillBottom = center.y + baselineHalfHeight + additionalFillHeight;
+            }
+            else if (currentValue > 0.5) {
+                // Right pan (0.5-1.0): expand upward beyond baseline
+                // Map 0.5-1.0 to 0.0-1.0 for additional fill amount
+                double fillAmount = (currentValue - 0.5) * 2.0;
+
+                // Calculate additional fill area from baseline top upward
+                double additionalFillHeight = ((drawRect.getHeight() / 2.0) - baselineHalfHeight) * fillAmount;
+                fillTop = center.y - baselineHalfHeight - additionalFillHeight;
+            }
+            // For exactly center (0.5), fillTop and fillBottom remain at baseline values
+
+            // Draw horizontal lines to create the fill effect within the circle
+            for (double y = fillTop; y <= fillBottom; y += 0.5) {
+                double yFromCenter = y - center.y;
+                double distanceFromCenter = std::abs(yFromCenter);
+
+                if (distanceFromCenter < radius) {
+                    // Calculate line width using circle equation: x² + y² = r²
+                    double halfLineWidth = std::sqrt(radius * radius - distanceFromCenter * distanceFromCenter);
+
+                    VSTGUI::CRect lineRect(
+                        center.x - halfLineWidth,
+                        y,
+                        center.x + halfLineWidth,
+                        y + 0.5
+                    );
+
+                    context->drawRect(lineRect, VSTGUI::kDrawFilled);
+                }
+            }
+
+            // Always draw the circle stroke on top
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            break;
+        }
+
         default:
         {
             // Future contexts: for now, just draw outline
@@ -462,8 +525,8 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        if (currentContext == TapContext::Volume) {
-            // Volume context: Handle continuous control
+        if (currentContext == TapContext::Volume || currentContext == TapContext::Pan) {
+            // Volume and Pan contexts: Handle continuous control
             isVolumeInteracting = true;
             initialClickPoint = where;
             initialVolumeValue = getValue();
@@ -493,9 +556,9 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
 VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isVolumeInteracting && (buttons & VSTGUI::kLButton)) {
-        // Volume context: Handle continuous dragging
+        // Volume and Pan contexts: Handle continuous dragging
         double deltaX = where.x - initialClickPoint.x;
-        double deltaY = initialClickPoint.y - where.y;  // Negative deltaY = drag up = increase volume
+        double deltaY = initialClickPoint.y - where.y;  // Negative deltaY = drag up = increase value
 
         // Determine drag direction if not already set
         if (currentDragDirection == DragDirection::None) {
@@ -512,7 +575,7 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
         }
 
         if (currentDragDirection == DragDirection::Horizontal) {
-            // Horizontal drag: Set volume on different taps based on mouse position
+            // Horizontal drag: Set value on different taps based on mouse position
             VSTGUI::CPoint framePoint = where;
             localToFrame(framePoint);
 
@@ -520,7 +583,7 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
             if (editor) {
                 auto targetButton = editor->getTapButtonAtPoint(framePoint);
                 if (targetButton) {
-                    // Calculate volume based on vertical position within the target button
+                    // Calculate value based on vertical position within the target button
                     const VSTGUI::CRect& targetRect = targetButton->getViewSize();
                     VSTGUI::CRect targetDrawRect = targetRect;
                     const double strokeInset = 2.5; // Half of 5px stroke
@@ -530,26 +593,33 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
                     VSTGUI::CPoint localPoint = framePoint;
                     targetButton->frameToLocal(localPoint);
 
-                    // Calculate volume based on Y position within target button
-                    double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
-                    relativeY = std::max(0.0, std::min(1.0, relativeY)); // Clamp to [0.0, 1.0]
+                    double newValue;
+                    if (currentContext == TapContext::Volume) {
+                        // Volume: bottom = 0.0, top = 1.0
+                        double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
+                        newValue = std::max(0.0, std::min(1.0, relativeY));
+                    } else { // TapContext::Pan
+                        // Pan: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
+                        double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
+                        newValue = std::max(0.0, std::min(1.0, relativeY));
+                    }
 
-                    // Update the target button's volume
-                    targetButton->setValue(relativeY);
+                    // Update the target button's value
+                    targetButton->setValue(newValue);
                     targetButton->invalid();
                     editor->valueChanged(targetButton);
                 }
             }
         }
         else if (currentDragDirection == DragDirection::Vertical) {
-            // Vertical drag: Relative volume adjustment on this button
+            // Vertical drag: Relative adjustment on this button
             double sensitivity = 1.0 / 30.0;  // 30 pixels = full range (0.0 to 1.0)
-            double volumeChange = deltaY * sensitivity;
+            double valueChange = deltaY * sensitivity;
 
-            double newVolume = initialVolumeValue + volumeChange;
-            newVolume = std::max(0.0, std::min(1.0, newVolume));  // Clamp to [0.0, 1.0]
+            double newValue = initialVolumeValue + valueChange;
+            newValue = std::max(0.0, std::min(1.0, newValue));  // Clamp to [0.0, 1.0]
 
-            setValue(newVolume);
+            setValue(newValue);
             invalid();
 
             if (listener) {
@@ -584,20 +654,27 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
 VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isVolumeInteracting) {
-        // Volume context: Check if this was a click or drag
+        // Volume and Pan contexts: Check if this was a click or drag
         if (currentDragDirection == DragDirection::None) {
-            // This was a click - set volume based on absolute position within circle
+            // This was a click - set value based on absolute position within circle
             const VSTGUI::CRect& rect = getViewSize();
             VSTGUI::CRect drawRect = rect;
             const double strokeInset = 2.5; // Half of 5px stroke
             drawRect.inset(strokeInset, strokeInset);
 
-            // Calculate position within the circle (0.0 = bottom, 1.0 = top)
-            double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
-            relativeY = std::max(0.0, std::min(1.0, relativeY)); // Clamp to [0.0, 1.0]
+            double newValue;
+            if (currentContext == TapContext::Volume) {
+                // Volume: bottom = 0.0, top = 1.0
+                double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
+                newValue = std::max(0.0, std::min(1.0, relativeY));
+            } else { // TapContext::Pan
+                // Pan: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
+                double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
+                newValue = std::max(0.0, std::min(1.0, relativeY));
+            }
 
-            // Set the volume value
-            setValue(relativeY);
+            // Set the value
+            setValue(newValue);
             invalid();
 
             // Notify listener
