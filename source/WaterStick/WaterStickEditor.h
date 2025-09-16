@@ -7,7 +7,7 @@
 
 namespace WaterStick {
 
-// Custom tap button class with specific styling
+// Custom tap button class with specific styling and click-drag support
 class TapButton : public VSTGUI::CControl
 {
 public:
@@ -15,8 +15,19 @@ public:
 
     void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
     VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    // Helper methods for drag functionality
+    void setDragTargetValue(double value) { dragTargetValue = value; }
+    bool isDragOperation() const { return dragMode; }
 
     CLASS_METHODS(TapButton, VSTGUI::CControl)
+
+private:
+    bool dragMode = false;
+    double dragTargetValue = 0.0;
+    double initialValue = 0.0;
 };
 
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
@@ -29,6 +40,9 @@ public:
 
     // IControlListener
     void valueChanged(VSTGUI::CControl* control) SMTG_OVERRIDE;
+
+    // Public helper for drag operations
+    TapButton* getTapButtonAtPoint(const VSTGUI::CPoint& point);
 
 private:
     static constexpr int kEditorWidth = 400;

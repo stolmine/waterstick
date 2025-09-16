@@ -110,6 +110,29 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
     }
 }
 
+TapButton* WaterStickEditor::getTapButtonAtPoint(const VSTGUI::CPoint& point)
+{
+    // Check all tap buttons to see if the point is within their bounds
+    for (int i = 0; i < 16; i++) {
+        if (tapButtons[i]) {
+            auto button = static_cast<TapButton*>(tapButtons[i]);
+            VSTGUI::CRect buttonRect = button->getViewSize();
+
+            // Convert button rect to frame coordinates for comparison
+            VSTGUI::CPoint topLeft = buttonRect.getTopLeft();
+            VSTGUI::CPoint bottomRight = buttonRect.getBottomRight();
+            button->localToFrame(topLeft);
+            button->localToFrame(bottomRight);
+
+            VSTGUI::CRect frameRect(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y);
+            if (frameRect.pointInside(point)) {
+                return button;
+            }
+        }
+    }
+    return nullptr;
+}
+
 //------------------------------------------------------------------------
 // TapButton Implementation
 //------------------------------------------------------------------------
@@ -151,8 +174,13 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        // Toggle value
-        setValue(getValue() > 0.5 ? 0.0 : 1.0);
+        // Store initial state for drag operation
+        initialValue = getValue();
+        dragTargetValue = initialValue > 0.5 ? 0.0 : 1.0;  // Opposite of current state
+        dragMode = true;
+
+        // Immediately toggle this button
+        setValue(dragTargetValue);
         invalid();  // Trigger redraw
 
         // Notify listener
@@ -160,6 +188,41 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
             listener->valueChanged(this);
         }
 
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (dragMode && (buttons & VSTGUI::kLButton)) {
+        // Convert local coordinates to frame coordinates for hit testing
+        VSTGUI::CPoint framePoint = where;
+        localToFrame(framePoint);
+
+        // Get editor to find button at this point
+        auto editor = dynamic_cast<WaterStickEditor*>(listener);
+        if (editor) {
+            auto targetButton = editor->getTapButtonAtPoint(framePoint);
+            if (targetButton && targetButton != this) {
+                // Only toggle if button's current state differs from our target state
+                if ((targetButton->getValue() > 0.5) != (dragTargetValue > 0.5)) {
+                    targetButton->setValue(dragTargetValue);
+                    targetButton->invalid();
+                    editor->valueChanged(targetButton);
+                }
+            }
+        }
+
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (dragMode) {
+        dragMode = false;
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
