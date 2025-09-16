@@ -57,7 +57,7 @@ private:
     bool isVolumeInteracting = false;
     VSTGUI::CPoint initialClickPoint;
     float initialVolumeValue = 0.0f;
-    static constexpr double DRAG_THRESHOLD = 3.0;  // Pixels before we consider it a drag
+    static constexpr double DRAG_THRESHOLD = 5.25;  // Pixels before we consider it a drag (3 * 1.75)
 
     // Drag direction tracking
     enum class DragDirection {
@@ -106,8 +106,8 @@ public:
     int getTapParameterIdForContext(int tapButtonIndex, TapContext context) const;
 
 private:
-    static constexpr int kEditorWidth = 400;
-    static constexpr int kEditorHeight = 300;
+    static constexpr int kEditorWidth = 700;   // 400 * 1.75
+    static constexpr int kEditorHeight = 525;  // 300 * 1.75
 
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];

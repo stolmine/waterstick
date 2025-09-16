@@ -63,8 +63,8 @@ void PLUGIN_API WaterStickEditor::close()
 
 void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
 {
-    // Button grid configuration
-    const int buttonSize = 30;           // Button diameter
+    // Button grid configuration (scaled by 1.75x)
+    const int buttonSize = 53;           // Button diameter (30 * 1.75 = 52.5, rounded to 53)
     const int buttonSpacing = buttonSize / 2;  // Half diameter spacing
     const int gridWidth = 8;            // 8 columns
     const int gridHeight = 2;           // 2 rows
@@ -127,8 +127,8 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
 
 void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 {
-    // Button grid configuration (matching tap buttons)
-    const int buttonSize = 30;           // Button diameter
+    // Button grid configuration (matching tap buttons, scaled by 1.75x)
+    const int buttonSize = 53;           // Button diameter (30 * 1.75 = 52.5, rounded to 53)
     const int buttonSpacing = buttonSize / 2;  // Half diameter spacing
     const int gridWidth = 8;            // 8 columns
     const int gridHeight = 2;           // 2 rows
@@ -144,11 +144,11 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     // Place 1.5x button spacing below the tap button grid
     const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 1.5);
 
-    // Calculate expanded view bounds to accommodate the rectangle
-    // Circle size: 30px - 5px stroke = 25px
-    // Rectangle size: 25px * 1.5 = 37.5px
-    // Expansion needed: (37.5px - 30px) / 2 = 3.75px per side
-    const int expansionNeeded = 4; // Round up to 4px for safety
+    // Calculate expanded view bounds to accommodate the rectangle (scaled by 1.75x)
+    // Circle size: 53px - 5px stroke = 48px (keeping 5px stroke width)
+    // Rectangle size: 48px * 1.5 = 72px
+    // Expansion needed: (72px - 53px) / 2 = 9.5px per side
+    const int expansionNeeded = 10; // Round up to 10px for safety
 
     // Create 8 mode buttons, one under each column
     for (int i = 0; i < 8; i++) {
@@ -613,7 +613,7 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
         }
         else if (currentDragDirection == DragDirection::Vertical) {
             // Vertical drag: Relative adjustment on this button
-            double sensitivity = 1.0 / 30.0;  // 30 pixels = full range (0.0 to 1.0)
+            double sensitivity = 1.0 / 52.5;  // 52.5 pixels = full range (0.0 to 1.0) - scaled by 1.75x
             double valueChange = deltaY * sensitivity;
 
             double newValue = initialVolumeValue + valueChange;
@@ -714,8 +714,8 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
     const VSTGUI::CRect& rect = getViewSize();
     bool isSelected = (getValue() > 0.5);
 
-    // Define the logical button area (30x30px) centered in the expanded view
-    const double buttonSize = 30.0;
+    // Define the logical button area (53x53px) centered in the expanded view (scaled by 1.75x)
+    const double buttonSize = 53.0;
     VSTGUI::CPoint viewCenter = rect.getCenter();
     const double halfButtonSize = buttonSize / 2.0;
 
@@ -728,9 +728,9 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
 
     if (isSelected) {
         // Calculate rectangle size as 1.5x the circle size
-        const double strokeInset = 2.5; // Half of 5px stroke width
-        const double circleSize = buttonSize - (strokeInset * 2); // 30px - 5px = 25px
-        const double rectangleSize = circleSize * 1.5; // 25px * 1.5 = 37.5px
+        const double strokeInset = 2.5; // Half of 5px stroke width (keeping 5px)
+        const double circleSize = buttonSize - (strokeInset * 2); // 53px - 5px = 48px
+        const double rectangleSize = circleSize * 1.5; // 48px * 1.5 = 72px
 
         // Center rectangle on the button's center
         const double halfRectSize = rectangleSize / 2.0;
@@ -743,7 +743,7 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
         );
 
         // Draw black rounded rectangle background (no stroke, fill only)
-        const double cornerRadius = 8.0; // Circular corner radius
+        const double cornerRadius = 14.0; // Circular corner radius (8 * 1.75 = 14)
         context->setFillColor(VSTGUI::kBlackCColor);
         context->setDrawMode(VSTGUI::kAntiAliasing);
 
@@ -774,8 +774,8 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
         context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
     }
 
-    // Draw center dot (7px diameter)
-    const double centerDotRadius = 3.5; // 7px diameter = 3.5px radius
+    // Draw center dot (12px diameter, scaled by 1.75x)
+    const double centerDotRadius = 6.125; // 12.25px diameter = 6.125px radius (7 * 1.75)
     VSTGUI::CPoint center = drawRect.getCenter();
     VSTGUI::CRect centerDotRect(
         center.x - centerDotRadius,
