@@ -136,11 +136,25 @@ TapButton* WaterStickEditor::getTapButtonAtPoint(const VSTGUI::CPoint& point)
 //------------------------------------------------------------------------
 // TapButton Implementation
 //------------------------------------------------------------------------
+
+// Static member definition
+std::set<TapButton*> TapButton::dragAffectedButtons;
+
 TapButton::TapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
 : VSTGUI::CControl(size, listener, tag)
 {
     setMax(1.0);  // Binary on/off button
     setMin(0.0);
+}
+
+bool TapButton::isButtonAlreadyAffected(TapButton* button) const
+{
+    return dragAffectedButtons.find(button) != dragAffectedButtons.end();
+}
+
+void TapButton::markButtonAsAffected(TapButton* button)
+{
+    dragAffectedButtons.insert(button);
 }
 
 void TapButton::draw(VSTGUI::CDrawContext* context)
@@ -174,14 +188,18 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        // Store initial state for drag operation
-        initialValue = getValue();
-        dragTargetValue = initialValue > 0.5 ? 0.0 : 1.0;  // Opposite of current state
+        // Start drag operation
         dragMode = true;
 
-        // Immediately toggle this button
-        setValue(dragTargetValue);
+        // Clear the affected buttons set for this new drag operation
+        resetDragAffectedSet();
+
+        // Toggle this button (flip its current state)
+        setValue(getValue() > 0.5 ? 0.0 : 1.0);
         invalid();  // Trigger redraw
+
+        // Mark this button as affected in this drag operation
+        markButtonAsAffected(this);
 
         // Notify listener
         if (listener) {
@@ -204,13 +222,15 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
         auto editor = dynamic_cast<WaterStickEditor*>(listener);
         if (editor) {
             auto targetButton = editor->getTapButtonAtPoint(framePoint);
-            if (targetButton && targetButton != this) {
-                // Only toggle if button's current state differs from our target state
-                if ((targetButton->getValue() > 0.5) != (dragTargetValue > 0.5)) {
-                    targetButton->setValue(dragTargetValue);
-                    targetButton->invalid();
-                    editor->valueChanged(targetButton);
-                }
+            if (targetButton && !isButtonAlreadyAffected(targetButton)) {
+                // Toggle the target button's current state (flip it)
+                double newValue = targetButton->getValue() > 0.5 ? 0.0 : 1.0;
+                targetButton->setValue(newValue);
+                targetButton->invalid();
+                editor->valueChanged(targetButton);
+
+                // Mark this button as affected so it won't be toggled again
+                markButtonAsAffected(targetButton);
             }
         }
 

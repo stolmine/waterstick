@@ -4,6 +4,7 @@
 #include "vstgui/lib/controls/ccontrol.h"
 #include "vstgui/lib/cdrawcontext.h"
 #include "vstgui/lib/controls/icontrollistener.h"
+#include <set>
 
 namespace WaterStick {
 
@@ -19,15 +20,16 @@ public:
     VSTGUI::CMouseEventResult onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
 
     // Helper methods for drag functionality
-    void setDragTargetValue(double value) { dragTargetValue = value; }
     bool isDragOperation() const { return dragMode; }
+    void resetDragAffectedSet() { dragAffectedButtons.clear(); }
+    bool isButtonAlreadyAffected(TapButton* button) const;
+    void markButtonAsAffected(TapButton* button);
 
     CLASS_METHODS(TapButton, VSTGUI::CControl)
 
 private:
     bool dragMode = false;
-    double dragTargetValue = 0.0;
-    double initialValue = 0.0;
+    static std::set<TapButton*> dragAffectedButtons;
 };
 
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
