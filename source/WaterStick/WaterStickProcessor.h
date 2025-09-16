@@ -213,9 +213,15 @@ private:
 
     // Fade-out state for smooth tap disengagement
     bool mTapFadingOut[16];        // True when tap is fading out
-    int mTapFadeRemaining[16];     // Samples remaining in fade
-    int mTapFadeTotalLength[16];   // Total fade length for calculation
-    float mTapFadeGain[16];        // Current fade gain (1.0 to 0.0)
+    int mTapFadeOutRemaining[16];  // Samples remaining in fade-out
+    int mTapFadeOutTotalLength[16]; // Total fade-out length for calculation
+
+    // Fade-in state for smooth tap engagement
+    bool mTapFadingIn[16];         // True when tap is fading in
+    int mTapFadeInRemaining[16];   // Samples remaining in fade-in
+    int mTapFadeInTotalLength[16]; // Total fade-in length for calculation
+
+    float mTapFadeGain[16];        // Current fade gain (0.0 to 1.0)
 
     // DSP
     DualDelayLine mDelayLineL;  // Keep original for legacy

@@ -621,8 +621,14 @@ WaterStickProcessor::WaterStickProcessor()
 
         // Initialize fade-out state
         mTapFadingOut[i] = false;
-        mTapFadeRemaining[i] = 0;
-        mTapFadeTotalLength[i] = 0;
+        mTapFadeOutRemaining[i] = 0;
+        mTapFadeOutTotalLength[i] = 0;
+
+        // Initialize fade-in state
+        mTapFadingIn[i] = false;
+        mTapFadeInRemaining[i] = 0;
+        mTapFadeInTotalLength[i] = 0;
+
         mTapFadeGain[i] = 1.0f;
     }
 
@@ -640,24 +646,33 @@ void WaterStickProcessor::checkTapStateChangesAndClearBuffers()
         if (mTapEnabledPrevious[i] && !mTapEnabled[i]) {
             // Start fade-out instead of immediate cut
             mTapFadingOut[i] = true;
-            mTapFadeGain[i] = 1.0f;  // Start at full gain
+            mTapFadingIn[i] = false;  // Stop any fade-in
+            mTapFadeGain[i] = 1.0f;   // Start at full gain
 
-            // Calculate fade length proportional to delay time (but capped)
+            // Calculate fade-out length proportional to delay time (but capped)
             float tapDelayTime = mTapDistribution.getTapDelayTime(i);
             int fadeLength = static_cast<int>(tapDelayTime * mSampleRate * 0.01f); // 1% of delay time
             fadeLength = std::max(64, std::min(fadeLength, 2048)); // Cap between 64-2048 samples
-            mTapFadeRemaining[i] = fadeLength;
-            mTapFadeTotalLength[i] = fadeLength;  // Store total length for exponential calculation
+            mTapFadeOutRemaining[i] = fadeLength;
+            mTapFadeOutTotalLength[i] = fadeLength;
         }
         // Check if tap went from disabled to enabled
         else if (!mTapEnabledPrevious[i] && mTapEnabled[i]) {
-            // Stop any ongoing fade and clear buffers for clean start
+            // Stop any ongoing fade-out and start fade-in
             mTapFadingOut[i] = false;
-            mTapFadeRemaining[i] = 0;
-            mTapFadeTotalLength[i] = 0;
-            mTapFadeGain[i] = 1.0f;
+            mTapFadingIn[i] = true;
+            mTapFadeGain[i] = 0.0f;   // Start at zero gain
+
+            // Clear buffers for clean start
             mTapDelayLinesL[i].reset();
             mTapDelayLinesR[i].reset();
+
+            // Calculate fade-in length - much shorter than fade-out (0.25% of delay time)
+            float tapDelayTime = mTapDistribution.getTapDelayTime(i);
+            int fadeLength = static_cast<int>(tapDelayTime * mSampleRate * 0.0025f); // 0.25% of delay time
+            fadeLength = std::max(16, std::min(fadeLength, 512)); // Cap between 16-512 samples (0.3ms-11.6ms)
+            mTapFadeInRemaining[i] = fadeLength;
+            mTapFadeInTotalLength[i] = fadeLength;
         }
 
         // Update previous state for next call
@@ -1006,7 +1021,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float sumR = 0.0f;
 
         for (int tap = 0; tap < NUM_TAPS; tap++) {
-            bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap];
+            bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
             if (processTap) {
                 // Process through both L and R delay lines for this tap
@@ -1024,19 +1039,35 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                     tapOutputL *= mTapFadeGain[tap];
                     tapOutputR *= mTapFadeGain[tap];
 
-                    // Update fade state
-                    mTapFadeRemaining[tap]--;
-                    if (mTapFadeRemaining[tap] <= 0) {
-                        // Fade complete - clear buffers and stop fading
+                    // Update fade-out state
+                    mTapFadeOutRemaining[tap]--;
+                    if (mTapFadeOutRemaining[tap] <= 0) {
+                        // Fade-out complete - clear buffers and stop fading
                         mTapFadingOut[tap] = false;
                         mTapFadeGain[tap] = 1.0f;
                         mTapDelayLinesL[tap].reset();
                         mTapDelayLinesR[tap].reset();
                     } else {
-                        // Calculate exponential fade (sounds more natural)
-                        // Progress from 1.0 (start) to 0.0 (end) using exponential curve
-                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeRemaining[tap]) / static_cast<float>(mTapFadeTotalLength[tap]));
+                        // Calculate exponential fade-out (1.0 to 0.0)
+                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeOutRemaining[tap]) / static_cast<float>(mTapFadeOutTotalLength[tap]));
                         mTapFadeGain[tap] = std::exp(-6.0f * fadeProgress); // -60dB fade curve
+                    }
+                }
+                // Apply fade-in if in progress
+                else if (mTapFadingIn[tap]) {
+                    tapOutputL *= mTapFadeGain[tap];
+                    tapOutputR *= mTapFadeGain[tap];
+
+                    // Update fade-in state
+                    mTapFadeInRemaining[tap]--;
+                    if (mTapFadeInRemaining[tap] <= 0) {
+                        // Fade-in complete - set to full gain and stop fading
+                        mTapFadingIn[tap] = false;
+                        mTapFadeGain[tap] = 1.0f;
+                    } else {
+                        // Calculate exponential fade-in (0.0 to 1.0)
+                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeInRemaining[tap]) / static_cast<float>(mTapFadeInTotalLength[tap]));
+                        mTapFadeGain[tap] = 1.0f - std::exp(-6.0f * fadeProgress); // Inverse exponential for fade-in
                     }
                 }
 
