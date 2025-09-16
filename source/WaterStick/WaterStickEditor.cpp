@@ -91,12 +91,21 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
         // Create custom tap button
         auto button = new TapButton(buttonRect, this, kTap1Enable + (i * 3));
 
-        // Set initial state based on parameter value
+        // Initialize context state
+        button->setContext(TapContext::Enable);
+
+        // Set initial state based on parameter value for Enable context
         auto controller = getController();
         if (controller) {
             auto paramValue = controller->getParamNormalized(button->getTag());
             button->setValue(paramValue);
+            button->setContextValue(TapContext::Enable, paramValue);
         }
+
+        // Initialize default values for other contexts
+        button->setContextValue(TapContext::Volume, 0.8f);  // Default 80% volume
+        button->setContextValue(TapContext::Pan, 0.5f);     // Default center pan
+        button->setContextValue(TapContext::Filter, 0.5f);  // Default filter setting
 
         // Store reference for easy access
         tapButtons[i] = button;
@@ -208,6 +217,57 @@ void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
             modeButtons[i]->invalid(); // Trigger redraw
         }
     }
+
+    // Switch to the corresponding context
+    int selectedIndex = getSelectedModeButtonIndex();
+    if (selectedIndex >= 0 && selectedIndex < static_cast<int>(TapContext::COUNT)) {
+        switchToContext(static_cast<TapContext>(selectedIndex));
+    }
+}
+
+void WaterStickEditor::switchToContext(TapContext newContext)
+{
+    if (newContext == currentContext) {
+        return; // Already in this context
+    }
+
+    // Save current context values from tap buttons to their internal state
+    for (int i = 0; i < 16; i++) {
+        auto tapButton = static_cast<TapButton*>(tapButtons[i]);
+        if (tapButton) {
+            // Store the current VST parameter value in the button's context storage
+            tapButton->setContextValue(currentContext, tapButton->getValue());
+        }
+    }
+
+    // Switch to new context
+    currentContext = newContext;
+
+    // Load new context values from button internal state to display
+    for (int i = 0; i < 16; i++) {
+        auto tapButton = static_cast<TapButton*>(tapButtons[i]);
+        if (tapButton) {
+            // Set the context for the button
+            tapButton->setContext(newContext);
+
+            // Load the stored value for this context
+            float contextValue = tapButton->getContextValue(newContext);
+            tapButton->setValue(contextValue);
+
+            // Trigger visual update
+            tapButton->invalid();
+        }
+    }
+}
+
+int WaterStickEditor::getSelectedModeButtonIndex() const
+{
+    for (int i = 0; i < 8; i++) {
+        if (modeButtons[i] && modeButtons[i]->getValue() > 0.5) {
+            return i;
+        }
+    }
+    return 0; // Default to first button if none selected
 }
 
 //------------------------------------------------------------------------
@@ -237,7 +297,7 @@ void TapButton::markButtonAsAffected(TapButton* button)
 void TapButton::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
-    bool isEnabled = (getValue() > 0.5);
+    float currentValue = getValue();
 
     // Set stroke width to 5px
     context->setLineWidth(5.0);
@@ -249,14 +309,54 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
     const double strokeInset = 2.5; // Half of 5px stroke
     drawRect.inset(strokeInset, strokeInset);
 
-    if (isEnabled) {
-        // Enabled state: black fill with black stroke
-        context->setFillColor(VSTGUI::kBlackCColor);
-        context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
-        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
-    } else {
-        // Disabled state: no fill, black stroke only
-        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+    // Draw different visualizations based on context
+    switch (currentContext) {
+        case TapContext::Enable:
+        {
+            // Original enable/disable behavior
+            bool isEnabled = (currentValue > 0.5);
+            if (isEnabled) {
+                // Enabled state: black fill with black stroke
+                context->setFillColor(VSTGUI::kBlackCColor);
+                context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
+                context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            } else {
+                // Disabled state: no fill, black stroke only
+                context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            }
+            break;
+        }
+
+        case TapContext::Volume:
+        {
+            // Volume context: partial fill based on volume level
+            // Always draw the stroke
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+
+            if (currentValue > 0.0) {
+                // Calculate fill height based on volume (0.0 to 1.0)
+                VSTGUI::CRect fillRect = drawRect;
+                double fillHeight = drawRect.getHeight() * currentValue;
+                fillRect.top = fillRect.bottom - fillHeight;
+
+                // Create a clipping path for the circle
+                context->saveGlobalState();
+
+                // Set fill color and draw partial fill
+                context->setFillColor(VSTGUI::kBlackCColor);
+                context->drawRect(fillRect, VSTGUI::kDrawFilled);
+
+                context->restoreGlobalState();
+            }
+            break;
+        }
+
+        default:
+        {
+            // Future contexts: for now, just draw outline
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            break;
+        }
     }
 
     setDirty(false);
