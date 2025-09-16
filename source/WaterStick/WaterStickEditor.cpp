@@ -126,7 +126,18 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     // Position under column 1 (leftmost column)
     const int modeButton1X = gridLeft;
 
-    VSTGUI::CRect modeButtonRect(modeButton1X, modeButtonY, modeButton1X + buttonSize, modeButtonY + buttonSize);
+    // Calculate expanded view bounds to accommodate the rectangle
+    // Circle size: 30px - 5px stroke = 25px
+    // Rectangle size: 25px * 1.5 = 37.5px
+    // Expansion needed: (37.5px - 30px) / 2 = 3.75px per side
+    const int expansionNeeded = 4; // Round up to 4px for safety
+
+    VSTGUI::CRect modeButtonRect(
+        modeButton1X - expansionNeeded,
+        modeButtonY - expansionNeeded,
+        modeButton1X + buttonSize + expansionNeeded,
+        modeButtonY + buttonSize + expansionNeeded
+    );
 
     // Create mode button with temporary tag (-1 for now)
     modeButton1 = new ModeButton(modeButtonRect, this, -1);
@@ -302,21 +313,68 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
     const VSTGUI::CRect& rect = getViewSize();
     bool isSelected = (getValue() > 0.5);
 
+    // Define the logical button area (30x30px) centered in the expanded view
+    const double buttonSize = 30.0;
+    VSTGUI::CPoint viewCenter = rect.getCenter();
+    const double halfButtonSize = buttonSize / 2.0;
+
+    VSTGUI::CRect buttonRect(
+        viewCenter.x - halfButtonSize,
+        viewCenter.y - halfButtonSize,
+        viewCenter.x + halfButtonSize,
+        viewCenter.y + halfButtonSize
+    );
+
+    if (isSelected) {
+        // Calculate rectangle size as 1.5x the circle size
+        const double strokeInset = 2.5; // Half of 5px stroke width
+        const double circleSize = buttonSize - (strokeInset * 2); // 30px - 5px = 25px
+        const double rectangleSize = circleSize * 1.5; // 25px * 1.5 = 37.5px
+
+        // Center rectangle on the button's center
+        const double halfRectSize = rectangleSize / 2.0;
+
+        VSTGUI::CRect backgroundRect(
+            viewCenter.x - halfRectSize,
+            viewCenter.y - halfRectSize,
+            viewCenter.x + halfRectSize,
+            viewCenter.y + halfRectSize
+        );
+
+        // Draw black rounded rectangle background (no stroke, fill only)
+        const double cornerRadius = 8.0; // Circular corner radius
+        context->setFillColor(VSTGUI::kBlackCColor);
+        context->setDrawMode(VSTGUI::kAntiAliasing);
+
+        // Use graphics path for rounded rectangle
+        VSTGUI::CGraphicsPath* path = context->createRoundRectGraphicsPath(backgroundRect, cornerRadius);
+        if (path) {
+            context->drawGraphicsPath(path, VSTGUI::CDrawContext::kPathFilled);
+            path->forget();
+        }
+    }
+
     // Set stroke width to 5px (matching tap buttons)
     context->setLineWidth(5.0);
-    context->setFrameColor(VSTGUI::kBlackCColor);
 
     // Create drawing rect that accounts for stroke width
     // Inset by half the stroke width to prevent clipping
-    VSTGUI::CRect drawRect = rect;
+    VSTGUI::CRect drawRect = buttonRect;
     const double strokeInset = 2.5; // Half of 5px stroke
     drawRect.inset(strokeInset, strokeInset);
 
-    // Always draw the outer circle with black stroke, no fill
-    context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+    if (isSelected) {
+        // Selected state: white circle stroke, no fill
+        context->setFrameColor(VSTGUI::kWhiteCColor);
+        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+    } else {
+        // Unselected state: black circle stroke, no fill
+        context->setFrameColor(VSTGUI::kBlackCColor);
+        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+    }
 
-    // Draw center dot (5px diameter)
-    const double centerDotRadius = 2.5; // 5px diameter = 2.5px radius
+    // Draw center dot (7px diameter)
+    const double centerDotRadius = 3.5; // 7px diameter = 3.5px radius
     VSTGUI::CPoint center = drawRect.getCenter();
     VSTGUI::CRect centerDotRect(
         center.x - centerDotRadius,
@@ -326,7 +384,7 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
     );
 
     if (isSelected) {
-        // Selected state: white center dot (for future implementation)
+        // Selected state: white center dot (inverted)
         context->setFillColor(VSTGUI::kWhiteCColor);
         context->drawEllipse(centerDotRect, VSTGUI::kDrawFilled);
     } else {
