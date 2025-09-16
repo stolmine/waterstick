@@ -211,6 +211,12 @@ private:
     float mTapLevel[16];
     float mTapPan[16];
 
+    // Fade-out state for smooth tap disengagement
+    bool mTapFadingOut[16];        // True when tap is fading out
+    int mTapFadeRemaining[16];     // Samples remaining in fade
+    int mTapFadeTotalLength[16];   // Total fade length for calculation
+    float mTapFadeGain[16];        // Current fade gain (1.0 to 0.0)
+
     // DSP
     DualDelayLine mDelayLineL;  // Keep original for legacy
     DualDelayLine mDelayLineR;  // Keep original for legacy
