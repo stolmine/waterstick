@@ -193,6 +193,9 @@ public:
     Steinberg::tresult PLUGIN_API setState(Steinberg::IBStream* state) SMTG_OVERRIDE;
 
 private:
+    // Helper methods
+    void checkTapStateChangesAndClearBuffers();
+
     // Parameters
     float mInputGain;
     float mOutputGain;
@@ -204,6 +207,7 @@ private:
 
     // Per-tap parameters
     bool mTapEnabled[16];
+    bool mTapEnabledPrevious[16];  // Track previous state for buffer clearing
     float mTapLevel[16];
     float mTapPan[16];
 

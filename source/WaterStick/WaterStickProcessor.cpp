@@ -614,9 +614,10 @@ WaterStickProcessor::WaterStickProcessor()
 {
     // Initialize tap parameters
     for (int i = 0; i < 16; i++) {
-        mTapEnabled[i] = true;    // All taps enabled by default
-        mTapLevel[i] = 1.0f;      // Unity gain
-        mTapPan[i] = 0.5f;        // Center pan
+        mTapEnabled[i] = true;             // All taps enabled by default
+        mTapEnabledPrevious[i] = true;     // Initialize previous state
+        mTapLevel[i] = 1.0f;               // Unity gain
+        mTapPan[i] = 0.5f;                 // Center pan
     }
 
     setControllerClass(kWaterStickControllerUID);
@@ -624,6 +625,21 @@ WaterStickProcessor::WaterStickProcessor()
 
 WaterStickProcessor::~WaterStickProcessor()
 {
+}
+
+void WaterStickProcessor::checkTapStateChangesAndClearBuffers()
+{
+    for (int i = 0; i < 16; i++) {
+        // Check if tap went from enabled to disabled
+        if (mTapEnabledPrevious[i] && !mTapEnabled[i]) {
+            // Clear the delay line buffers for this tap
+            mTapDelayLinesL[i].reset();
+            mTapDelayLinesR[i].reset();
+        }
+
+        // Update previous state for next call
+        mTapEnabledPrevious[i] = mTapEnabled[i];
+    }
 }
 
 tresult PLUGIN_API WaterStickProcessor::initialize(FUnknown* context)
@@ -910,6 +926,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
 
     updateParameters();
 
+    // Check for tap state changes and clear buffers if needed
+    checkTapStateChangesAndClearBuffers();
+
     // Update tempo sync delay time every process cycle (tempo can change without parameter changes)
     if (mTempoSyncMode) {
         // Update tap distribution with current tempo
@@ -1039,6 +1058,9 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
         streamer.readBool(mTapEnabled[i]);
         streamer.readFloat(mTapLevel[i]);
         streamer.readFloat(mTapPan[i]);
+
+        // Initialize previous state to current state to prevent unwanted buffer clears
+        mTapEnabledPrevious[i] = mTapEnabled[i];
     }
 
     return kResultOk;
