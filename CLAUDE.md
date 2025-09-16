@@ -187,6 +187,9 @@ This project is a VST3 clone of the Intellijel Rainmaker Eurorack module - a sop
 - Performance profiling and optimization
 - User acceptance testing with original hardware comparison
 
+### Housekeeping
+- After any build succeeds execute the following bash to move build to library: 'cp -R /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3 /Library/Audio/Plug-Ins/VST3'
+
 This specification ensures the VST3 clone captures both the sonic character and visual appeal of the original Rainmaker module while meeting professional plugin development standards.
 
 ## Implementation Progress & Development Roadmap
@@ -240,17 +243,17 @@ This specification ensures the VST3 clone captures both the sonic character and 
 
 ## GUI Development Roadmap
 
-### Phase 1: Tap Control Interface (CURRENT)
+### Phase 1: Tap Control Interface ✅ COMPLETED
 **Implementation Priority:**
 
-1. **Tap Enable/Disable Buttons**
-   - Visual: 16 individual buttons matching Rainmaker's tap buttons
+1. **✅ Tap Enable/Disable Buttons**
+   - Visual: 16 individual buttons in 2x8 grid with custom styling
    - Functionality: Toggle tap enable parameters (Tap 1-16 Enable)
-   - Layout: Arranged in 4x4 grid or linear pattern matching original
-   - Status: Immediate visual feedback with ON/OFF states
+   - Layout: Clean circular buttons with black stroke and fill states
+   - Advanced Features: Click-drag toggle functionality for efficient pattern editing
    - Why first: Essential for basic tap control and user workflow
 
-2. **Global Control Interface**
+2. **Global Control Interface** (PENDING)
    - Target Controls: Input Gain, Output Gain, Delay Time, Dry/Wet, Sync Mode, Sync Division, Grid
    - Exclude for now: Individual tap Level/Pan controls (more complex layout)
    - Visual: Knobs and switches matching Eurorack aesthetic
@@ -267,6 +270,26 @@ This specification ensures the VST3 clone captures both the sonic character and 
 - Real-time waveform display
 - Enhanced visual feedback and animations
 
+### Phase 1.5: Audio Quality Enhancements ✅ COMPLETED
+**Professional Tap Behavior:**
+
+1. **✅ Automatic Buffer Clearing**
+   - Clean buffer clearing when taps transition from enabled to disabled
+   - Prevents residual audio from playing when taps are re-enabled
+   - Tracks previous tap states for intelligent clearing logic
+
+2. **✅ Exponential Fade-Out on Disable**
+   - Proportional fade length: 1% of delay time (64-2048 samples)
+   - Exponential curve: `exp(-6.0f * progress)` for natural ~60dB fade
+   - Eliminates popping artifacts when disabling taps
+   - GUI remains instantly responsive while audio fades smoothly
+
+3. **✅ Exponential Fade-In on Enable**
+   - Ultra-short fade length: 0.25% of delay time (16-512 samples)
+   - Inverse exponential curve: `1.0 - exp(-6.0f * progress)`
+   - Minimal audible delay (0.3ms-11.6ms) for immediate response feel
+   - Prevents clicks and jarring engagement artifacts
+
 ### Current Architecture Status
 The foundation provides:
 - **Robust timing system** ready for multi-tap distribution
@@ -274,3 +297,35 @@ The foundation provides:
 - **Parameter safety** with backward-compatible enum extensions
 - **Professional plugin standards** with full VST3 validation
 - **Crash-free GUI framework** using VSTGUIEditor for programmatic interface
+- **Professional audio behavior** with smooth fade transitions and clean buffer management
+
+## Stretch Goals (Future Iterations)
+
+These are advanced features for much later development phases:
+
+### Audio Quality Refinements
+1. **Fine-tune fade-in/out times on tap enable/disable**
+   - Current implementation works well, but could be optimized further
+   - Consider user-adjustable fade curves or adaptive timing
+   - Potentially add different fade algorithms for different musical contexts
+
+### Advanced GUI Features
+2. **Sophisticated parameter automation curves**
+   - Bezier curve automation for smooth parameter changes
+   - Musical timing-aware automation (quantized to beat divisions)
+
+3. **Visual feedback enhancements**
+   - Real-time audio waveform display
+   - Tap activity meters with peak hold
+   - Visual representation of delay times and tap positions
+
+### DSP Enhancements
+4. **Advanced spectral processing per tap**
+   - Individual EQ sections per tap
+   - Granular pitch shifting implementation
+   - Advanced filtering options
+
+5. **Performance optimizations**
+   - SIMD optimization for multi-tap processing
+   - Efficient memory management for long delay times
+   - Multi-threading for complex processing chains
