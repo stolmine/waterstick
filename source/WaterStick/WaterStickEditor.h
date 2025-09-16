@@ -58,6 +58,14 @@ private:
     VSTGUI::CPoint initialClickPoint;
     float initialVolumeValue = 0.0f;
     static constexpr double DRAG_THRESHOLD = 3.0;  // Pixels before we consider it a drag
+
+    // Drag direction tracking
+    enum class DragDirection {
+        None,
+        Vertical,
+        Horizontal
+    };
+    DragDirection currentDragDirection = DragDirection::None;
 };
 
 // Custom mode button class with center dot styling

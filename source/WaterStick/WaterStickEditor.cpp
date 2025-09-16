@@ -421,23 +421,67 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
 {
     if (isVolumeInteracting && (buttons & VSTGUI::kLButton)) {
         // Volume context: Handle continuous dragging
+        double deltaX = where.x - initialClickPoint.x;
         double deltaY = initialClickPoint.y - where.y;  // Negative deltaY = drag up = increase volume
 
-        // Scale the delta to a reasonable sensitivity
-        double sensitivity = 1.0 / 30.0;  // 30 pixels = full range (0.0 to 1.0)
-        double volumeChange = deltaY * sensitivity;
+        // Determine drag direction if not already set
+        if (currentDragDirection == DragDirection::None) {
+            double distance = std::sqrt(deltaX * deltaX + deltaY * deltaY);
 
-        // Calculate new volume value
-        double newVolume = initialVolumeValue + volumeChange;
-        newVolume = std::max(0.0, std::min(1.0, newVolume));  // Clamp to [0.0, 1.0]
+            if (distance > DRAG_THRESHOLD) {
+                // Determine primary direction based on larger component
+                if (std::abs(deltaX) > std::abs(deltaY)) {
+                    currentDragDirection = DragDirection::Horizontal;
+                } else {
+                    currentDragDirection = DragDirection::Vertical;
+                }
+            }
+        }
 
-        // Update value and redraw
-        setValue(newVolume);
-        invalid();
+        if (currentDragDirection == DragDirection::Horizontal) {
+            // Horizontal drag: Set volume on different taps based on mouse position
+            VSTGUI::CPoint framePoint = where;
+            localToFrame(framePoint);
 
-        // Notify listener
-        if (listener) {
-            listener->valueChanged(this);
+            auto editor = dynamic_cast<WaterStickEditor*>(listener);
+            if (editor) {
+                auto targetButton = editor->getTapButtonAtPoint(framePoint);
+                if (targetButton) {
+                    // Calculate volume based on vertical position within the target button
+                    const VSTGUI::CRect& targetRect = targetButton->getViewSize();
+                    VSTGUI::CRect targetDrawRect = targetRect;
+                    const double strokeInset = 2.5; // Half of 5px stroke
+                    targetDrawRect.inset(strokeInset, strokeInset);
+
+                    // Convert frame coordinates to target button local coordinates
+                    VSTGUI::CPoint localPoint = framePoint;
+                    targetButton->frameToLocal(localPoint);
+
+                    // Calculate volume based on Y position within target button
+                    double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
+                    relativeY = std::max(0.0, std::min(1.0, relativeY)); // Clamp to [0.0, 1.0]
+
+                    // Update the target button's volume
+                    targetButton->setValue(relativeY);
+                    targetButton->invalid();
+                    editor->valueChanged(targetButton);
+                }
+            }
+        }
+        else if (currentDragDirection == DragDirection::Vertical) {
+            // Vertical drag: Relative volume adjustment on this button
+            double sensitivity = 1.0 / 30.0;  // 30 pixels = full range (0.0 to 1.0)
+            double volumeChange = deltaY * sensitivity;
+
+            double newVolume = initialVolumeValue + volumeChange;
+            newVolume = std::max(0.0, std::min(1.0, newVolume));  // Clamp to [0.0, 1.0]
+
+            setValue(newVolume);
+            invalid();
+
+            if (listener) {
+                listener->valueChanged(this);
+            }
         }
 
         return VSTGUI::kMouseEventHandled;
@@ -468,12 +512,7 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
 {
     if (isVolumeInteracting) {
         // Volume context: Check if this was a click or drag
-        double distance = std::sqrt(
-            std::pow(where.x - initialClickPoint.x, 2) +
-            std::pow(where.y - initialClickPoint.y, 2)
-        );
-
-        if (distance < DRAG_THRESHOLD) {
+        if (currentDragDirection == DragDirection::None) {
             // This was a click - set volume based on absolute position within circle
             const VSTGUI::CRect& rect = getViewSize();
             VSTGUI::CRect drawRect = rect;
@@ -493,9 +532,11 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
                 listener->valueChanged(this);
             }
         }
-        // If it was a drag, the value was already set during onMouseMoved
+        // If it was a drag (vertical or horizontal), the value was already set during onMouseMoved
 
+        // Reset interaction state
         isVolumeInteracting = false;
+        currentDragDirection = DragDirection::None;
         return VSTGUI::kMouseEventHandled;
     }
     else if (dragMode) {
