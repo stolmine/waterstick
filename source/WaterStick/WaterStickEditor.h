@@ -102,6 +102,9 @@ public:
     TapContext getCurrentContext() const { return currentContext; }
     int getSelectedModeButtonIndex() const;
 
+    // Parameter mapping helpers
+    int getTapParameterIdForContext(int tapButtonIndex, TapContext context) const;
+
 private:
     static constexpr int kEditorWidth = 400;
     static constexpr int kEditorHeight = 300;

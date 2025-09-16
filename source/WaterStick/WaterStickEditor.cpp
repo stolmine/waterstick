@@ -95,18 +95,27 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
         // Initialize context state
         button->setContext(TapContext::Enable);
 
-        // Set initial state based on parameter value for Enable context
+        // Load initial values from parameters for all contexts
         auto controller = getController();
         if (controller) {
-            auto paramValue = controller->getParamNormalized(button->getTag());
-            button->setValue(paramValue);
-            button->setContextValue(TapContext::Enable, paramValue);
-        }
+            // Load Enable context value
+            int enableParamId = getTapParameterIdForContext(i, TapContext::Enable);
+            auto enableValue = controller->getParamNormalized(enableParamId);
+            button->setContextValue(TapContext::Enable, enableValue);
 
-        // Initialize default values for other contexts
-        button->setContextValue(TapContext::Volume, 0.8f);  // Default 80% volume
-        button->setContextValue(TapContext::Pan, 0.5f);     // Default center pan
-        button->setContextValue(TapContext::Filter, 0.5f);  // Default filter setting
+            // Load Volume context value
+            int volumeParamId = getTapParameterIdForContext(i, TapContext::Volume);
+            auto volumeValue = controller->getParamNormalized(volumeParamId);
+            button->setContextValue(TapContext::Volume, volumeValue);
+
+            // Load Pan context value
+            int panParamId = getTapParameterIdForContext(i, TapContext::Pan);
+            auto panValue = controller->getParamNormalized(panParamId);
+            button->setContextValue(TapContext::Pan, panValue);
+
+            // Set initial display value (Enable context is default)
+            button->setValue(enableValue);
+        }
 
         // Store reference for easy access
         tapButtons[i] = button;
@@ -173,10 +182,36 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
     if (modeButton && modeButton->getValue() > 0.5) {
         // Handle mutual exclusion for mode buttons
         handleModeButtonSelection(modeButton);
+        return; // Mode buttons don't have VST parameters
     }
 
-    if (control && control->getTag() != -1) {
-        // Update parameter in controller
+    // Check if this is a tap button
+    auto tapButton = dynamic_cast<TapButton*>(control);
+    if (tapButton) {
+        // Find which tap button this is (0-15)
+        int tapButtonIndex = -1;
+        for (int i = 0; i < 16; i++) {
+            if (tapButtons[i] == tapButton) {
+                tapButtonIndex = i;
+                break;
+            }
+        }
+
+        if (tapButtonIndex >= 0) {
+            // Get the correct parameter ID based on the button's current context
+            TapContext buttonContext = tapButton->getContext();
+            int parameterId = getTapParameterIdForContext(tapButtonIndex, buttonContext);
+
+            // Update parameter in controller
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(parameterId, control->getValue());
+                controller->performEdit(parameterId, control->getValue());
+            }
+        }
+    }
+    else if (control && control->getTag() != -1) {
+        // Handle other controls (non-tap, non-mode buttons)
         auto controller = getController();
         if (controller) {
             controller->setParamNormalized(control->getTag(), control->getValue());
@@ -232,31 +267,48 @@ void WaterStickEditor::switchToContext(TapContext newContext)
         return; // Already in this context
     }
 
-    // Save current context values from tap buttons to their internal state
-    for (int i = 0; i < 16; i++) {
-        auto tapButton = static_cast<TapButton*>(tapButtons[i]);
-        if (tapButton) {
-            // Store the current VST parameter value in the button's context storage
-            tapButton->setContextValue(currentContext, tapButton->getValue());
+    // Save current context values from tap buttons to VST parameters
+    auto controller = getController();
+    if (controller) {
+        for (int i = 0; i < 16; i++) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[i]);
+            if (tapButton) {
+                // Get the current parameter ID for the current context
+                int currentParamId = getTapParameterIdForContext(i, currentContext);
+
+                // Save the button's current value to the parameter
+                controller->setParamNormalized(currentParamId, tapButton->getValue());
+
+                // Also update the button's internal storage
+                tapButton->setContextValue(currentContext, tapButton->getValue());
+            }
         }
     }
 
     // Switch to new context
     currentContext = newContext;
 
-    // Load new context values from button internal state to display
-    for (int i = 0; i < 16; i++) {
-        auto tapButton = static_cast<TapButton*>(tapButtons[i]);
-        if (tapButton) {
-            // Set the context for the button
-            tapButton->setContext(newContext);
+    // Load new context values from VST parameters
+    if (controller) {
+        for (int i = 0; i < 16; i++) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[i]);
+            if (tapButton) {
+                // Set the context for the button
+                tapButton->setContext(newContext);
 
-            // Load the stored value for this context
-            float contextValue = tapButton->getContextValue(newContext);
-            tapButton->setValue(contextValue);
+                // Get the parameter ID for the new context
+                int newParamId = getTapParameterIdForContext(i, newContext);
 
-            // Trigger visual update
-            tapButton->invalid();
+                // Load the parameter value
+                float paramValue = controller->getParamNormalized(newParamId);
+
+                // Set the button's value and internal storage
+                tapButton->setValue(paramValue);
+                tapButton->setContextValue(newContext, paramValue);
+
+                // Trigger visual update
+                tapButton->invalid();
+            }
         }
     }
 }
@@ -269,6 +321,27 @@ int WaterStickEditor::getSelectedModeButtonIndex() const
         }
     }
     return 0; // Default to first button if none selected
+}
+
+int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext context) const
+{
+    // Convert tap button index to tap number (1-16)
+    // The grid layout: taps 1-8 are top row (indices 0-7), taps 9-16 are bottom row (indices 8-15)
+    int tapNumber = tapButtonIndex + 1; // Convert from 0-15 to 1-16
+
+    // Calculate base parameter offset for this tap (each tap has 3 params: Enable, Level, Pan)
+    int baseOffset = (tapNumber - 1) * 3;
+
+    switch (context) {
+        case TapContext::Enable:
+            return kTap1Enable + baseOffset;  // Enable parameter
+        case TapContext::Volume:
+            return kTap1Level + baseOffset;   // Level parameter
+        case TapContext::Pan:
+            return kTap1Pan + baseOffset;     // Pan parameter (future)
+        default:
+            return kTap1Enable + baseOffset;  // Default to Enable
+    }
 }
 
 //------------------------------------------------------------------------
