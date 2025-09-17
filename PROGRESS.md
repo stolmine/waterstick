@@ -317,6 +317,29 @@ The foundation provides:
 - **Global feedback system** with tanh limiting and cubic scaling curve
 - **Enhanced GUI** with dynamic label sizing and professional layout
 
+### Phase 2.10: Tap Mute Minimap ✅ COMPLETED
+**Always-Visible Tap State Display:**
+
+1. **✅ Minimap Implementation**
+   - Always-visible tap enable state display in upper right corner
+   - 13px scaled circles (1/4 size of main tap buttons) with 1px stroke
+   - 2x8 grid layout matching main tap array structure
+   - Non-interactive display for persistent state visibility
+
+2. **✅ State Synchronization**
+   - Real-time sync with Enable context changes
+   - Proper parameter ID mapping (kTap1Enable + i*3)
+   - Updates on plugin load and tap state changes
+   - Independent of current context selection
+
+3. **✅ Visual Design**
+   - Positioned in upper right with 30px margin
+   - 150px width × 53px height container
+   - Black/white fill states matching main tap buttons
+   - Transparent background for clean integration
+
+**Note**: Visual alignment and positioning could benefit from fine-tuning in future iterations for optimal aesthetic balance.
+
 ---
 
 ## Next Development Priorities
@@ -325,18 +348,20 @@ The foundation provides:
 2. **Performance Optimizations**: SIMD optimization and memory efficiency improvements
 3. **Comb Resonator Section**: 64-tap Karplus-Strong implementation
 4. **Advanced Modulation**: LFO and envelope control for dynamic parameter automation
+5. **Minimap Visual Refinement**: Fine-tune positioning and alignment of tap mute minimap
 
 ---
 
 ## Development Progress Summary
 
-- **Phase 1-2.9**: Core VST3 Foundation ✅ 100% Complete
+- **Phase 1-2.10**: Core VST3 Foundation ✅ 100% Complete
   - Full tap distribution engine with 16 independent taps
   - Complete contextual control system (6 modes)
   - Per-tap enable, volume, pan, and filter controls (cutoff, resonance, type)
   - Professional global feedback system with tanh limiting
   - Enhanced global control interface (7 knobs) with dynamic label sizing
   - Mode button labels for enhanced user interface clarity
+  - Tap mute minimap for always-visible tap enable states
   - VST3 validation passed (104 parameters, 47/47 tests)
 - **Phase 3**: Comb Resonator Section 🔄 In Planning
 - **Phase 4**: Advanced Features 🔄 In Planning
