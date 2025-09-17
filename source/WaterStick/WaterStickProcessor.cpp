@@ -603,8 +603,8 @@ void STKDelayLine::reset()
 //------------------------------------------------------------------------
 
 WaterStickProcessor::WaterStickProcessor()
-: mInputGain(1.0f)
-, mOutputGain(1.0f)
+: mInputGain(1.0f)  // 0dB linear gain (parameter default 0.769231 → 0dB → 1.0 linear)
+, mOutputGain(1.0f)  // 0dB linear gain (parameter default 0.769231 → 0dB → 1.0 linear)
 , mDelayTime(0.1f)  // 100ms default
 , mDryWet(0.5f)     // 50% wet default
 , mTempoSyncMode(false)  // Default to free mode
@@ -806,11 +806,19 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                     switch (paramQueue->getParameterId())
                     {
                         case kInputGain:
-                            mInputGain = static_cast<float>(value);
+                        {
+                            // Convert normalized to dB (-40dB to +12dB range), then to linear gain
+                            float dbValue = -40.0f + (static_cast<float>(value) * 52.0f);
+                            mInputGain = std::pow(10.0f, dbValue / 20.0f);
                             break;
+                        }
                         case kOutputGain:
-                            mOutputGain = static_cast<float>(value);
+                        {
+                            // Convert normalized to dB (-40dB to +12dB range), then to linear gain
+                            float dbValue = -40.0f + (static_cast<float>(value) * 52.0f);
+                            mOutputGain = std::pow(10.0f, dbValue / 20.0f);
                             break;
+                        }
                         case kDelayTime:
                             mDelayTime = static_cast<float>(value * 2.0); // 0-2 seconds
                             break;
