@@ -82,6 +82,29 @@ public:
     CLASS_METHODS(ModeButton, VSTGUI::CControl)
 };
 
+// Custom knob control with dot indicator design
+class KnobControl : public VSTGUI::CControl
+{
+public:
+    KnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    // Special handling for Time/Division knob
+    void setIsTimeDivisionKnob(bool isTimeDivision) { isTimeDivisionKnob = isTimeDivision; }
+    bool getIsTimeDivisionKnob() const { return isTimeDivisionKnob; }
+
+    CLASS_METHODS(KnobControl, VSTGUI::CControl)
+
+private:
+    bool isDragging = false;
+    VSTGUI::CPoint lastMousePos;
+    bool isTimeDivisionKnob = false;
+};
+
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
 {
 public:
@@ -120,12 +143,27 @@ private:
     // Mode button references (8 total, one under each column)
     ModeButton* modeButtons[8];
 
+    // Global control knobs
+    KnobControl* syncModeKnob;
+    KnobControl* timeDivisionKnob;
+    KnobControl* inputGainKnob;
+    KnobControl* outputGainKnob;
+    KnobControl* dryWetKnob;
+
+    // Knob labels
+    VSTGUI::CTextLabel* syncModeLabel;
+    VSTGUI::CTextLabel* timeDivisionLabel;
+    VSTGUI::CTextLabel* inputGainLabel;
+    VSTGUI::CTextLabel* outputGainLabel;
+    VSTGUI::CTextLabel* dryWetLabel;
+
     // Context state management
     TapContext currentContext = TapContext::Enable;
 
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);
     void createModeButtons(VSTGUI::CViewContainer* container);
+    void createGlobalControls(VSTGUI::CViewContainer* container);
 };
 
 } // namespace WaterStick

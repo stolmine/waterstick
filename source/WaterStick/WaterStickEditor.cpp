@@ -27,6 +27,20 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     for (int i = 0; i < 8; i++) {
         modeButtons[i] = nullptr;
     }
+
+    // Initialize global controls
+    syncModeKnob = nullptr;
+    timeDivisionKnob = nullptr;
+    inputGainKnob = nullptr;
+    outputGainKnob = nullptr;
+    dryWetKnob = nullptr;
+
+    // Initialize labels
+    syncModeLabel = nullptr;
+    timeDivisionLabel = nullptr;
+    inputGainLabel = nullptr;
+    outputGainLabel = nullptr;
+    dryWetLabel = nullptr;
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -46,6 +60,9 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
     // Create mode buttons
     createModeButtons(container);
+
+    // Create global controls
+    createGlobalControls(container);
 
     frame->addView(container);
 
@@ -73,9 +90,10 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Center the grid in the window (occupying ~30% of space)
+    // Center the grid horizontally in the upper 2/3 of the window
+    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
-    const int gridTop = (kEditorHeight - totalGridHeight) / 2;
+    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
     // Create 16 tap buttons in 2x8 grid
     for (int i = 0; i < 16; i++) {
@@ -150,10 +168,12 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
     // Calculate total grid dimensions
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
+    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Center the grid in the window (matching tap buttons)
+    // Match the tap button positioning
+    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
-    const int tapGridTop = (kEditorHeight - (gridHeight * buttonSize + buttonSpacing)) / 2;
+    const int tapGridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
     // Calculate mode button position
     // Place 1.5x button spacing below the tap button grid
@@ -187,6 +207,85 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
         // Add to container
         container->addView(modeButtons[i]);
+    }
+}
+
+void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
+{
+    // Calculate knob positioning in bottom 1/3 of window
+    const int bottomThirdTop = (kEditorHeight * 2) / 3;
+    const int bottomThirdHeight = kEditorHeight - bottomThirdTop;
+
+    // Knob configuration
+    const int knobSize = 53; // Same size as tap buttons
+    const int buttonSize = 53; // For spacing calculations
+    const int buttonSpacing = buttonSize / 2;
+    const int gridWidth = 8;
+    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
+
+    // Calculate knob spacing (1.25x tap array gap distance)
+    const int knobSpacing = static_cast<int>(buttonSpacing * 1.25);
+
+    // Calculate total width needed for 5 knobs
+    const int totalKnobsWidth = (5 * knobSize) + (4 * knobSpacing);
+
+    // Align knob edges with outer edges of tap controls
+    const int tapGridLeft = (kEditorWidth - totalGridWidth) / 2;
+    const int knobsLeft = tapGridLeft + (totalGridWidth - totalKnobsWidth) / 2;
+
+    // Position knobs with at least 1.5x spacing from mode buttons
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
+    const int knobY = bottomThirdTop + modeButtonSpacing;
+
+    // Label positioning
+    const int labelHeight = 20;
+    const int labelY = knobY + knobSize + 10; // 10px gap between knob and label
+
+    // Create knobs and labels
+    const char* knobLabels[] = {"SYNC", "TIME", "INPUT", "OUTPUT", "DRY/WET"};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kInputGain, kOutputGain, kDryWet};
+    KnobControl** knobPointers[] = {&syncModeKnob, &timeDivisionKnob, &inputGainKnob, &outputGainKnob, &dryWetKnob};
+    VSTGUI::CTextLabel** labelPointers[] = {&syncModeLabel, &timeDivisionLabel, &inputGainLabel, &outputGainLabel, &dryWetLabel};
+
+    for (int i = 0; i < 5; i++) {
+        // Calculate knob position
+        int knobX = knobsLeft + i * (knobSize + knobSpacing);
+
+        // Create knob
+        VSTGUI::CRect knobRect(knobX, knobY, knobX + knobSize, knobY + knobSize);
+        *(knobPointers[i]) = new KnobControl(knobRect, this, knobTags[i]);
+
+        // Special handling for time/division knob
+        if (i == 1) {
+            (*knobPointers[i])->setIsTimeDivisionKnob(true);
+        }
+
+        // Load initial value from controller
+        auto controller = getController();
+        if (controller) {
+            float value = controller->getParamNormalized(knobTags[i]);
+            (*knobPointers[i])->setValue(value);
+        }
+
+        container->addView(*(knobPointers[i]));
+
+        // Create label
+        VSTGUI::CRect labelRect(knobX, labelY, knobX + knobSize, labelY + labelHeight);
+        *(labelPointers[i]) = new VSTGUI::CTextLabel(labelRect, knobLabels[i]);
+
+        // Set label styling
+        auto label = *(labelPointers[i]);
+        label->setHoriAlign(VSTGUI::kCenterText);
+        label->setFontColor(VSTGUI::kBlackCColor);
+        label->setBackColor(VSTGUI::kTransparentCColor);
+
+        // Try to use custom font
+        auto customFont = getWorkSansFont(12.0f);
+        if (customFont) {
+            label->setFont(customFont);
+        }
+
+        container->addView(label);
     }
 }
 
@@ -226,11 +325,48 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
         }
     }
     else if (control && control->getTag() != -1) {
-        // Handle other controls (non-tap, non-mode buttons)
-        auto controller = getController();
-        if (controller) {
-            controller->setParamNormalized(control->getTag(), control->getValue());
-            controller->performEdit(control->getTag(), control->getValue());
+        // Check if this is the time/division knob with special handling
+        auto knobControl = dynamic_cast<KnobControl*>(control);
+        if (knobControl && knobControl->getIsTimeDivisionKnob()) {
+            // Handle time/division knob - switch between kDelayTime and kSyncDivision based on sync mode
+            auto controller = getController();
+            if (controller) {
+                float syncMode = controller->getParamNormalized(kTempoSyncMode);
+
+                if (syncMode > 0.5f) {
+                    // Sync mode: control sync division
+                    controller->setParamNormalized(kSyncDivision, control->getValue());
+                    controller->performEdit(kSyncDivision, control->getValue());
+                } else {
+                    // Free mode: control delay time
+                    controller->setParamNormalized(kDelayTime, control->getValue());
+                    controller->performEdit(kDelayTime, control->getValue());
+                }
+            }
+        }
+        else {
+            // Handle other controls (non-tap, non-mode buttons)
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(control->getTag(), control->getValue());
+                controller->performEdit(control->getTag(), control->getValue());
+
+                // Special case: if sync mode changed, update the time/division knob value
+                if (control->getTag() == kTempoSyncMode && timeDivisionKnob) {
+                    float newSyncMode = control->getValue();
+                    if (newSyncMode > 0.5f) {
+                        // Switched to sync mode: load sync division value
+                        float syncDivValue = controller->getParamNormalized(kSyncDivision);
+                        timeDivisionKnob->setValue(syncDivValue);
+                        timeDivisionKnob->invalid();
+                    } else {
+                        // Switched to free mode: load delay time value
+                        float delayTimeValue = controller->getParamNormalized(kDelayTime);
+                        timeDivisionKnob->setValue(delayTimeValue);
+                        timeDivisionKnob->invalid();
+                    }
+                }
+            }
         }
     }
 }
@@ -1036,6 +1172,102 @@ VSTGUI::CMouseEventResult ModeButton::onMouseDown(VSTGUI::CPoint& where, const V
             }
         }
 
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+//------------------------------------------------------------------------
+// KnobControl Implementation
+
+KnobControl::KnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+: CControl(size, listener, tag)
+{
+}
+
+void KnobControl::draw(VSTGUI::CDrawContext* context)
+{
+    VSTGUI::CRect drawRect = getViewSize();
+    drawRect.makeIntegral();
+
+    // Draw black circle outline (5px stroke, same as tap buttons)
+    context->setLineWidth(5.0);
+    context->setLineStyle(VSTGUI::kLineSolid);
+    context->setDrawMode(VSTGUI::kAliasing);
+    context->setFrameColor(VSTGUI::kBlackCColor);
+    context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+
+    // Calculate dot position based on value (pot range: ~300 degrees)
+    float value = getValue();
+    float angle = -135.0f + (value * 270.0f); // Start at 7:30, end at 4:30
+    float angleRad = angle * M_PI / 180.0f;
+
+    // Get circle center and calculate inner radius for dot positioning
+    VSTGUI::CPoint center = drawRect.getCenter();
+    float outerRadius = (drawRect.getWidth() / 2.0f) - 2.5f; // Account for stroke width
+    float dotRadius = 6.125f; // Same size as mode button dots (12.25px diameter)
+
+    // Calculate the distance from center to dot center
+    // Maintain half dot width space from inner edge
+    float dotCenterDistance = outerRadius - dotRadius - (dotRadius / 2.0f);
+
+    // Calculate dot position
+    VSTGUI::CPoint dotCenter(
+        center.x + dotCenterDistance * cos(angleRad),
+        center.y + dotCenterDistance * sin(angleRad)
+    );
+
+    // Draw the dot
+    VSTGUI::CRect dotRect(
+        dotCenter.x - dotRadius,
+        dotCenter.y - dotRadius,
+        dotCenter.x + dotRadius,
+        dotCenter.y + dotRadius
+    );
+
+    context->setFillColor(VSTGUI::kBlackCColor);
+    context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
+
+    setDirty(false);
+}
+
+VSTGUI::CMouseEventResult KnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (buttons & VSTGUI::kLButton) {
+        isDragging = true;
+        lastMousePos = where;
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult KnobControl::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (isDragging && (buttons & VSTGUI::kLButton)) {
+        // Calculate vertical movement for value change
+        float deltaY = lastMousePos.y - where.y; // Positive = mouse moved up
+        float sensitivity = 0.005f; // Adjust for desired sensitivity
+
+        float newValue = getValue() + (deltaY * sensitivity);
+        newValue = std::max(0.0f, std::min(1.0f, newValue)); // Clamp to 0-1
+
+        setValue(newValue);
+        invalid(); // Trigger redraw
+
+        if (listener) {
+            listener->valueChanged(this);
+        }
+
+        lastMousePos = where;
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult KnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (isDragging) {
+        isDragging = false;
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
