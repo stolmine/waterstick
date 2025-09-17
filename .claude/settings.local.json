@@ -26,9 +26,15 @@
       "Bash(git branch:*)",
       "Bash(codesign:*)",
       "Bash(git clean:*)",
-      "Bash(git rev-parse:*)"
+      "Bash(git rev-parse:*)",
+      "WebSearch",
+      "Bash(git fetch:*)",
+      "Bash(./bin/validator:*)",
+      "Bash(./bin/Release/validator /Library/Audio/Plug-Ins/VST3/WaterStick.vst3)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "outputStyle": "dsp-subagent"
 }

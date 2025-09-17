@@ -31,6 +31,12 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
         modeButtons[i] = nullptr;
     }
 
+    // Initialize minimap
+    minimapContainer = nullptr;
+    for (int i = 0; i < 16; i++) {
+        minimapButtons[i] = nullptr;
+    }
+
     // Initialize global controls
     syncModeKnob = nullptr;
     timeDivisionKnob = nullptr;
@@ -74,10 +80,16 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     // Create global controls
     createGlobalControls(container);
 
+    // Create minimap
+    createMinimap(container);
+
     frame->addView(container);
 
     // Update value readouts with initial parameter values
     updateValueReadouts();
+
+    // Update minimap with initial tap enable states
+    updateMinimapState();
 
     return true;
 }
@@ -220,6 +232,34 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
         // Add to container
         container->addView(modeButtons[i]);
+    }
+
+    // Add labels below mode buttons
+    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "X", "X"};
+    const int labelHeight = 20; // Match global control labels
+    const int labelY = modeButtonY + buttonSize + 15; // Increased gap to clear selection rectangle
+
+    for (int i = 0; i < 8; i++) {
+        const int modeButtonX = gridLeft + i * (buttonSize + buttonSpacing);
+
+        // Create label centered under mode button
+        VSTGUI::CRect labelRect(modeButtonX, labelY, modeButtonX + buttonSize, labelY + labelHeight);
+        modeButtonLabels[i] = new VSTGUI::CTextLabel(labelRect, modeLabels[i]);
+
+        // Set label styling to match global control labels exactly
+        modeButtonLabels[i]->setHoriAlign(VSTGUI::kCenterText);
+        modeButtonLabels[i]->setFontColor(VSTGUI::kBlackCColor);
+        modeButtonLabels[i]->setBackColor(VSTGUI::kTransparentCColor);
+        modeButtonLabels[i]->setFrameColor(VSTGUI::kTransparentCColor);
+        modeButtonLabels[i]->setStyle(VSTGUI::CTextLabel::kNoFrame);
+
+        // Use same font size as global control labels (11.0f)
+        auto customFont = getWorkSansFont(11.0f);
+        if (customFont) {
+            modeButtonLabels[i]->setFont(customFont);
+        }
+
+        container->addView(modeButtonLabels[i]);
     }
 }
 
@@ -471,6 +511,11 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
             if (controller) {
                 controller->setParamNormalized(parameterId, control->getValue());
                 controller->performEdit(parameterId, control->getValue());
+
+                // Update minimap if this was a tap enable change
+                if (buttonContext == TapContext::Enable) {
+                    updateMinimapState();
+                }
             }
         }
     }
@@ -1430,6 +1475,140 @@ VSTGUI::CMouseEventResult KnobControl::onMouseUp(VSTGUI::CPoint& where, const VS
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
+}
+
+//========================================================================
+// MinimapTapButton Implementation
+//========================================================================
+
+MinimapTapButton::MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+: VSTGUI::CControl(size, listener, tag)
+{
+}
+
+void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
+{
+    // Get the actual drawing rectangle
+    VSTGUI::CRect rect = getViewSize();
+
+    // Define circle parameters - scaled down from original 53px to ~13px
+    const double circleSize = 13.0; // About 1/4 scale of original 53px
+    VSTGUI::CPoint center = rect.getCenter();
+    const double radius = circleSize / 2.0;
+
+    // Create circle rect centered in the button area
+    VSTGUI::CRect circleRect(
+        center.x - radius,
+        center.y - radius,
+        center.x + radius,
+        center.y + radius
+    );
+
+    // Determine if tap is enabled (getValue > 0.5 means enabled)
+    bool isEnabled = (getValue() > 0.5);
+
+    // Draw circle stroke (1px width for minimap)
+    context->setLineWidth(1.0);
+    context->setDrawMode(VSTGUI::kAntiAliasing);
+    context->setFrameColor(VSTGUI::kBlackCColor);
+
+    // Fill based on enabled state
+    if (isEnabled) {
+        context->setFillColor(VSTGUI::kBlackCColor);
+        context->drawEllipse(circleRect, VSTGUI::kDrawFilledAndStroked);
+    } else {
+        context->setFillColor(VSTGUI::kWhiteCColor);
+        context->drawEllipse(circleRect, VSTGUI::kDrawFilledAndStroked);
+    }
+
+    setDirty(false);
+}
+
+//========================================================================
+// Minimap Implementation
+//========================================================================
+
+void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
+{
+    // Minimap dimensions - height = 1 tap button, width = 2 tap buttons
+    const int minimapButtonSize = 13; // Scaled down from 53px (about 1/4 scale)
+    const int minimapButtonSpacing = minimapButtonSize / 2; // Proportional spacing
+    const int minimapGridWidth = 8;
+    const int minimapGridHeight = 2;
+
+    // Calculate minimap total dimensions
+    const int minimapTotalWidth = (minimapGridWidth * minimapButtonSize) + ((minimapGridWidth - 1) * minimapButtonSpacing);
+    const int minimapTotalHeight = (minimapGridHeight * minimapButtonSize) + ((minimapGridHeight - 1) * minimapButtonSpacing);
+
+    // Target dimensions: height = 1 tap element (53px), width = 2 tap elements (53+26.5+53 = 132.5px)
+    const int targetHeight = 53;
+    const int targetWidth = 150; // Increased to prevent clipping
+
+    // Calculate actual tap grid positioning
+    const int buttonSize = 53;
+    const int buttonSpacing = buttonSize / 2;
+    const int gridWidth = 8;
+    const int gridHeight = 2;
+    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
+    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
+    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
+    const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
+    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+
+    // Position in upper right corner with proper margins
+    const int margin = 30; // Same as side margins
+    const int minimapTop = margin; // Align with top margin
+    const int minimapLeft = kEditorWidth - margin - targetWidth;
+
+    // Create minimap container
+    VSTGUI::CRect minimapRect(minimapLeft, minimapTop, minimapLeft + targetWidth, minimapTop + targetHeight);
+    minimapContainer = new VSTGUI::CViewContainer(minimapRect);
+    minimapContainer->setBackgroundColor(VSTGUI::kTransparentCColor);
+
+    // Center the minimap grid within the container
+    const int gridStartX = (targetWidth - minimapTotalWidth) / 2;
+    const int gridStartY = (targetHeight - minimapTotalHeight) / 2;
+
+    // Create minimap buttons in 2x8 grid
+    for (int i = 0; i < 16; i++) {
+        int row = i / 8;        // 0 for taps 1-8, 1 for taps 9-16
+        int col = i % 8;        // 0-7 for column position
+
+        // Calculate button position within minimap container
+        int x = gridStartX + col * (minimapButtonSize + minimapButtonSpacing);
+        int y = gridStartY + row * (minimapButtonSize + minimapButtonSpacing);
+
+        VSTGUI::CRect buttonRect(x, y, x + minimapButtonSize, y + minimapButtonSize);
+
+        // Create minimap button (non-interactive, display only)
+        minimapButtons[i] = new MinimapTapButton(buttonRect, nullptr, -1);
+
+        // Initialize with current tap enable state
+        // Use proper parameter ID mapping (each tap has 3 params: Enable, Level, Pan)
+        Steinberg::Vst::ParamID paramId = kTap1Enable + (i * 3);
+        Steinberg::Vst::ParamValue paramValue = controller->getParamNormalized(paramId);
+        minimapButtons[i]->setValue(static_cast<float>(paramValue));
+
+        minimapContainer->addView(minimapButtons[i]);
+    }
+
+    container->addView(minimapContainer);
+}
+
+void WaterStickEditor::updateMinimapState()
+{
+    if (!minimapContainer) return;
+
+    // Update minimap buttons to reflect current tap enable states
+    for (int i = 0; i < 16; i++) {
+        if (minimapButtons[i]) {
+            // Use proper parameter ID mapping (each tap has 3 params: Enable, Level, Pan)
+            Steinberg::Vst::ParamID paramId = kTap1Enable + (i * 3);
+            Steinberg::Vst::ParamValue paramValue = controller->getParamNormalized(paramId);
+            minimapButtons[i]->setValue(static_cast<float>(paramValue));
+            minimapButtons[i]->invalid(); // Trigger redraw
+        }
+    }
 }
 
 } // namespace WaterStick

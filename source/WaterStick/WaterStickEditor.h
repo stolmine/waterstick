@@ -19,6 +19,17 @@ enum class TapContext {
     COUNT              // Total number of contexts
 };
 
+// Custom minimap tap button class for always-visible tap mute state
+class MinimapTapButton : public VSTGUI::CControl
+{
+public:
+    MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+
+    CLASS_METHODS(MinimapTapButton, VSTGUI::CControl)
+};
+
 // Custom tap button class with specific styling and context-aware behavior
 class TapButton : public VSTGUI::CControl
 {
@@ -174,12 +185,21 @@ private:
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
 
+    // Mode button labels
+    VSTGUI::CTextLabel* modeButtonLabels[8];
+
+    // Minimap components
+    VSTGUI::CViewContainer* minimapContainer;
+    MinimapTapButton* minimapButtons[16];
+
     // Context state management
     TapContext currentContext = TapContext::Enable;
 
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);
     void createModeButtons(VSTGUI::CViewContainer* container);
+    void createMinimap(VSTGUI::CViewContainer* container);
+    void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
 };
 
