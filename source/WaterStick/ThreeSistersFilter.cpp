@@ -121,9 +121,9 @@ void ThreeSistersFilter::updateFilterChains() {
 
     if (resonance_ >= 0.0) {
         // Positive resonance: reduce damping for traditional resonance
-        // Map 0.0->1.0 to 0.5->0.001 (moderate damping to high resonance)
-        // Start with more moderate damping to avoid total sound kill at 0
-        dampingFactor = 0.5 * (1.0 - resonance_) + 0.001 * resonance_;
+        // Map 0.0->1.0 to 0.5->0.0005 (moderate damping to very high resonance)
+        // Increased resonance range for broader palette of ringing tones
+        dampingFactor = 0.5 * (1.0 - resonance_) + 0.0005 * resonance_;
     } else {
         // Negative resonance: use moderate damping for clean filtering
         // We'll implement anti-resonance mixing in the process function

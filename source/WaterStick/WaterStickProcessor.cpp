@@ -988,11 +988,21 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                                         mTapFilterCutoff[tapIndex] = static_cast<float>(20.0 * std::pow(1000.0, value));
                                         break;
                                     case 1: // Filter Resonance
-                                        // Improved resonance scaling with longer travel in high resonance territory
+                                        // Enhanced resonance scaling: upper 10% of parameter range occupies upper 30% of control throw
                                         if (value >= 0.5) {
-                                            // Positive resonance: 0.0 to +1.0 with exponential curve for more control
+                                            // Positive resonance: 0.0 to +1.0 with enhanced high-resonance control
                                             float positiveValue = (value - 0.5f) * 2.0f; // 0.0 to 1.0
-                                            mTapFilterResonance[tapIndex] = static_cast<float>(positiveValue * positiveValue * positiveValue); // Cubic curve
+
+                                            // Non-linear scaling: upper 10% of parameter (0.9-1.0) maps to upper 30% of control (0.7-1.0)
+                                            if (positiveValue >= 0.9f) {
+                                                // Upper 10% of parameter range (high resonance territory)
+                                                float highResValue = (positiveValue - 0.9f) / 0.1f; // 0.0 to 1.0 in high-res zone
+                                                mTapFilterResonance[tapIndex] = 0.7f + highResValue * 0.3f; // 0.7 to 1.0
+                                            } else {
+                                                // Lower 90% of parameter range maps to lower 70% of control
+                                                float lowResValue = positiveValue / 0.9f; // 0.0 to 1.0 in low-res zone
+                                                mTapFilterResonance[tapIndex] = lowResValue * 0.7f; // 0.0 to 0.7
+                                            }
                                         } else {
                                             // Negative resonance: -1.0 to 0.0 with linear mapping
                                             mTapFilterResonance[tapIndex] = static_cast<float>((value - 0.5f) * 2.0f); // -1.0 to 0.0
