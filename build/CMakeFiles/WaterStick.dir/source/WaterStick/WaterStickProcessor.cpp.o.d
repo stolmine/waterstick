@@ -810,6 +810,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/perfect_forward.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
+  /Users/why/repos/waterstick/source/WaterStick/ThreeSistersFilter.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstparameterchanges.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h

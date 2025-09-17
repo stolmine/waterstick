@@ -10,11 +10,13 @@ namespace WaterStick {
 
 // Enum for different tap contexts
 enum class TapContext {
-    Enable = 0,    // Enable/disable context (mode button 1)
-    Volume = 1,    // Volume level context (mode button 2)
-    Pan = 2,       // Pan position context (mode button 3) - future
-    Filter = 3,    // Filter frequency context (mode button 4) - future
-    COUNT          // Total number of contexts
+    Enable = 0,        // Enable/disable context (mode button 1)
+    Volume = 1,        // Volume level context (mode button 2)
+    Pan = 2,           // Pan position context (mode button 3)
+    FilterCutoff = 3,  // Filter cutoff frequency context (mode button 4)
+    FilterResonance = 4, // Filter resonance context (mode button 5)
+    FilterType = 5,    // Filter type context (mode button 6) - future
+    COUNT              // Total number of contexts
 };
 
 // Custom tap button class with specific styling and context-aware behavior

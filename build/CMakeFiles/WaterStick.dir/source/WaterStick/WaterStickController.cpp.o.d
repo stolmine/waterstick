@@ -805,7 +805,8 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o: \
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/common/pluginview.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/gui/iplugview.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/typesizecheck.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/vst3editor.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
+  /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.h \
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vstguieditor.h \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/vstgui.h \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/lib/vstguibase.h \
@@ -928,21 +929,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o: \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/lib/animation/itimingfunction.h \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/lib/animation/../vstguibase.h \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/lib/animation/../cpoint.h \
-  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstplugview.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/uidescription.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/iuidescription.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/../lib/vstguifwd.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/../lib/cfont.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/../lib/cstring.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/uidescriptionfwd.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/icontroller.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/../lib/controls/icontrollistener.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../uidescription/../lib/cviewcontainer.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../lib/controls/icommandmenuitemtarget.h \
-  /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/plugin-bindings/../lib/optional.h \
-  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/gui/iplugviewcontentscalesupport.h \
-  /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
-  /Users/why/repos/waterstick/source/WaterStick/WaterStickEditor.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/set \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
   /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/ustring.h \

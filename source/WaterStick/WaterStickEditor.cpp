@@ -113,6 +113,16 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
             auto panValue = controller->getParamNormalized(panParamId);
             button->setContextValue(TapContext::Pan, panValue);
 
+            // Load Filter Cutoff context value
+            int filterCutoffParamId = getTapParameterIdForContext(i, TapContext::FilterCutoff);
+            auto filterCutoffValue = controller->getParamNormalized(filterCutoffParamId);
+            button->setContextValue(TapContext::FilterCutoff, filterCutoffValue);
+
+            // Load Filter Resonance context value
+            int filterResonanceParamId = getTapParameterIdForContext(i, TapContext::FilterResonance);
+            auto filterResonanceValue = controller->getParamNormalized(filterResonanceParamId);
+            button->setContextValue(TapContext::FilterResonance, filterResonanceValue);
+
             // Set initial display value (Enable context is default)
             button->setValue(enableValue);
         }
@@ -329,17 +339,46 @@ int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext
     // The grid layout: taps 1-8 are top row (indices 0-7), taps 9-16 are bottom row (indices 8-15)
     int tapNumber = tapButtonIndex + 1; // Convert from 0-15 to 1-16
 
-    // Calculate base parameter offset for this tap (each tap has 3 params: Enable, Level, Pan)
-    int baseOffset = (tapNumber - 1) * 3;
-
     switch (context) {
         case TapContext::Enable:
+        {
+            // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
+            int baseOffset = (tapNumber - 1) * 3;
             return kTap1Enable + baseOffset;  // Enable parameter
+        }
         case TapContext::Volume:
+        {
+            // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
+            int baseOffset = (tapNumber - 1) * 3;
             return kTap1Level + baseOffset;   // Level parameter
+        }
         case TapContext::Pan:
-            return kTap1Pan + baseOffset;     // Pan parameter (future)
+        {
+            // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
+            int baseOffset = (tapNumber - 1) * 3;
+            return kTap1Pan + baseOffset;     // Pan parameter
+        }
+        case TapContext::FilterCutoff:
+        {
+            // Calculate base parameter offset for filter control (each tap has 3 filter params: Cutoff, Resonance, Type)
+            int filterBaseOffset = (tapNumber - 1) * 3;
+            return kTap1FilterCutoff + filterBaseOffset;  // Filter cutoff parameter
+        }
+        case TapContext::FilterResonance:
+        {
+            // Calculate base parameter offset for filter control (each tap has 3 filter params: Cutoff, Resonance, Type)
+            int filterBaseOffset = (tapNumber - 1) * 3;
+            return kTap1FilterResonance + filterBaseOffset;  // Filter resonance parameter
+        }
+        case TapContext::FilterType:
+        {
+            // Calculate base parameter offset for filter control (each tap has 3 filter params: Cutoff, Resonance, Type)
+            int filterBaseOffset = (tapNumber - 1) * 3;
+            return kTap1FilterType + filterBaseOffset;  // Filter type parameter
+        }
         default:
+            // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
+            int baseOffset = (tapNumber - 1) * 3;
             return kTap1Enable + baseOffset;  // Default to Enable
     }
 }
@@ -511,6 +550,117 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             break;
         }
 
+        case TapContext::FilterCutoff:
+        {
+            // Filter Cutoff context: reuse volume visualization (circular fill)
+            // Volume context: simulate circular clipping by drawing fill only in circle area
+            if (currentValue > 0.0) {
+                // Apply intelligent scaling curve for better visual-to-audio correlation
+                double scaledValue = currentValue;
+
+                // Apply a subtle curve to prevent visual "100%" until truly at max
+                if (currentValue < 1.0) {
+                    scaledValue = currentValue * 0.95 + (currentValue * currentValue * 0.05);
+                }
+
+                // Calculate the circular area and fill height
+                VSTGUI::CPoint center = drawRect.getCenter();
+                double radius = std::min(drawRect.getWidth(), drawRect.getHeight()) / 2.0;
+                double fillHeight = drawRect.getHeight() * scaledValue;
+                double fillTop = drawRect.bottom - fillHeight;
+
+                // Draw horizontal lines to create the fill effect within the circle
+                context->setFillColor(VSTGUI::kBlackCColor);
+
+                for (double y = fillTop; y <= drawRect.bottom; y += 0.5) {
+                    // Calculate the width of the circle at this Y position
+                    double yFromCenter = y - center.y;
+                    double distanceFromCenter = std::abs(yFromCenter);
+
+                    if (distanceFromCenter < radius) {
+                        // Calculate line width using circle equation: x² + y² = r²
+                        double halfLineWidth = std::sqrt(radius * radius - distanceFromCenter * distanceFromCenter);
+
+                        VSTGUI::CRect lineRect(
+                            center.x - halfLineWidth,
+                            y,
+                            center.x + halfLineWidth,
+                            y + 0.5
+                        );
+
+                        context->drawRect(lineRect, VSTGUI::kDrawFilled);
+                    }
+                }
+            }
+
+            // Always draw the circle stroke on top
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            break;
+        }
+
+        case TapContext::FilterResonance:
+        {
+            // Filter Resonance context: reuse pan visualization (rectangle with 5px baseline)
+            // All resonance values show minimum 5px height rectangle centered vertically
+            // Low resonance (0.0) = 5px baseline + bottom half expansion
+            // Center resonance (0.5) = 5px baseline only
+            // High resonance (1.0) = 5px baseline + top half expansion
+
+            VSTGUI::CPoint center = drawRect.getCenter();
+            double radius = std::min(drawRect.getWidth(), drawRect.getHeight()) / 2.0;
+
+            context->setFillColor(VSTGUI::kBlackCColor);
+
+            // Always start with the 5px baseline rectangle (2.5px above and below center)
+            const double baselineHalfHeight = 2.5; // 5px total baseline height
+            double fillTop = center.y - baselineHalfHeight;
+            double fillBottom = center.y + baselineHalfHeight;
+
+            if (currentValue < 0.5) {
+                // Low resonance (0.0-0.5): expand downward beyond baseline
+                // Map 0.0-0.5 to 1.0-0.0 for additional fill amount
+                double fillAmount = (0.5 - currentValue) * 2.0;
+
+                // Calculate additional fill area from baseline bottom downward
+                double additionalFillHeight = ((drawRect.getHeight() / 2.0) - baselineHalfHeight) * fillAmount;
+                fillBottom = center.y + baselineHalfHeight + additionalFillHeight;
+            }
+            else if (currentValue > 0.5) {
+                // High resonance (0.5-1.0): expand upward beyond baseline
+                // Map 0.5-1.0 to 0.0-1.0 for additional fill amount
+                double fillAmount = (currentValue - 0.5) * 2.0;
+
+                // Calculate additional fill area from baseline top upward
+                double additionalFillHeight = ((drawRect.getHeight() / 2.0) - baselineHalfHeight) * fillAmount;
+                fillTop = center.y - baselineHalfHeight - additionalFillHeight;
+            }
+            // For exactly center (0.5), fillTop and fillBottom remain at baseline values
+
+            // Draw horizontal lines to create the fill effect within the circle
+            for (double y = fillTop; y <= fillBottom; y += 0.5) {
+                double yFromCenter = y - center.y;
+                double distanceFromCenter = std::abs(yFromCenter);
+
+                if (distanceFromCenter < radius) {
+                    // Calculate line width using circle equation: x² + y² = r²
+                    double halfLineWidth = std::sqrt(radius * radius - distanceFromCenter * distanceFromCenter);
+
+                    VSTGUI::CRect lineRect(
+                        center.x - halfLineWidth,
+                        y,
+                        center.x + halfLineWidth,
+                        y + 0.5
+                    );
+
+                    context->drawRect(lineRect, VSTGUI::kDrawFilled);
+                }
+            }
+
+            // Always draw the circle stroke on top
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            break;
+        }
+
         default:
         {
             // Future contexts: for now, just draw outline
@@ -525,8 +675,9 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        if (currentContext == TapContext::Volume || currentContext == TapContext::Pan) {
-            // Volume and Pan contexts: Handle continuous control
+        if (currentContext == TapContext::Volume || currentContext == TapContext::Pan ||
+            currentContext == TapContext::FilterCutoff || currentContext == TapContext::FilterResonance) {
+            // Volume, Pan, Filter Cutoff, and Filter Resonance contexts: Handle continuous control
             isVolumeInteracting = true;
             initialClickPoint = where;
             initialVolumeValue = getValue();
@@ -594,12 +745,12 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
                     targetButton->frameToLocal(localPoint);
 
                     double newValue;
-                    if (currentContext == TapContext::Volume) {
-                        // Volume: bottom = 0.0, top = 1.0
+                    if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff) {
+                        // Volume and Filter Cutoff: bottom = 0.0, top = 1.0
                         double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
                         newValue = std::max(0.0, std::min(1.0, relativeY));
-                    } else { // TapContext::Pan
-                        // Pan: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
+                    } else { // TapContext::Pan or TapContext::FilterResonance
+                        // Pan and Filter Resonance: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
                         double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
                         newValue = std::max(0.0, std::min(1.0, relativeY));
                     }
@@ -663,12 +814,12 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
             drawRect.inset(strokeInset, strokeInset);
 
             double newValue;
-            if (currentContext == TapContext::Volume) {
-                // Volume: bottom = 0.0, top = 1.0
+            if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff) {
+                // Volume and Filter Cutoff: bottom = 0.0, top = 1.0
                 double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
                 newValue = std::max(0.0, std::min(1.0, relativeY));
-            } else { // TapContext::Pan
-                // Pan: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
+            } else { // TapContext::Pan or TapContext::FilterResonance
+                // Pan and Filter Resonance: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
                 double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
                 newValue = std::max(0.0, std::min(1.0, relativeY));
             }

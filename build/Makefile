@@ -571,6 +571,30 @@ utf16-name/fast:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/utf16name/CMakeFiles/utf16-name.dir/build.make vst3sdk/public.sdk/samples/vst/utf16name/CMakeFiles/utf16-name.dir/build
 .PHONY : utf16-name/fast
 
+source/WaterStick/ThreeSistersFilter.o: source/WaterStick/ThreeSistersFilter.cpp.o
+.PHONY : source/WaterStick/ThreeSistersFilter.o
+
+# target to build an object file
+source/WaterStick/ThreeSistersFilter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o
+.PHONY : source/WaterStick/ThreeSistersFilter.cpp.o
+
+source/WaterStick/ThreeSistersFilter.i: source/WaterStick/ThreeSistersFilter.cpp.i
+.PHONY : source/WaterStick/ThreeSistersFilter.i
+
+# target to preprocess a source file
+source/WaterStick/ThreeSistersFilter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.i
+.PHONY : source/WaterStick/ThreeSistersFilter.cpp.i
+
+source/WaterStick/ThreeSistersFilter.s: source/WaterStick/ThreeSistersFilter.cpp.s
+.PHONY : source/WaterStick/ThreeSistersFilter.s
+
+# target to generate assembly for a file
+source/WaterStick/ThreeSistersFilter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.s
+.PHONY : source/WaterStick/ThreeSistersFilter.cpp.s
+
 source/WaterStick/WaterStickController.o: source/WaterStick/WaterStickController.cpp.o
 .PHONY : source/WaterStick/WaterStickController.o
 
@@ -734,6 +758,9 @@ help:
 	@echo "... vstgui_standalone"
 	@echo "... vstgui_support"
 	@echo "... vstgui_uidescription"
+	@echo "... source/WaterStick/ThreeSistersFilter.o"
+	@echo "... source/WaterStick/ThreeSistersFilter.i"
+	@echo "... source/WaterStick/ThreeSistersFilter.s"
 	@echo "... source/WaterStick/WaterStickController.o"
 	@echo "... source/WaterStick/WaterStickController.i"
 	@echo "... source/WaterStick/WaterStickController.s"
