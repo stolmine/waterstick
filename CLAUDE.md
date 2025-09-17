@@ -143,12 +143,11 @@ This specification ensures the VST3 clone captures both the sonic character and 
    - Technical: Expanded view bounds (38x38px) to prevent rectangle clipping
    - Foundation for contextual tap parameter control modes
 
-2. **Global Control Interface** (NEXT PRIORITY)
+2. **✅ Global Control Interface** ✅ COMPLETED
    - Target Controls: Input Gain, Output Gain, Delay Time, Dry/Wet, Sync Mode, Sync Division, Grid
-   - Exclude for now: Individual tap Level/Pan controls (more complex layout)
-   - Visual: Knobs and switches matching Eurorack aesthetic
+   - Visual: Professional knobs with Eurorack aesthetic and dot indicators
    - Functionality: Real-time parameter control with host automation
-   - Why next: Provides complete basic functionality without overwhelming layout
+   - Implementation: 6-knob interface with proper spacing and value display
 
 ### Phase 2: Tap Menu System Expansion ✅ COMPLETED
 **Multi-Mode Parameter Navigation:**
@@ -299,7 +298,7 @@ The foundation provides:
 - Memory efficiency and processing speed enhancements
 - Expanded modulation and routing capabilities
 
-## Current Development Status (Updated: Phase 2.5 Global Controls Complete)
+## Current Development Status (Updated: Phase 2.6 Complete)
 
 ### ✅ Completed Core Features
 The WaterStick VST3 plugin now provides a professional, production-ready foundation with:
@@ -316,8 +315,9 @@ The WaterStick VST3 plugin now provides a professional, production-ready foundat
 - **Pan Context (Mode 3)**: Continuous stereo positioning with 5px baseline reference
 - **Filter Cutoff Context (Mode 4)**: Per-tap filter frequency control with logarithmic scaling
 - **Filter Resonance Context (Mode 5)**: Per-tap filter resonance control with cubic curve scaling
-- **Filter Type Context (Mode 6)**: Per-tap filter type selection with letter-based controls
-- **Six-Mode Mouse Interaction**: Click (absolute), vertical drag (relative), horizontal drag (cross-tap)
+- **Filter Type Context (Mode 6)**: Per-tap filter type selection with letter-based controls (L/H/B/N/X)
+- **Global Control Interface**: 6 professional knobs (Sync Mode, Time/Division, Grid, Input Gain, Output Gain, Dry/Wet)
+- **Advanced Mouse Interaction**: Click (absolute), vertical drag (relative), horizontal drag (cross-tap painting)
 - **Complete VST Integration**: Full DAW automation and project save/restore
 
 #### **Audio Quality Standards**
@@ -382,25 +382,95 @@ The WaterStick VST3 plugin now provides a professional, production-ready foundat
    - Professional drag direction detection and cross-tap painting support
    - Sample-accurate parameter automation for all filter controls
 
+### Phase 2.5: Global Control Interface ✅ COMPLETED
+**Professional Master Controls:**
+
+1. **✅ 6-Knob Global Interface**
+   - Sync Mode knob with binary toggle (Free/Sync)
+   - Time/Division knob with context-sensitive display (time in free mode, division in sync mode)
+   - Grid knob for tap distribution patterns
+   - Input Gain knob with dB scaling
+   - Output Gain knob with dB scaling
+   - Dry/Wet knob for effect balance
+
+2. **✅ Professional Knob Design**
+   - Custom KnobControl class with dot indicator design
+   - Proper 6-knob distribution across tap grid width
+   - Aligned positioning with tap grid edges
+   - Real-time value display with formatted readouts
+
+3. **✅ Complete Parameter Integration**
+   - Full VST parameter automation for all global controls
+   - Context-sensitive value formatting (dB, %, divisions, etc.)
+   - Real-time parameter updates with smooth interaction
+   - Professional knob interaction with drag sensitivity
+
+### Phase 2.6: Filter Type Context Implementation ✅ COMPLETED
+**Letter-Based Filter Type Selection:**
+
+1. **✅ Filter Type Context (Mode 6)**
+   - Complete per-tap filter type selection using letter visualization
+   - Letter display: L (Low Pass), H (High Pass), B (Band Pass), N (Notch), X (Bypass)
+   - Click and vertical drag interactions for filter type cycling
+   - Full VST parameter integration with kTap1FilterType through kTap16FilterType
+
+2. **✅ Advanced Visual Design**
+   - Clean letter rendering without circle stroke for clarity
+   - Proper filter type mapping to discrete parameter values
+   - Context-aware interaction (no horizontal drag for discrete values)
+   - Integrated with existing tap button context system
+
+### Phase 2.7: Global Feedback System ✅ COMPLETED
+**Professional Delay Feedback Implementation:**
+
+1. **✅ Global Feedback Parameter**
+   - Added kFeedback parameter with 0-100% range and percentage display
+   - Cubic scaling curve for smooth control with precision at lower values
+   - Full VST3 integration with automation support and parameter persistence
+   - Positioned between Time and Grid controls in global interface
+
+2. **✅ Tanh-Limited Feedback Processing**
+   - Professional feedback routing from delay tap outputs back to input
+   - Tanh saturation prevents runaway feedback while allowing controlled saturation
+   - Sample-accurate feedback buffers (mFeedbackBufferL/R) for clean processing
+   - Feedback applied before input gain for optimal signal flow
+
+3. **✅ Enhanced Global Control Interface**
+   - Expanded from 6 to 7 knobs maintaining equal spacing and edge alignment
+   - Dynamic knob distribution across tap grid width with proper proportions
+   - Professional layout: SYNC, TIME, FEEDBACK, GRID, INPUT, OUTPUT, DRY/WET
+   - Complete parameter integration in valueChanged and updateValueReadouts
+
+### Phase 2.8: GUI Layout Improvements ✅ COMPLETED
+**Dynamic Label Sizing System:**
+
+1. **✅ Feedback Label Clipping Fix**
+   - Resolved "FEEDBACK" label truncation with dynamic width calculation
+   - Character-based approximation (7.5px per char + 8px padding) for 11pt font
+   - Automatic expansion beyond minimum width while preserving layout consistency
+   - Professional center alignment around knob centers regardless of width
+
+2. **✅ Scalable Label Architecture**
+   - Dynamic sizing handles any future longer label text automatically
+   - Minimum width protection maintains visual consistency with shorter labels
+   - Performance-optimized approximation avoids expensive font measuring
+   - Clean integration with existing knob creation and styling system
+
 ### 🔄 Next Development Priorities
-1. **✅ Filter Type Context (Mode 6)**: Per-tap filter type selection with letter-based controls ✅ COMPLETED
-2. **Enhanced GUI Features**
-   - Resizable interface implementation
-   - Advanced per-tap filter routing and chaining
-2. **Enhanced Visual Feedback**
-   - Real-time tap activity meters
-   - Visualization of delay times and tap positions
-3. **Performance Optimizations**
-   - SIMD optimization for multi-tap processing
-   - Memory efficiency improvements
+1. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
+2. **Performance Optimizations**: SIMD optimization and memory efficiency improvements
+3. **Comb Resonator Section**: 64-tap Karplus-Strong implementation
+4. **Advanced Modulation**: LFO and envelope control for dynamic parameter automation
 
 ### 📊 Development Progress
-- **Phase 1-2.5**: Core VST3 Foundation ✅ 100% Complete
-  - Full tap distribution engine
-  - Per-tap enable, volume, pan, and filter controls
-  - Global control interface
-  - VST3 validation passed (47/47 tests)
+- **Phase 1-2.8**: Core VST3 Foundation ✅ 100% Complete
+  - Full tap distribution engine with 16 independent taps
+  - Complete contextual control system (6 modes)
+  - Per-tap enable, volume, pan, and filter controls (cutoff, resonance, type)
+  - Professional global feedback system with tanh limiting
+  - Enhanced global control interface (7 knobs) with dynamic label sizing
+  - VST3 validation passed (104 parameters, 47/47 tests)
 - **Phase 3**: Comb Resonator Section 🔄 In Planning
 - **Phase 4**: Advanced Features 🔄 In Planning
 
-The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, full automation support, and a modular, extensible design. Global controls for sync, time, grid, input, output, and dry/wet are fully implemented, maintaining a clean and intuitive user experience.
+The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, and enhanced GUI with dynamic layout capabilities. All core functionality is implemented with full automation support, professional audio quality, and modular, extensible design.

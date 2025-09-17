@@ -283,8 +283,25 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 
         container->addView(*(knobPointers[i]));
 
-        // Create label (no background box, uniform sizing)
-        VSTGUI::CRect labelRect(knobX, labelY, knobX + knobSize, labelY + labelHeight);
+        // Calculate dynamic label width based on text content
+        auto customFont = getWorkSansFont(11.0f); // Get font first for width calculation
+        int labelWidth = knobSize; // Default minimum width
+
+        // Use a simple approximation for text width since we don't have drawing context yet
+        // FEEDBACK = 8 chars, others are shorter
+        const char* text = knobLabels[i];
+        int textLength = static_cast<int>(strlen(text));
+
+        // Approximate width: 7.5 pixels per character for 11pt font + 8px padding
+        int approximateWidth = static_cast<int>(textLength * 7.5f + 8);
+        labelWidth = std::max(knobSize, approximateWidth);
+
+        // Center the label horizontally around the knob center
+        int labelLeft = knobX + (knobSize - labelWidth) / 2;
+        int labelRight = labelLeft + labelWidth;
+
+        // Create label with dynamic width
+        VSTGUI::CRect labelRect(labelLeft, labelY, labelRight, labelY + labelHeight);
         *(labelPointers[i]) = new VSTGUI::CTextLabel(labelRect, knobLabels[i]);
 
         // Set label styling - no background, uniform font size
@@ -295,8 +312,7 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
         label->setFrameColor(VSTGUI::kTransparentCColor); // Remove any border
         label->setStyle(VSTGUI::CTextLabel::kNoFrame); // Explicitly no frame
 
-        // Use uniform font size (based on "OUTPUT" label size)
-        auto customFont = getWorkSansFont(11.0f); // Slightly smaller for better fit
+        // Apply the font we already measured with
         if (customFont) {
             label->setFont(customFont);
         }
