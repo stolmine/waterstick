@@ -6,6 +6,7 @@
 #include "pluginterfaces/base/ibstream.h"
 #include "pluginterfaces/vst/ivstmessage.h"
 #include "pluginterfaces/vst/vsttypes.h"
+#include <cmath>
 
 using namespace Steinberg;
 
@@ -128,6 +129,19 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 16 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap16Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 16 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16Pan, 0, STR16("Tap"));
 
+    // Global filter parameters
+    parameters.addParameter(STR16("Filter Cutoff"), STR16("Hz"), 0, 0.5,
+                           Vst::ParameterInfo::kCanAutomate, kFilterCutoff, 0,
+                           STR16("Filter"));
+
+    parameters.addParameter(STR16("Filter Resonance"), STR16("%"), 0, 0.5,
+                           Vst::ParameterInfo::kCanAutomate, kFilterResonance, 0,
+                           STR16("Filter"));
+
+    parameters.addParameter(STR16("Filter Type"), nullptr, kNumFilterTypes - 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kFilterType, 0,
+                           STR16("Filter"));
+
     return result;
 }
 
@@ -178,6 +192,29 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
         setParamNormalized(kTap1Level + (i * 3), tapLevel);
         setParamNormalized(kTap1Pan + (i * 3), tapPan);
     }
+
+    // Load filter parameters
+    float filterCutoff, filterResonance;
+    int32 filterType;
+
+    if (streamer.readFloat(filterCutoff) == false) return kResultFalse;
+    if (streamer.readFloat(filterResonance) == false) return kResultFalse;
+    if (streamer.readInt32(filterType) == false) return kResultFalse;
+
+    // Inverse of logarithmic scaling: if freq = 20 * pow(1000, value), then value = log(freq/20) / log(1000)
+    setParamNormalized(kFilterCutoff, std::log(filterCutoff / 20.0f) / std::log(1000.0f));
+
+    // Inverse of resonance scaling
+    float normalizedResonance;
+    if (filterResonance >= 0.0f) {
+        // Inverse of cubic curve: value = cbrt(resonance)
+        normalizedResonance = 0.5f + 0.5f * std::cbrt(filterResonance);
+    } else {
+        // Linear mapping for negative values
+        normalizedResonance = 0.5f + filterResonance / 2.0f;
+    }
+    setParamNormalized(kFilterResonance, normalizedResonance);
+    setParamNormalized(kFilterType, static_cast<Vst::ParamValue>(filterType) / (kNumFilterTypes - 1));
 
     return kResultOk;
 }
@@ -231,6 +268,50 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
                     "1", "2", "3", "4", "6", "8", "12", "16"
                 };
                 Steinberg::UString(string, 128).fromAscii(gridTexts[grid]);
+                return kResultTrue;
+            }
+            break;
+        }
+        case kFilterCutoff:
+        {
+            // Convert normalized value to frequency using same logarithmic scale as processor
+            float frequency = 20.0f * std::pow(1000.0f, valueNormalized); // 20Hz to 20kHz logarithmic
+
+            char freqText[128];
+            if (frequency < 1000.0f) {
+                snprintf(freqText, sizeof(freqText), "%.1f Hz", frequency);
+            } else {
+                snprintf(freqText, sizeof(freqText), "%.2f kHz", frequency / 1000.0f);
+            }
+            Steinberg::UString(string, 128).fromAscii(freqText);
+            return kResultTrue;
+        }
+        case kFilterResonance:
+        {
+            // Convert normalized value to actual resonance using same scaling as processor
+            float resonance;
+            if (valueNormalized >= 0.5f) {
+                // Positive resonance with cubic curve
+                float positiveValue = (valueNormalized - 0.5f) * 2.0f;
+                resonance = positiveValue * positiveValue * positiveValue;
+            } else {
+                // Negative resonance with linear mapping
+                resonance = (valueNormalized - 0.5f) * 2.0f;
+            }
+
+            char resText[128];
+            snprintf(resText, sizeof(resText), "%.2f", resonance);
+            Steinberg::UString(string, 128).fromAscii(resText);
+            return kResultTrue;
+        }
+        case kFilterType:
+        {
+            int filterType = static_cast<int>(valueNormalized * (kNumFilterTypes - 1) + 0.5);
+            if (filterType >= 0 && filterType < kNumFilterTypes) {
+                static const char* filterTypeTexts[kNumFilterTypes] = {
+                    "Low Pass", "High Pass", "Band Pass", "Notch"
+                };
+                Steinberg::UString(string, 128).fromAscii(filterTypeTexts[filterType]);
                 return kResultTrue;
             }
             break;

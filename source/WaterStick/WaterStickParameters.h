@@ -62,6 +62,10 @@ enum {
     kTap16Enable,        // Tap 16 enable/disable
     kTap16Level,         // Tap 16 level
     kTap16Pan,           // Tap 16 pan position
+    // Global filter parameters
+    kFilterCutoff,       // Global filter cutoff frequency
+    kFilterResonance,    // Global filter resonance (-1.0 to +1.0)
+    kFilterType,         // Global filter type (0=LP, 1=HP, 2=BP, 3=Notch)
     kNumParams
 };
 
@@ -103,6 +107,15 @@ enum GridValues {
     kGrid_12,            // 12 Taps/Beat
     kGrid_16,            // 16 Taps/Beat
     kNumGridValues
+};
+
+// Filter types
+enum FilterTypes {
+    kFilterType_LowPass = 0,     // Low pass filter
+    kFilterType_HighPass,        // High pass filter
+    kFilterType_BandPass,        // Band pass filter
+    kFilterType_Notch,           // Notch filter
+    kNumFilterTypes
 };
 
 } // namespace WaterStick

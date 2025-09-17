@@ -4,6 +4,7 @@
 #include "public.sdk/source/vst/vstparameters.h"
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "WaterStickParameters.h"
+#include "ThreeSistersFilter.h"
 #include <vector>
 #include <cmath>
 #include <algorithm>
@@ -211,6 +212,11 @@ private:
     float mTapLevel[16];
     float mTapPan[16];
 
+    // Global filter parameters
+    float mFilterCutoff;
+    float mFilterResonance;
+    int mFilterType;
+
     // Fade-out state for smooth tap disengagement
     bool mTapFadingOut[16];        // True when tap is fading out
     int mTapFadeOutRemaining[16];  // Samples remaining in fade-out
@@ -235,6 +241,10 @@ private:
     TempoSync mTempoSync;
     TapDistribution mTapDistribution;
     double mSampleRate;
+
+    // Global filter (applied after tap mixing)
+    ThreeSistersFilter mGlobalFilterL;
+    ThreeSistersFilter mGlobalFilterR;
 
     void updateParameters();
 };
