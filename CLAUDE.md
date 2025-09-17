@@ -440,7 +440,7 @@ These are advanced features for much later development phases:
    - Efficient memory management for long delay times
    - Multi-threading for complex processing chains
 
-## Current Development Status (Updated: Phase 2.2 Complete)
+## Current Development Status (Updated: Phase 2.4 Complete)
 
 ### ✅ Completed Core Features
 The WaterStick VST3 plugin now provides a professional, production-ready foundation with:
@@ -455,14 +455,16 @@ The WaterStick VST3 plugin now provides a professional, production-ready foundat
 - **Enable Context (Mode 1)**: Binary tap on/off control with drag functionality
 - **Volume Context (Mode 2)**: Continuous level control with circular fill visualization
 - **Pan Context (Mode 3)**: Continuous stereo positioning with 5px baseline reference
-- **Three-Mode Mouse Interaction**: Click (absolute), vertical drag (relative), horizontal drag (cross-tap)
+- **Filter Cutoff Context (Mode 4)**: Per-tap filter frequency control with logarithmic scaling
+- **Filter Resonance Context (Mode 5)**: Per-tap filter resonance control with cubic curve scaling
+- **Five-Mode Mouse Interaction**: Click (absolute), vertical drag (relative), horizontal drag (cross-tap)
 - **Complete VST Integration**: Full DAW automation and project save/restore
 
 #### **Audio Quality Standards**
 - Professional fade-in/out curves preventing audio artifacts
 - Automatic buffer clearing for clean tap transitions
 - Sample-accurate parameter automation
-- VST3 validation compliance
+- VST3 validation compliance (103 parameters, 47 tests passed)
 
 ### Phase 2.3: Per-Tap Filter Implementation ✅ COMPLETED
 **Transition from Global to Per-Tap Filtering:**
@@ -491,8 +493,37 @@ The WaterStick VST3 plugin now provides a professional, production-ready foundat
    - Full VST3 validation compliance (103 total parameters)
    - Backward-compatible parameter indexing maintained
 
+### Phase 2.4: Filter Context Implementation ✅ COMPLETED
+**Professional Per-Tap Filter Control:**
+
+1. **✅ Filter Cutoff Context (Mode 4)**
+   - Complete per-tap filter cutoff frequency control using volume GUI visualization
+   - Professional circular fill visualization representing cutoff frequency levels
+   - Logarithmic frequency scaling (20Hz-20kHz) matching commit e5eb25c parameters
+   - Full VST parameter integration with kTap1FilterCutoff through kTap16FilterCutoff
+   - Three interaction modes: click (absolute positioning), vertical drag (relative adjustment), horizontal drag (cross-tap painting)
+
+2. **✅ Filter Resonance Context (Mode 5)**
+   - Complete per-tap filter resonance control using pan GUI visualization
+   - Professional rectangle with 5px baseline representing resonance levels
+   - Resonance scaling (-1.0 to +1.0) with cubic curve for positive values matching commit e5eb25c
+   - Full VST parameter integration with kTap1FilterResonance through kTap16FilterResonance
+   - Visual mapping: bottom half = low resonance, center = moderate, top half = high resonance
+
+3. **✅ Context System Enhancement**
+   - Extended TapContext enum with FilterCutoff and FilterResonance contexts
+   - Updated getTapParameterIdForContext() to route to proper per-tap filter parameters
+   - Enhanced createTapButtons() to load filter context values automatically
+   - Complete context switching with parameter save/load functionality
+
+4. **✅ Mouse Interaction Integration**
+   - Extended all mouse event handlers (onMouseDown, onMouseMoved, onMouseUp) for filter contexts
+   - Maintained consistent interaction paradigms with existing Volume and Pan contexts
+   - Professional drag direction detection and cross-tap painting support
+   - Sample-accurate parameter automation for all filter controls
+
 ### 🔄 Next Development Priorities
-1. **Filter Context (Mode 4)**: GUI interface for per-tap filter control
+1. **Filter Type Context (Mode 6)**: GUI interface for per-tap filter type selection
 2. **Global Control Interface**: Input/Output gain, Dry/Wet, sync controls
 3. **Enhanced Visual Feedback**: Real-time tap activity indicators
 
@@ -502,7 +533,8 @@ The WaterStick VST3 plugin now provides a professional, production-ready foundat
 - **Phase 2.1**: Volume Context Implementation ✅ 100% Complete
 - **Phase 2.2**: Pan Context Implementation ✅ 100% Complete
 - **Phase 2.3**: Per-Tap Filter Implementation ✅ 100% Complete
+- **Phase 2.4**: Filter Context Implementation ✅ 100% Complete
 - **Phase 3**: Comb Resonator Section 🔄 Future Development
 - **Phase 4**: Advanced Features 🔄 Future Development
 
-The plugin now provides individual Three Sisters-quality filtering for each of the 16 taps, enabling sophisticated per-tap spectral manipulation while maintaining comprehensive tap control. Each tap has independent cutoff frequency, resonance, and filter type control with the same cascaded SVF architecture quality previously available globally.
+The plugin now provides comprehensive per-tap filter control through dedicated GUI contexts. Mode buttons 4 and 5 enable professional control of filter cutoff frequency and resonance for each of the 16 taps, maintaining visual consistency with the existing context system while providing full VST3 automation support.
