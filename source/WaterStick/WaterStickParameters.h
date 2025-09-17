@@ -156,7 +156,8 @@ enum GridValues {
 
 // Filter types
 enum FilterTypes {
-    kFilterType_LowPass = 0,     // Low pass filter
+    kFilterType_Bypass = 0,      // Bypass (no filtering)
+    kFilterType_LowPass,         // Low pass filter
     kFilterType_HighPass,        // High pass filter
     kFilterType_BandPass,        // Band pass filter
     kFilterType_Notch,           // Notch filter

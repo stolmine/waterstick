@@ -73,8 +73,8 @@ ThreeSistersFilter::ThreeSistersFilter()
     : sampleRate_(44100.0)
     , frequency_(1000.0)
     , resonance_(0.0)
-    , filterType_(kFilterType_LowPass)
-    , previousFilterType_(kFilterType_LowPass)
+    , filterType_(kFilterType_Bypass)
+    , previousFilterType_(kFilterType_Bypass)
     , fadeProgress_(1.0)
     , fadeRate_(0.0)
     , isTransitioning_(false)
@@ -172,6 +172,11 @@ void ThreeSistersFilter::updateTransition() {
 
 double ThreeSistersFilter::processFilterType(int type, double input) {
     switch (type) {
+        case kFilterType_Bypass: {
+            // Bypass: return input unchanged
+            return input;
+        }
+
         case kFilterType_LowPass: {
             // LP→LP cascade for 24dB/octave lowpass
             auto stage1 = lpChain_[0].process(input);
@@ -231,6 +236,10 @@ double ThreeSistersFilter::process(double input) {
         // Mix in complementary frequency content
         double complementary = 0.0;
         switch (filterType_) {
+            case kFilterType_Bypass:
+                // For bypass, anti-resonance has no effect
+                complementary = input;
+                break;
             case kFilterType_LowPass: {
                 // Mix in high frequency content
                 auto hpOut = hpChain_[0].process(input);

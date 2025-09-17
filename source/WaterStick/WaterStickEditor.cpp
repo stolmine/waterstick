@@ -675,15 +675,17 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 
         case TapContext::FilterType:
         {
-            // Filter Type context: display letters L, H, B, N based on filter type value
-            // Parameter values: 0.0-0.25=L, 0.25-0.50=H, 0.50-0.75=B, 0.75-1.0=N
+            // Filter Type context: display letters X, L, H, B, N based on filter type value
+            // Parameter values: 0.0-0.2=X (bypass), 0.2-0.4=L, 0.4-0.6=H, 0.6-0.8=B, 0.8-1.0=N
 
             char letter;
-            if (currentValue < 0.25) {
+            if (currentValue < 0.2) {
+                letter = 'X';  // Bypass (no filtering)
+            } else if (currentValue < 0.4) {
                 letter = 'L';  // Low Pass
-            } else if (currentValue < 0.50) {
+            } else if (currentValue < 0.6) {
                 letter = 'H';  // High Pass
-            } else if (currentValue < 0.75) {
+            } else if (currentValue < 0.8) {
                 letter = 'B';  // Band Pass
             } else {
                 letter = 'N';  // Notch

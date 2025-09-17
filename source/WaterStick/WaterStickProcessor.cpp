@@ -622,7 +622,7 @@ WaterStickProcessor::WaterStickProcessor()
         // Initialize per-tap filter parameters
         mTapFilterCutoff[i] = 1000.0f;     // 1 kHz default
         mTapFilterResonance[i] = 0.0f;     // No resonance default
-        mTapFilterType[i] = kFilterType_LowPass;  // Low pass default
+        mTapFilterType[i] = kFilterType_Bypass;   // Bypass default (no filtering)
 
         // Initialize fade-out state
         mTapFadingOut[i] = false;

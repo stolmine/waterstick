@@ -367,7 +367,7 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
                         int filterType = static_cast<int>(valueNormalized * (kNumFilterTypes - 1) + 0.5);
                         if (filterType >= 0 && filterType < kNumFilterTypes) {
                             static const char* filterTypeTexts[kNumFilterTypes] = {
-                                "Low Pass", "High Pass", "Band Pass", "Notch"
+                                "Bypass", "Low Pass", "High Pass", "Band Pass", "Notch"
                             };
                             Steinberg::UString(string, 128).fromAscii(filterTypeTexts[filterType]);
                             return kResultTrue;
