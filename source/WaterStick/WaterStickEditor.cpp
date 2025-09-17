@@ -123,6 +123,11 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
             auto filterResonanceValue = controller->getParamNormalized(filterResonanceParamId);
             button->setContextValue(TapContext::FilterResonance, filterResonanceValue);
 
+            // Load Filter Type context value
+            int filterTypeParamId = getTapParameterIdForContext(i, TapContext::FilterType);
+            auto filterTypeValue = controller->getParamNormalized(filterTypeParamId);
+            button->setContextValue(TapContext::FilterType, filterTypeValue);
+
             // Set initial display value (Enable context is default)
             button->setValue(enableValue);
         }
@@ -661,6 +666,52 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             break;
         }
 
+        case TapContext::FilterType:
+        {
+            // Filter Type context: display letters L, H, B, N based on filter type value
+            // Parameter values: 0.0-0.25=L, 0.25-0.50=H, 0.50-0.75=B, 0.75-1.0=N
+
+            char letter;
+            if (currentValue < 0.25) {
+                letter = 'L';  // Low Pass
+            } else if (currentValue < 0.50) {
+                letter = 'H';  // High Pass
+            } else if (currentValue < 0.75) {
+                letter = 'B';  // Band Pass
+            } else {
+                letter = 'N';  // Notch
+            }
+
+            // Use system font sized to fill the circle area
+            // Circle diameter is 48px, make font large enough so ascenders/descenders reach edges
+            auto systemFont = VSTGUI::kSystemFont;
+            systemFont->setSize(48);  // Large font to fill circle area
+
+            // Set font in context
+            context->setFont(systemFont);
+            context->setFontColor(VSTGUI::kBlackCColor);
+
+            // Create single character string
+            std::string letterStr(1, letter);
+
+            // Calculate text position to center the letter properly
+            VSTGUI::CPoint center = drawRect.getCenter();
+
+            // Get text dimensions for precise centering
+            auto textWidth = context->getStringWidth(letterStr.c_str());
+
+            // For proper vertical centering, we need to account for the baseline
+            // Use a more accurate method to center the text
+            VSTGUI::CPoint textPos(
+                center.x - textWidth / 2.0,
+                center.y + systemFont->getSize() / 3.0  // Baseline adjustment for visual centering
+            );
+
+            // Draw the letter (no circle stroke in FilterType context)
+            context->drawString(letterStr.c_str(), textPos);
+            break;
+        }
+
         default:
         {
             // Future contexts: for now, just draw outline
@@ -676,8 +727,9 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
 {
     if (buttons & VSTGUI::kLButton) {
         if (currentContext == TapContext::Volume || currentContext == TapContext::Pan ||
-            currentContext == TapContext::FilterCutoff || currentContext == TapContext::FilterResonance) {
-            // Volume, Pan, Filter Cutoff, and Filter Resonance contexts: Handle continuous control
+            currentContext == TapContext::FilterCutoff || currentContext == TapContext::FilterResonance ||
+            currentContext == TapContext::FilterType) {
+            // Volume, Pan, Filter Cutoff, Filter Resonance, and Filter Type contexts: Handle continuous control
             isVolumeInteracting = true;
             initialClickPoint = where;
             initialVolumeValue = getValue();
@@ -725,8 +777,9 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
             }
         }
 
-        if (currentDragDirection == DragDirection::Horizontal) {
+        if (currentDragDirection == DragDirection::Horizontal && currentContext != TapContext::FilterType) {
             // Horizontal drag: Set value on different taps based on mouse position
+            // Note: FilterType context does not support horizontal drag
             VSTGUI::CPoint framePoint = where;
             localToFrame(framePoint);
 
@@ -745,8 +798,9 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
                     targetButton->frameToLocal(localPoint);
 
                     double newValue;
-                    if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff) {
-                        // Volume and Filter Cutoff: bottom = 0.0, top = 1.0
+                    if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff ||
+                        currentContext == TapContext::FilterType) {
+                        // Volume, Filter Cutoff, and Filter Type: bottom = 0.0, top = 1.0
                         double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
                         newValue = std::max(0.0, std::min(1.0, relativeY));
                     } else { // TapContext::Pan or TapContext::FilterResonance
@@ -814,8 +868,9 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
             drawRect.inset(strokeInset, strokeInset);
 
             double newValue;
-            if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff) {
-                // Volume and Filter Cutoff: bottom = 0.0, top = 1.0
+            if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff ||
+                currentContext == TapContext::FilterType) {
+                // Volume, Filter Cutoff, and Filter Type: bottom = 0.0, top = 1.0
                 double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
                 newValue = std::max(0.0, std::min(1.0, relativeY));
             } else { // TapContext::Pan or TapContext::FilterResonance
