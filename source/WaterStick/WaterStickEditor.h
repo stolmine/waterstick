@@ -133,6 +133,10 @@ public:
     // Font management
     VSTGUI::SharedPointer<VSTGUI::CFontDesc> getWorkSansFont(float size) const;
 
+    // Value formatting helpers
+    std::string formatParameterValue(int parameterId, float normalizedValue) const;
+    void updateValueReadouts();
+
 private:
     static constexpr int kEditorWidth = 700;   // 400 * 1.75
     static constexpr int kEditorHeight = 525;  // 300 * 1.75
@@ -149,6 +153,7 @@ private:
     KnobControl* inputGainKnob;
     KnobControl* outputGainKnob;
     KnobControl* dryWetKnob;
+    KnobControl* gridKnob;
 
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
@@ -156,6 +161,15 @@ private:
     VSTGUI::CTextLabel* inputGainLabel;
     VSTGUI::CTextLabel* outputGainLabel;
     VSTGUI::CTextLabel* dryWetLabel;
+    VSTGUI::CTextLabel* gridLabel;
+
+    // Value readout labels
+    VSTGUI::CTextLabel* syncModeValue;
+    VSTGUI::CTextLabel* timeDivisionValue;
+    VSTGUI::CTextLabel* inputGainValue;
+    VSTGUI::CTextLabel* outputGainValue;
+    VSTGUI::CTextLabel* dryWetValue;
+    VSTGUI::CTextLabel* gridValue;
 
     // Context state management
     TapContext currentContext = TapContext::Enable;

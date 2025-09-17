@@ -32,11 +32,11 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     }
 
     // Add parameters
-    parameters.addParameter(STR16("Input Gain"), STR16("dB"), 0, 1.0,
+    parameters.addParameter(STR16("Input Gain"), STR16("dB"), 0, 40.0/52.0,
                            Vst::ParameterInfo::kCanAutomate, kInputGain, 0,
                            STR16("Input"));
 
-    parameters.addParameter(STR16("Output Gain"), STR16("dB"), 0, 1.0,
+    parameters.addParameter(STR16("Output Gain"), STR16("dB"), 0, 40.0/52.0,
                            Vst::ParameterInfo::kCanAutomate, kOutputGain, 0,
                            STR16("Output"));
 
@@ -193,6 +193,11 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 16 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16FilterType, 0, STR16("Filter"));
+
+    // Initialize parameters to their default values to ensure proper display
+    // This is crucial for parameters that don't get set via setComponentState on first load
+    setParamNormalized(kInputGain, 40.0/52.0);   // 0dB
+    setParamNormalized(kOutputGain, 40.0/52.0);  // 0dB
 
     return result;
 }

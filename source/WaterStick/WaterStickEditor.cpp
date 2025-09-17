@@ -9,6 +9,9 @@
 #include "vstgui/lib/cfont.h"
 #include "vstgui/lib/cframe.h"
 #include <cmath>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 namespace WaterStick {
 
@@ -41,6 +44,13 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     inputGainLabel = nullptr;
     outputGainLabel = nullptr;
     dryWetLabel = nullptr;
+
+    // Initialize value readouts
+    syncModeValue = nullptr;
+    timeDivisionValue = nullptr;
+    inputGainValue = nullptr;
+    outputGainValue = nullptr;
+    dryWetValue = nullptr;
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -65,6 +75,9 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     createGlobalControls(container);
 
     frame->addView(container);
+
+    // Update value readouts with initial parameter values
+    updateValueReadouts();
 
     return true;
 }
@@ -214,44 +227,44 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 {
     // Calculate knob positioning in bottom 1/3 of window
     const int bottomThirdTop = (kEditorHeight * 2) / 3;
-    const int bottomThirdHeight = kEditorHeight - bottomThirdTop;
 
     // Knob configuration
     const int knobSize = 53; // Same size as tap buttons
-    const int buttonSize = 53; // For spacing calculations
+    const int buttonSize = 53; // For tap button calculations
     const int buttonSpacing = buttonSize / 2;
     const int gridWidth = 8;
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
 
-    // Calculate knob spacing (1.25x tap array gap distance)
-    const int knobSpacing = static_cast<int>(buttonSpacing * 1.25);
-
-    // Calculate total width needed for 5 knobs
-    const int totalKnobsWidth = (5 * knobSize) + (4 * knobSpacing);
-
-    // Align knob edges with outer edges of tap controls
+    // Calculate tap grid positioning to align knob edges with tap edges
     const int tapGridLeft = (kEditorWidth - totalGridWidth) / 2;
-    const int knobsLeft = tapGridLeft + (totalGridWidth - totalKnobsWidth) / 2;
+    const int tapGridRight = tapGridLeft + totalGridWidth;
 
-    // Position knobs with at least 1.5x spacing from mode buttons
+    // Distribute 6 knobs equally across the tap grid width
+    // Align leftmost and rightmost knob edges with tap grid edges
+    const int availableWidth = totalGridWidth - (6 * knobSize); // Space for 5 gaps between 6 knobs
+    const int knobSpacing = availableWidth / 5; // Equal spacing between knobs
+
+    // Position knobs with proper spacing from mode buttons
     const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
     const int knobY = bottomThirdTop + modeButtonSpacing;
 
-    // Label positioning
+    // Label positioning - uniform sizing based on "OUTPUT" label
     const int labelHeight = 20;
-    const int labelY = knobY + knobSize + 10; // 10px gap between knob and label
+    const int labelY = knobY + knobSize + 5; // 5px gap between knob and label
+    const int valueReadoutY = labelY + labelHeight + 2; // 2px gap between label and value
 
     // Create knobs and labels
-    const char* knobLabels[] = {"SYNC", "TIME", "INPUT", "OUTPUT", "DRY/WET"};
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kInputGain, kOutputGain, kDryWet};
-    KnobControl** knobPointers[] = {&syncModeKnob, &timeDivisionKnob, &inputGainKnob, &outputGainKnob, &dryWetKnob};
-    VSTGUI::CTextLabel** labelPointers[] = {&syncModeLabel, &timeDivisionLabel, &inputGainLabel, &outputGainLabel, &dryWetLabel};
+    const char* knobLabels[] = {"SYNC", "TIME", "GRID", "INPUT", "OUTPUT", "DRY/WET"};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kGrid, kInputGain, kOutputGain, kDryWet};
+    KnobControl** knobPointers[] = {&syncModeKnob, &timeDivisionKnob, &gridKnob, &inputGainKnob, &outputGainKnob, &dryWetKnob};
+    VSTGUI::CTextLabel** labelPointers[] = {&syncModeLabel, &timeDivisionLabel, &gridLabel, &inputGainLabel, &outputGainLabel, &dryWetLabel};
+    VSTGUI::CTextLabel** valuePointers[] = {&syncModeValue, &timeDivisionValue, &gridValue, &inputGainValue, &outputGainValue, &dryWetValue};
 
-    for (int i = 0; i < 5; i++) {
-        // Calculate knob position
-        int knobX = knobsLeft + i * (knobSize + knobSpacing);
+    for (int i = 0; i < 6; i++) {
+        // Calculate knob position (equally distributed)
+        int knobX = tapGridLeft + i * (knobSize + knobSpacing);
 
-        // Create knob
+        // Create knob (no clipping - full circle visible)
         VSTGUI::CRect knobRect(knobX, knobY, knobX + knobSize, knobY + knobSize);
         *(knobPointers[i]) = new KnobControl(knobRect, this, knobTags[i]);
 
@@ -265,27 +278,148 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
         if (controller) {
             float value = controller->getParamNormalized(knobTags[i]);
             (*knobPointers[i])->setValue(value);
+
         }
 
         container->addView(*(knobPointers[i]));
 
-        // Create label
+        // Create label (no background box, uniform sizing)
         VSTGUI::CRect labelRect(knobX, labelY, knobX + knobSize, labelY + labelHeight);
         *(labelPointers[i]) = new VSTGUI::CTextLabel(labelRect, knobLabels[i]);
 
-        // Set label styling
+        // Set label styling - no background, uniform font size
         auto label = *(labelPointers[i]);
         label->setHoriAlign(VSTGUI::kCenterText);
         label->setFontColor(VSTGUI::kBlackCColor);
         label->setBackColor(VSTGUI::kTransparentCColor);
+        label->setFrameColor(VSTGUI::kTransparentCColor); // Remove any border
+        label->setStyle(VSTGUI::CTextLabel::kNoFrame); // Explicitly no frame
 
-        // Try to use custom font
-        auto customFont = getWorkSansFont(12.0f);
+        // Use uniform font size (based on "OUTPUT" label size)
+        auto customFont = getWorkSansFont(11.0f); // Slightly smaller for better fit
         if (customFont) {
             label->setFont(customFont);
         }
 
         container->addView(label);
+
+        // Create value readout
+        VSTGUI::CRect valueRect(knobX, valueReadoutY, knobX + knobSize, valueReadoutY + labelHeight);
+        *(valuePointers[i]) = new VSTGUI::CTextLabel(valueRect, "");
+
+        // Set value readout styling
+        auto valueLabel = *(valuePointers[i]);
+        valueLabel->setHoriAlign(VSTGUI::kCenterText);
+        valueLabel->setFontColor(VSTGUI::kBlackCColor);
+        valueLabel->setBackColor(VSTGUI::kTransparentCColor);
+        valueLabel->setFrameColor(VSTGUI::kTransparentCColor);
+        valueLabel->setStyle(VSTGUI::CTextLabel::kNoFrame);
+
+        // Use smaller font for value readouts
+        auto valueFont = getWorkSansFont(9.0f);
+        if (valueFont) {
+            valueLabel->setFont(valueFont);
+        }
+
+        // Set initial value text
+        if (controller) {
+            float value = controller->getParamNormalized(knobTags[i]);
+            std::string valueText = formatParameterValue(knobTags[i], value);
+            valueLabel->setText(valueText.c_str());
+        }
+
+        container->addView(valueLabel);
+    }
+}
+
+std::string WaterStickEditor::formatParameterValue(int parameterId, float normalizedValue) const
+{
+    std::ostringstream oss;
+
+    switch (parameterId) {
+        case kTempoSyncMode:
+            return normalizedValue > 0.5f ? "SYNC" : "FREE";
+
+        case kDelayTime:
+            // Convert normalized to seconds (0-20s range)
+            oss << std::fixed << std::setprecision(2) << (normalizedValue * 20.0f) << "s";
+            return oss.str();
+
+        case kSyncDivision:
+        {
+            // Convert to sync division index and get description
+            int divIndex = static_cast<int>(normalizedValue * (kNumSyncDivisions - 1));
+            const char* divNames[] = {
+                "1/64", "1/32T", "1/64.", "1/32", "1/16T", "1/32.", "1/16", "1/8T", "1/16.",
+                "1/8", "1/4T", "1/8.", "1/4", "1/2T", "1/4.", "1/2", "1T", "1/2.", "1", "2", "4", "8"
+            };
+            if (divIndex >= 0 && divIndex < kNumSyncDivisions) {
+                return divNames[divIndex];
+            }
+            return "1/4";
+        }
+
+        case kInputGain:
+        case kOutputGain:
+        {
+            // Convert normalized to dB (-40dB to +12dB range)
+            float dbValue = -40.0f + (normalizedValue * 52.0f);
+            oss << std::fixed << std::setprecision(1) << dbValue << "dB";
+            return oss.str();
+        }
+
+        case kDryWet:
+            // Convert to percentage
+            oss << std::fixed << std::setprecision(0) << (normalizedValue * 100.0f) << "%";
+            return oss.str();
+
+        case kGrid:
+        {
+            // Convert normalized to grid index and get taps per beat
+            int gridIndex = static_cast<int>(normalizedValue * 7); // 8 grid values (0-7)
+            const int tapsPerBeat[] = {1, 2, 3, 4, 6, 8, 12, 16};
+            if (gridIndex >= 0 && gridIndex <= 7) {
+                oss << tapsPerBeat[gridIndex] << " Taps/Beat";
+            } else {
+                oss << "4 Taps/Beat"; // Default fallback
+            }
+            return oss.str();
+        }
+
+        default:
+            oss << std::fixed << std::setprecision(2) << normalizedValue;
+            return oss.str();
+    }
+}
+
+void WaterStickEditor::updateValueReadouts()
+{
+    auto controller = getController();
+    if (!controller) return;
+
+    // Update all global control value readouts
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kGrid, kInputGain, kOutputGain, kDryWet};
+    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, gridValue, inputGainValue, outputGainValue, dryWetValue};
+
+    for (int i = 0; i < 6; i++) {
+        if (valueLabels[i]) {
+            int paramId = knobTags[i];
+
+            // Special handling for time/division knob
+            if (i == 1) {
+                float syncMode = controller->getParamNormalized(kTempoSyncMode);
+                if (syncMode > 0.5f) {
+                    paramId = kSyncDivision;
+                } else {
+                    paramId = kDelayTime;
+                }
+            }
+
+            float value = controller->getParamNormalized(paramId);
+            std::string valueText = formatParameterValue(paramId, value);
+            valueLabels[i]->setText(valueText.c_str());
+            valueLabels[i]->invalid();
+        }
     }
 }
 
@@ -342,6 +476,9 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
                     controller->setParamNormalized(kDelayTime, control->getValue());
                     controller->performEdit(kDelayTime, control->getValue());
                 }
+
+                // Update value readouts for time/division knob
+                updateValueReadouts();
             }
         }
         else {
@@ -366,6 +503,9 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
                         timeDivisionKnob->invalid();
                     }
                 }
+
+                // Update value readouts for any global control change
+                updateValueReadouts();
             }
         }
     }
@@ -1190,6 +1330,9 @@ void KnobControl::draw(VSTGUI::CDrawContext* context)
     VSTGUI::CRect drawRect = getViewSize();
     drawRect.makeIntegral();
 
+    // Inset the drawing rect to prevent stroke clipping (5px stroke = 2.5px inset on each side)
+    drawRect.inset(2.5, 2.5);
+
     // Draw black circle outline (5px stroke, same as tap buttons)
     context->setLineWidth(5.0);
     context->setLineStyle(VSTGUI::kLineSolid);
@@ -1197,9 +1340,9 @@ void KnobControl::draw(VSTGUI::CDrawContext* context)
     context->setFrameColor(VSTGUI::kBlackCColor);
     context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
 
-    // Calculate dot position based on value (pot range: ~300 degrees)
+    // Calculate dot position based on value (pot range: ~300 degrees, rotated 90 degrees left)
     float value = getValue();
-    float angle = -135.0f + (value * 270.0f); // Start at 7:30, end at 4:30
+    float angle = -225.0f + (value * 270.0f); // Start at 10:30, end at 1:30 (rotated 90 degrees left)
     float angleRad = angle * M_PI / 180.0f;
 
     // Get circle center and calculate inner radius for dot positioning
