@@ -202,6 +202,7 @@ private:
     float mOutputGain;
     float mDelayTime;
     float mDryWet;
+    float mFeedback;
     bool mTempoSyncMode;
     int mSyncDivision;
     int mGrid;
@@ -245,6 +246,10 @@ private:
     // Per-tap filters (16 taps, stereo)
     ThreeSistersFilter mTapFiltersL[NUM_TAPS];  // Left channel filters
     ThreeSistersFilter mTapFiltersR[NUM_TAPS];  // Right channel filters
+
+    // Feedback storage for tanh limiting
+    float mFeedbackBufferL;
+    float mFeedbackBufferR;
 
     void updateParameters();
 };

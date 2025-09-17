@@ -150,6 +150,7 @@ private:
     // Global control knobs
     KnobControl* syncModeKnob;
     KnobControl* timeDivisionKnob;
+    KnobControl* feedbackKnob;
     KnobControl* inputGainKnob;
     KnobControl* outputGainKnob;
     KnobControl* dryWetKnob;
@@ -158,6 +159,7 @@ private:
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
     VSTGUI::CTextLabel* timeDivisionLabel;
+    VSTGUI::CTextLabel* feedbackLabel;
     VSTGUI::CTextLabel* inputGainLabel;
     VSTGUI::CTextLabel* outputGainLabel;
     VSTGUI::CTextLabel* dryWetLabel;
@@ -166,6 +168,7 @@ private:
     // Value readout labels
     VSTGUI::CTextLabel* syncModeValue;
     VSTGUI::CTextLabel* timeDivisionValue;
+    VSTGUI::CTextLabel* feedbackValue;
     VSTGUI::CTextLabel* inputGainValue;
     VSTGUI::CTextLabel* outputGainValue;
     VSTGUI::CTextLabel* dryWetValue;

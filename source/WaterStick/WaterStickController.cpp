@@ -48,6 +48,10 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate, kDryWet, 0,
                            STR16("Mix"));
 
+    parameters.addParameter(STR16("Feedback"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kFeedback, 0,
+                           STR16("Global"));
+
     // Tempo sync parameters
     parameters.addParameter(STR16("Sync Mode"), nullptr, 1, 0.0,
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTempoSyncMode, 0,
@@ -326,6 +330,15 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
                 return kResultTrue;
             }
             break;
+        }
+        case kFeedback:
+        {
+            // Convert normalized value to percentage for display
+            float percentage = valueNormalized * 100.0f;
+            char percentText[128];
+            snprintf(percentText, sizeof(percentText), "%.1f%%", percentage);
+            Steinberg::UString(string, 128).fromAscii(percentText);
+            return kResultTrue;
         }
         default:
         {

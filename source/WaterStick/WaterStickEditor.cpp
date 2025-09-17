@@ -239,10 +239,10 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
     const int tapGridLeft = (kEditorWidth - totalGridWidth) / 2;
     const int tapGridRight = tapGridLeft + totalGridWidth;
 
-    // Distribute 6 knobs equally across the tap grid width
+    // Distribute 7 knobs equally across the tap grid width
     // Align leftmost and rightmost knob edges with tap grid edges
-    const int availableWidth = totalGridWidth - (6 * knobSize); // Space for 5 gaps between 6 knobs
-    const int knobSpacing = availableWidth / 5; // Equal spacing between knobs
+    const int availableWidth = totalGridWidth - (7 * knobSize); // Space for 6 gaps between 7 knobs
+    const int knobSpacing = availableWidth / 6; // Equal spacing between knobs
 
     // Position knobs with proper spacing from mode buttons
     const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
@@ -254,13 +254,13 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
     const int valueReadoutY = labelY + labelHeight + 2; // 2px gap between label and value
 
     // Create knobs and labels
-    const char* knobLabels[] = {"SYNC", "TIME", "GRID", "INPUT", "OUTPUT", "DRY/WET"};
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kGrid, kInputGain, kOutputGain, kDryWet};
-    KnobControl** knobPointers[] = {&syncModeKnob, &timeDivisionKnob, &gridKnob, &inputGainKnob, &outputGainKnob, &dryWetKnob};
-    VSTGUI::CTextLabel** labelPointers[] = {&syncModeLabel, &timeDivisionLabel, &gridLabel, &inputGainLabel, &outputGainLabel, &dryWetLabel};
-    VSTGUI::CTextLabel** valuePointers[] = {&syncModeValue, &timeDivisionValue, &gridValue, &inputGainValue, &outputGainValue, &dryWetValue};
+    const char* knobLabels[] = {"SYNC", "TIME", "FEEDBACK", "GRID", "INPUT", "OUTPUT", "DRY/WET"};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kDryWet};
+    KnobControl** knobPointers[] = {&syncModeKnob, &timeDivisionKnob, &feedbackKnob, &gridKnob, &inputGainKnob, &outputGainKnob, &dryWetKnob};
+    VSTGUI::CTextLabel** labelPointers[] = {&syncModeLabel, &timeDivisionLabel, &feedbackLabel, &gridLabel, &inputGainLabel, &outputGainLabel, &dryWetLabel};
+    VSTGUI::CTextLabel** valuePointers[] = {&syncModeValue, &timeDivisionValue, &feedbackValue, &gridValue, &inputGainValue, &outputGainValue, &dryWetValue};
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         // Calculate knob position (equally distributed)
         int knobX = tapGridLeft + i * (knobSize + knobSpacing);
 
@@ -398,10 +398,10 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kGrid, kInputGain, kOutputGain, kDryWet};
-    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, gridValue, inputGainValue, outputGainValue, dryWetValue};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kDryWet};
+    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, dryWetValue};
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         if (valueLabels[i]) {
             int paramId = knobTags[i];
 

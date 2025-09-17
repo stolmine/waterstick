@@ -8,6 +8,7 @@ enum {
     kOutputGain,
     kDelayTime,
     kDryWet,
+    kFeedback,               // Global feedback parameter
     // Tempo sync parameters - added at end to maintain compatibility
     kTempoSyncMode,      // Toggle: 0=Free, 1=Synced
     kSyncDivision,       // Sync division: 1/64 to 8 bars

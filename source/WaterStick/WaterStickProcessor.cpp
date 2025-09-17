@@ -607,6 +607,7 @@ WaterStickProcessor::WaterStickProcessor()
 , mOutputGain(1.0f)  // 0dB linear gain (parameter default 0.769231 → 0dB → 1.0 linear)
 , mDelayTime(0.1f)  // 100ms default
 , mDryWet(0.5f)     // 50% wet default
+, mFeedback(0.0f)   // No feedback default
 , mTempoSyncMode(false)  // Default to free mode
 , mSyncDivision(kSync_1_4)  // Default to 1/4 note
 , mGrid(kGrid_4)    // Default to 4 taps per beat
@@ -636,6 +637,10 @@ WaterStickProcessor::WaterStickProcessor()
 
         mTapFadeGain[i] = 1.0f;
     }
+
+    // Initialize feedback buffers
+    mFeedbackBufferL = 0.0f;
+    mFeedbackBufferR = 0.0f;
 
     setControllerClass(kWaterStickControllerUID);
 }
@@ -825,6 +830,14 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kDryWet:
                             mDryWet = static_cast<float>(value); // 0-1 (dry to wet)
                             break;
+                        case kFeedback:
+                        {
+                            // Convert normalized value to feedback amount with logarithmic curve
+                            // Provides more control at lower values, runaway possible at very top
+                            float normalizedValue = static_cast<float>(value);
+                            mFeedback = normalizedValue * normalizedValue * normalizedValue; // Cubic curve for smooth control
+                            break;
+                        }
                         case kTempoSyncMode:
                             mTempoSyncMode = value > 0.5; // Toggle: >0.5 = synced
                             break;
@@ -1079,9 +1092,16 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float inL = inputL[sample];
         float inR = inputR[sample];
 
-        // Apply input gain
-        float gainedL = inL * mInputGain;
-        float gainedR = inR * mInputGain;
+        // Apply input gain and feedback with tanh limiting
+        float inputWithFeedbackL = inL + (mFeedbackBufferL * mFeedback);
+        float inputWithFeedbackR = inR + (mFeedbackBufferR * mFeedback);
+
+        // Apply tanh saturation to prevent runaway feedback
+        inputWithFeedbackL = std::tanh(inputWithFeedbackL);
+        inputWithFeedbackR = std::tanh(inputWithFeedbackR);
+
+        float gainedL = inputWithFeedbackL * mInputGain;
+        float gainedR = inputWithFeedbackR * mInputGain;
 
         // Process through all 16 tap delay lines
         float sumL = 0.0f;
@@ -1152,6 +1172,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                 sumR += (tapOutputL * rightGain) + (tapOutputR * rightGain);
             }
         }
+
+        // Update feedback buffers with wet signal for next sample
+        mFeedbackBufferL = sumL;
+        mFeedbackBufferR = sumR;
 
         // Dry/wet mix
         float dryGain = 1.0f - mDryWet;
