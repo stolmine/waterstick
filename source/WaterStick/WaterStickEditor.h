@@ -107,6 +107,9 @@ public:
     // Parameter mapping helpers
     int getTapParameterIdForContext(int tapButtonIndex, TapContext context) const;
 
+    // Font management
+    VSTGUI::SharedPointer<VSTGUI::CFontDesc> getWorkSansFont(float size) const;
+
 private:
     static constexpr int kEditorWidth = 700;   // 400 * 1.75
     static constexpr int kEditorHeight = 525;  // 300 * 1.75

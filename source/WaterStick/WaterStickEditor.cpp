@@ -338,6 +338,13 @@ int WaterStickEditor::getSelectedModeButtonIndex() const
     return 0; // Default to first button if none selected
 }
 
+VSTGUI::SharedPointer<VSTGUI::CFontDesc> WaterStickEditor::getWorkSansFont(float size) const
+{
+    // Create CFontDesc with the font file path relative to the plugin bundle
+    // VSTGUI will handle loading the font from the file system
+    return VSTGUI::makeOwned<VSTGUI::CFontDesc>("fonts/WorkSans-Regular.otf", size);
+}
+
 int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext context) const
 {
     // Convert tap button index to tap number (1-16)
@@ -682,14 +689,22 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
                 letter = 'N';  // Notch
             }
 
-            // Use system font sized to fill the circle area
+            // Use WorkSans-Regular custom font sized to fill the circle area
             // Circle diameter is 48px, make font large enough so ascenders/descenders reach edges
-            auto systemFont = VSTGUI::kSystemFont;
-            systemFont->setSize(48);  // Large font to fill circle area
+            auto editor = dynamic_cast<WaterStickEditor*>(listener);
+            auto customFont = editor ? editor->getWorkSansFont(48.0f) : nullptr;
 
-            // Set font in context
-            context->setFont(systemFont);
-            context->setFontColor(VSTGUI::kBlackCColor);
+            if (customFont) {
+                // Set custom font in context
+                context->setFont(customFont);
+                context->setFontColor(VSTGUI::kBlackCColor);
+            } else {
+                // Fallback to system font if custom font fails
+                auto systemFont = VSTGUI::kSystemFont;
+                systemFont->setSize(48);
+                context->setFont(systemFont);
+                context->setFontColor(VSTGUI::kBlackCColor);
+            }
 
             // Create single character string
             std::string letterStr(1, letter);
@@ -702,9 +717,10 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
 
             // For proper vertical centering, we need to account for the baseline
             // Use a more accurate method to center the text
+            float fontSize = customFont ? customFont->getSize() : 48.0f;
             VSTGUI::CPoint textPos(
                 center.x - textWidth / 2.0,
-                center.y + systemFont->getSize() / 3.0  // Baseline adjustment for visual centering
+                center.y + fontSize / 3.0  // Baseline adjustment for visual centering
             );
 
             // Draw the letter (no circle stroke in FilterType context)
