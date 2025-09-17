@@ -18,6 +18,7 @@ public:
 
     void setSampleRate(double sampleRate);
     void setParameters(double frequency, double resonance);
+    void setSaturationAmount(double saturationAmount);
     Outputs process(double input);
     void reset();
 
@@ -27,6 +28,7 @@ private:
     double g_, g1_, d_;        // Pre-computed coefficients
     double frequency_;
     double resonance_;
+    double saturationAmount_;  // Controls tanh saturation amount
 
     void updateCoefficients();
 };

@@ -13,6 +13,7 @@ SVFUnit::SVFUnit()
     , d_(1.0)
     , frequency_(1000.0)
     , resonance_(0.7071) // 1/sqrt(2) for critically damped
+    , saturationAmount_(1.5) // Threshold prevents harsh clipping but allows musical resonance
 {
     updateCoefficients();
 }
@@ -28,6 +29,10 @@ void SVFUnit::setParameters(double frequency, double resonance) {
     updateCoefficients();
 }
 
+void SVFUnit::setSaturationAmount(double saturationAmount) {
+    saturationAmount_ = saturationAmount;
+}
+
 void SVFUnit::updateCoefficients() {
     // TPT (Topology Preserving Transform) method
     // Pre-warped frequency using tan(ωT/2)
@@ -40,14 +45,20 @@ void SVFUnit::updateCoefficients() {
 }
 
 SVFUnit::Outputs SVFUnit::process(double input) {
-    // Zero-delay feedback TPT SVF implementation
+    // Zero-delay feedback TPT SVF implementation with nonlinear saturation
     double HP = (input - g1_ * s1_ - s2_) * d_;
     double v1 = g_ * HP;
     double BP = v1 + s1_;
-    s1_ = BP + v1;
+
+    // Apply tanh saturation to first integrator state for smooth limiting
+    // Threshold chosen to prevent harsh clipping while allowing musical resonance
+    s1_ = saturationAmount_ * std::tanh((BP + v1) / saturationAmount_);
+
     double v2 = g_ * BP;
     double LP = v2 + s2_;
-    s2_ = LP + v2;
+
+    // Apply tanh saturation to second integrator state
+    s2_ = saturationAmount_ * std::tanh((LP + v2) / saturationAmount_);
 
     return {LP, BP, HP};
 }
