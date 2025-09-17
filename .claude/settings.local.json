@@ -25,7 +25,8 @@
       "WebFetch(domain:github.com)",
       "Bash(git branch:*)",
       "Bash(codesign:*)",
-      "Bash(git clean:*)"
+      "Bash(git clean:*)",
+      "Bash(git rev-parse:*)"
     ],
     "deny": [],
     "ask": []

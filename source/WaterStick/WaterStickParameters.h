@@ -62,10 +62,55 @@ enum {
     kTap16Enable,        // Tap 16 enable/disable
     kTap16Level,         // Tap 16 level
     kTap16Pan,           // Tap 16 pan position
-    // Global filter parameters
-    kFilterCutoff,       // Global filter cutoff frequency
-    kFilterResonance,    // Global filter resonance (-1.0 to +1.0)
-    kFilterType,         // Global filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    // Per-tap filter parameters (16 taps × 3 parameters each)
+    kTap1FilterCutoff,   // Tap 1 filter cutoff frequency
+    kTap1FilterResonance, // Tap 1 filter resonance (-1.0 to +1.0)
+    kTap1FilterType,     // Tap 1 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap2FilterCutoff,   // Tap 2 filter cutoff frequency
+    kTap2FilterResonance, // Tap 2 filter resonance (-1.0 to +1.0)
+    kTap2FilterType,     // Tap 2 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap3FilterCutoff,   // Tap 3 filter cutoff frequency
+    kTap3FilterResonance, // Tap 3 filter resonance (-1.0 to +1.0)
+    kTap3FilterType,     // Tap 3 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap4FilterCutoff,   // Tap 4 filter cutoff frequency
+    kTap4FilterResonance, // Tap 4 filter resonance (-1.0 to +1.0)
+    kTap4FilterType,     // Tap 4 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap5FilterCutoff,   // Tap 5 filter cutoff frequency
+    kTap5FilterResonance, // Tap 5 filter resonance (-1.0 to +1.0)
+    kTap5FilterType,     // Tap 5 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap6FilterCutoff,   // Tap 6 filter cutoff frequency
+    kTap6FilterResonance, // Tap 6 filter resonance (-1.0 to +1.0)
+    kTap6FilterType,     // Tap 6 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap7FilterCutoff,   // Tap 7 filter cutoff frequency
+    kTap7FilterResonance, // Tap 7 filter resonance (-1.0 to +1.0)
+    kTap7FilterType,     // Tap 7 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap8FilterCutoff,   // Tap 8 filter cutoff frequency
+    kTap8FilterResonance, // Tap 8 filter resonance (-1.0 to +1.0)
+    kTap8FilterType,     // Tap 8 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap9FilterCutoff,   // Tap 9 filter cutoff frequency
+    kTap9FilterResonance, // Tap 9 filter resonance (-1.0 to +1.0)
+    kTap9FilterType,     // Tap 9 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap10FilterCutoff,  // Tap 10 filter cutoff frequency
+    kTap10FilterResonance, // Tap 10 filter resonance (-1.0 to +1.0)
+    kTap10FilterType,    // Tap 10 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap11FilterCutoff,  // Tap 11 filter cutoff frequency
+    kTap11FilterResonance, // Tap 11 filter resonance (-1.0 to +1.0)
+    kTap11FilterType,    // Tap 11 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap12FilterCutoff,  // Tap 12 filter cutoff frequency
+    kTap12FilterResonance, // Tap 12 filter resonance (-1.0 to +1.0)
+    kTap12FilterType,    // Tap 12 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap13FilterCutoff,  // Tap 13 filter cutoff frequency
+    kTap13FilterResonance, // Tap 13 filter resonance (-1.0 to +1.0)
+    kTap13FilterType,    // Tap 13 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap14FilterCutoff,  // Tap 14 filter cutoff frequency
+    kTap14FilterResonance, // Tap 14 filter resonance (-1.0 to +1.0)
+    kTap14FilterType,    // Tap 14 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap15FilterCutoff,  // Tap 15 filter cutoff frequency
+    kTap15FilterResonance, // Tap 15 filter resonance (-1.0 to +1.0)
+    kTap15FilterType,    // Tap 15 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    kTap16FilterCutoff,  // Tap 16 filter cutoff frequency
+    kTap16FilterResonance, // Tap 16 filter resonance (-1.0 to +1.0)
+    kTap16FilterType,    // Tap 16 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
     kNumParams
 };
 

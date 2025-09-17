@@ -610,9 +610,6 @@ WaterStickProcessor::WaterStickProcessor()
 , mTempoSyncMode(false)  // Default to free mode
 , mSyncDivision(kSync_1_4)  // Default to 1/4 note
 , mGrid(kGrid_4)    // Default to 4 taps per beat
-, mFilterCutoff(1000.0f)    // 1 kHz default
-, mFilterResonance(0.0f)    // No resonance default
-, mFilterType(kFilterType_LowPass)  // Low pass default
 , mSampleRate(44100.0)
 {
     // Initialize tap parameters
@@ -621,6 +618,11 @@ WaterStickProcessor::WaterStickProcessor()
         mTapEnabledPrevious[i] = true;     // Initialize previous state
         mTapLevel[i] = 1.0f;               // Unity gain
         mTapPan[i] = 0.5f;                 // Center pan
+
+        // Initialize per-tap filter parameters
+        mTapFilterCutoff[i] = 1000.0f;     // 1 kHz default
+        mTapFilterResonance[i] = 0.0f;     // No resonance default
+        mTapFilterType[i] = kFilterType_LowPass;  // Low pass default
 
         // Initialize fade-out state
         mTapFadingOut[i] = false;
@@ -725,9 +727,11 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
     // Initialize tap distribution
     mTapDistribution.initialize(mSampleRate);
 
-    // Initialize global filters
-    mGlobalFilterL.setSampleRate(mSampleRate);
-    mGlobalFilterR.setSampleRate(mSampleRate);
+    // Initialize per-tap filters
+    for (int i = 0; i < NUM_TAPS; i++) {
+        mTapFiltersL[i].setSampleRate(mSampleRate);
+        mTapFiltersR[i].setSampleRate(mSampleRate);
+    }
 
     return AudioEffect::setupProcessing(newSetup);
 }
@@ -764,9 +768,11 @@ void WaterStickProcessor::updateParameters()
         mDelayLineR.setDelayTime(finalDelayTime);
     }
 
-    // Update global filter parameters
-    mGlobalFilterL.setParameters(mFilterCutoff, mFilterResonance, mFilterType);
-    mGlobalFilterR.setParameters(mFilterCutoff, mFilterResonance, mFilterType);
+    // Update per-tap filter parameters
+    for (int i = 0; i < NUM_TAPS; i++) {
+        mTapFiltersL[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
+        mTapFiltersR[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
+    }
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -967,27 +973,38 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kTap16Pan:
                             mTapPan[15] = static_cast<float>(value);
                             break;
-                        // Global filter parameters
-                        case kFilterCutoff:
-                            // Logarithmic frequency scaling: 20Hz to 20kHz
-                            // Formula: freq = minFreq * pow(maxFreq/minFreq, normalizedValue)
-                            mFilterCutoff = static_cast<float>(20.0 * std::pow(1000.0, value)); // 20Hz to 20kHz logarithmic
-                            break;
-                        case kFilterResonance:
-                            // Improved resonance scaling with longer travel in high resonance territory
-                            // Use exponential curve for positive resonance, linear for negative
-                            if (value >= 0.5) {
-                                // Positive resonance: 0.0 to +1.0 with exponential curve for more control
-                                float positiveValue = (value - 0.5f) * 2.0f; // 0.0 to 1.0
-                                mFilterResonance = static_cast<float>(positiveValue * positiveValue * positiveValue); // Cubic curve
-                            } else {
-                                // Negative resonance: -1.0 to 0.0 with linear mapping
-                                mFilterResonance = static_cast<float>((value - 0.5f) * 2.0f); // -1.0 to 0.0
+                        default:
+                        {
+                            // Handle per-tap filter parameters
+                            Vst::ParamID paramId = paramQueue->getParameterId();
+                            if (paramId >= kTap1FilterCutoff && paramId <= kTap16FilterType) {
+                                int paramOffset = paramId - kTap1FilterCutoff;
+                                int tapIndex = paramOffset / 3; // Which tap (0-15)
+                                int paramType = paramOffset % 3; // 0=cutoff, 1=resonance, 2=type
+
+                                switch (paramType) {
+                                    case 0: // Filter Cutoff
+                                        // Logarithmic frequency scaling: 20Hz to 20kHz
+                                        mTapFilterCutoff[tapIndex] = static_cast<float>(20.0 * std::pow(1000.0, value));
+                                        break;
+                                    case 1: // Filter Resonance
+                                        // Improved resonance scaling with longer travel in high resonance territory
+                                        if (value >= 0.5) {
+                                            // Positive resonance: 0.0 to +1.0 with exponential curve for more control
+                                            float positiveValue = (value - 0.5f) * 2.0f; // 0.0 to 1.0
+                                            mTapFilterResonance[tapIndex] = static_cast<float>(positiveValue * positiveValue * positiveValue); // Cubic curve
+                                        } else {
+                                            // Negative resonance: -1.0 to 0.0 with linear mapping
+                                            mTapFilterResonance[tapIndex] = static_cast<float>((value - 0.5f) * 2.0f); // -1.0 to 0.0
+                                        }
+                                        break;
+                                    case 2: // Filter Type
+                                        mTapFilterType[tapIndex] = static_cast<int>(value * (kNumFilterTypes - 1) + 0.5); // Round to nearest
+                                        break;
+                                }
                             }
                             break;
-                        case kFilterType:
-                            mFilterType = static_cast<int>(value * (kNumFilterTypes - 1) + 0.5); // Round to nearest
-                            break;
+                        }
                     }
                 }
             }
@@ -1066,6 +1083,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                 tapOutputL *= tapLevel;
                 tapOutputR *= tapLevel;
 
+                // Apply per-tap filter
+                tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
+                tapOutputR = static_cast<float>(mTapFiltersR[tap].process(tapOutputR));
+
                 // Apply fade-out if in progress
                 if (mTapFadingOut[tap]) {
                     tapOutputL *= mTapFadeGain[tap];
@@ -1120,13 +1141,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float mixedL = (inL * dryGain) + (sumL * wetGain);
         float mixedR = (inR * dryGain) + (sumR * wetGain);
 
-        // Apply global filter
-        float filteredL = static_cast<float>(mGlobalFilterL.process(mixedL));
-        float filteredR = static_cast<float>(mGlobalFilterR.process(mixedR));
-
         // Apply output gain and write to output
-        outputL[sample] = filteredL * mOutputGain;
-        outputR[sample] = filteredR * mOutputGain;
+        outputL[sample] = mixedL * mOutputGain;
+        outputR[sample] = mixedR * mOutputGain;
     }
 
     return kResultOk;
@@ -1149,12 +1166,11 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
         streamer.writeBool(mTapEnabled[i]);
         streamer.writeFloat(mTapLevel[i]);
         streamer.writeFloat(mTapPan[i]);
+        // Save per-tap filter parameters
+        streamer.writeFloat(mTapFilterCutoff[i]);
+        streamer.writeFloat(mTapFilterResonance[i]);
+        streamer.writeInt32(mTapFilterType[i]);
     }
-
-    // Save filter parameters
-    streamer.writeFloat(mFilterCutoff);
-    streamer.writeFloat(mFilterResonance);
-    streamer.writeInt32(mFilterType);
 
     return kResultOk;
 }
@@ -1176,15 +1192,14 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
         streamer.readBool(mTapEnabled[i]);
         streamer.readFloat(mTapLevel[i]);
         streamer.readFloat(mTapPan[i]);
+        // Load per-tap filter parameters
+        streamer.readFloat(mTapFilterCutoff[i]);
+        streamer.readFloat(mTapFilterResonance[i]);
+        streamer.readInt32(mTapFilterType[i]);
 
         // Initialize previous state to current state to prevent unwanted buffer clears
         mTapEnabledPrevious[i] = mTapEnabled[i];
     }
-
-    // Load filter parameters
-    streamer.readFloat(mFilterCutoff);
-    streamer.readFloat(mFilterResonance);
-    streamer.readInt32(mFilterType);
 
     return kResultOk;
 }

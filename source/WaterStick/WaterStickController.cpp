@@ -129,18 +129,70 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 16 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap16Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 16 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16Pan, 0, STR16("Tap"));
 
-    // Global filter parameters
-    parameters.addParameter(STR16("Filter Cutoff"), STR16("Hz"), 0, 0.5,
-                           Vst::ParameterInfo::kCanAutomate, kFilterCutoff, 0,
-                           STR16("Filter"));
+    // Per-tap filter parameters (16 taps × 3 parameters each)
+    parameters.addParameter(STR16("Tap 1 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 1 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 1 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap1FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Filter Resonance"), STR16("%"), 0, 0.5,
-                           Vst::ParameterInfo::kCanAutomate, kFilterResonance, 0,
-                           STR16("Filter"));
+    parameters.addParameter(STR16("Tap 2 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 2 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 2 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap2FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Filter Type"), nullptr, kNumFilterTypes - 1, 0.0,
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kFilterType, 0,
-                           STR16("Filter"));
+    parameters.addParameter(STR16("Tap 3 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 3 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 3 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap3FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 4 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 4 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 4 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap4FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 5 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 5 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 5 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap5FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 6 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 6 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 6 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap6FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 7 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 7 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 7 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap7FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 8 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 8 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 8 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap8FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 9 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 9 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 9 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap9FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 10 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 10 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 10 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap10FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 11 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 11 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 11 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap11FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 12 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 12 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 12 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap12FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 13 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 13 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 13 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap13FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 14 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 14 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 14 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap14FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 15 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 15 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 15 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap15FilterType, 0, STR16("Filter"));
+
+    parameters.addParameter(STR16("Tap 16 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 16 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterResonance, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 16 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16FilterType, 0, STR16("Filter"));
 
     return result;
 }
@@ -183,38 +235,36 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     for (int i = 0; i < 16; i++) {
         bool tapEnabled;
         float tapLevel, tapPan;
+        float tapFilterCutoff, tapFilterResonance;
+        int32 tapFilterType;
 
         if (streamer.readBool(tapEnabled) == false) return kResultFalse;
         if (streamer.readFloat(tapLevel) == false) return kResultFalse;
         if (streamer.readFloat(tapPan) == false) return kResultFalse;
+        if (streamer.readFloat(tapFilterCutoff) == false) return kResultFalse;
+        if (streamer.readFloat(tapFilterResonance) == false) return kResultFalse;
+        if (streamer.readInt32(tapFilterType) == false) return kResultFalse;
 
         setParamNormalized(kTap1Enable + (i * 3), tapEnabled ? 1.0 : 0.0);
         setParamNormalized(kTap1Level + (i * 3), tapLevel);
         setParamNormalized(kTap1Pan + (i * 3), tapPan);
+
+        // Set per-tap filter parameters
+        // Inverse of logarithmic scaling: if freq = 20 * pow(1000, value), then value = log(freq/20) / log(1000)
+        setParamNormalized(kTap1FilterCutoff + (i * 3), std::log(tapFilterCutoff / 20.0f) / std::log(1000.0f));
+
+        // Inverse of resonance scaling
+        float normalizedResonance;
+        if (tapFilterResonance >= 0.0f) {
+            // Inverse of cubic curve: value = cbrt(resonance)
+            normalizedResonance = 0.5f + 0.5f * std::cbrt(tapFilterResonance);
+        } else {
+            // Linear mapping for negative values
+            normalizedResonance = 0.5f + tapFilterResonance / 2.0f;
+        }
+        setParamNormalized(kTap1FilterResonance + (i * 3), normalizedResonance);
+        setParamNormalized(kTap1FilterType + (i * 3), static_cast<Vst::ParamValue>(tapFilterType) / (kNumFilterTypes - 1));
     }
-
-    // Load filter parameters
-    float filterCutoff, filterResonance;
-    int32 filterType;
-
-    if (streamer.readFloat(filterCutoff) == false) return kResultFalse;
-    if (streamer.readFloat(filterResonance) == false) return kResultFalse;
-    if (streamer.readInt32(filterType) == false) return kResultFalse;
-
-    // Inverse of logarithmic scaling: if freq = 20 * pow(1000, value), then value = log(freq/20) / log(1000)
-    setParamNormalized(kFilterCutoff, std::log(filterCutoff / 20.0f) / std::log(1000.0f));
-
-    // Inverse of resonance scaling
-    float normalizedResonance;
-    if (filterResonance >= 0.0f) {
-        // Inverse of cubic curve: value = cbrt(resonance)
-        normalizedResonance = 0.5f + 0.5f * std::cbrt(filterResonance);
-    } else {
-        // Linear mapping for negative values
-        normalizedResonance = 0.5f + filterResonance / 2.0f;
-    }
-    setParamNormalized(kFilterResonance, normalizedResonance);
-    setParamNormalized(kFilterType, static_cast<Vst::ParamValue>(filterType) / (kNumFilterTypes - 1));
 
     return kResultOk;
 }
@@ -272,47 +322,59 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             }
             break;
         }
-        case kFilterCutoff:
+        default:
         {
-            // Convert normalized value to frequency using same logarithmic scale as processor
-            float frequency = 20.0f * std::pow(1000.0f, valueNormalized); // 20Hz to 20kHz logarithmic
+            // Handle per-tap filter parameters
+            if (id >= kTap1FilterCutoff && id <= kTap16FilterType) {
+                int paramOffset = id - kTap1FilterCutoff;
+                int paramType = paramOffset % 3; // 0=cutoff, 1=resonance, 2=type
 
-            char freqText[128];
-            if (frequency < 1000.0f) {
-                snprintf(freqText, sizeof(freqText), "%.1f Hz", frequency);
-            } else {
-                snprintf(freqText, sizeof(freqText), "%.2f kHz", frequency / 1000.0f);
-            }
-            Steinberg::UString(string, 128).fromAscii(freqText);
-            return kResultTrue;
-        }
-        case kFilterResonance:
-        {
-            // Convert normalized value to actual resonance using same scaling as processor
-            float resonance;
-            if (valueNormalized >= 0.5f) {
-                // Positive resonance with cubic curve
-                float positiveValue = (valueNormalized - 0.5f) * 2.0f;
-                resonance = positiveValue * positiveValue * positiveValue;
-            } else {
-                // Negative resonance with linear mapping
-                resonance = (valueNormalized - 0.5f) * 2.0f;
-            }
+                switch (paramType) {
+                    case 0: // Filter Cutoff
+                    {
+                        // Convert normalized value to frequency using same logarithmic scale as processor
+                        float frequency = 20.0f * std::pow(1000.0f, valueNormalized); // 20Hz to 20kHz logarithmic
 
-            char resText[128];
-            snprintf(resText, sizeof(resText), "%.2f", resonance);
-            Steinberg::UString(string, 128).fromAscii(resText);
-            return kResultTrue;
-        }
-        case kFilterType:
-        {
-            int filterType = static_cast<int>(valueNormalized * (kNumFilterTypes - 1) + 0.5);
-            if (filterType >= 0 && filterType < kNumFilterTypes) {
-                static const char* filterTypeTexts[kNumFilterTypes] = {
-                    "Low Pass", "High Pass", "Band Pass", "Notch"
-                };
-                Steinberg::UString(string, 128).fromAscii(filterTypeTexts[filterType]);
-                return kResultTrue;
+                        char freqText[128];
+                        if (frequency < 1000.0f) {
+                            snprintf(freqText, sizeof(freqText), "%.1f Hz", frequency);
+                        } else {
+                            snprintf(freqText, sizeof(freqText), "%.2f kHz", frequency / 1000.0f);
+                        }
+                        Steinberg::UString(string, 128).fromAscii(freqText);
+                        return kResultTrue;
+                    }
+                    case 1: // Filter Resonance
+                    {
+                        // Convert normalized value to actual resonance using same scaling as processor
+                        float resonance;
+                        if (valueNormalized >= 0.5f) {
+                            // Positive resonance with cubic curve
+                            float positiveValue = (valueNormalized - 0.5f) * 2.0f;
+                            resonance = positiveValue * positiveValue * positiveValue;
+                        } else {
+                            // Negative resonance with linear mapping
+                            resonance = (valueNormalized - 0.5f) * 2.0f;
+                        }
+
+                        char resText[128];
+                        snprintf(resText, sizeof(resText), "%.2f", resonance);
+                        Steinberg::UString(string, 128).fromAscii(resText);
+                        return kResultTrue;
+                    }
+                    case 2: // Filter Type
+                    {
+                        int filterType = static_cast<int>(valueNormalized * (kNumFilterTypes - 1) + 0.5);
+                        if (filterType >= 0 && filterType < kNumFilterTypes) {
+                            static const char* filterTypeTexts[kNumFilterTypes] = {
+                                "Low Pass", "High Pass", "Band Pass", "Notch"
+                            };
+                            Steinberg::UString(string, 128).fromAscii(filterTypeTexts[filterType]);
+                            return kResultTrue;
+                        }
+                        break;
+                    }
+                }
             }
             break;
         }

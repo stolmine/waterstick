@@ -212,10 +212,10 @@ private:
     float mTapLevel[16];
     float mTapPan[16];
 
-    // Global filter parameters
-    float mFilterCutoff;
-    float mFilterResonance;
-    int mFilterType;
+    // Per-tap filter parameters
+    float mTapFilterCutoff[16];
+    float mTapFilterResonance[16];
+    int mTapFilterType[16];
 
     // Fade-out state for smooth tap disengagement
     bool mTapFadingOut[16];        // True when tap is fading out
@@ -242,9 +242,9 @@ private:
     TapDistribution mTapDistribution;
     double mSampleRate;
 
-    // Global filter (applied after tap mixing)
-    ThreeSistersFilter mGlobalFilterL;
-    ThreeSistersFilter mGlobalFilterR;
+    // Per-tap filters (16 taps, stereo)
+    ThreeSistersFilter mTapFiltersL[NUM_TAPS];  // Left channel filters
+    ThreeSistersFilter mTapFiltersR[NUM_TAPS];  // Right channel filters
 
     void updateParameters();
 };
