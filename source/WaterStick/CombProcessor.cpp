@@ -11,6 +11,9 @@ CombProcessor::CombProcessor()
     , mCombSize(0.1f)
     , mNumActiveTaps(64)
     , mFeedback(0.0f)
+    , mSlope(0)
+    , mWave(0)
+    , mRate(1.0f)
     , mPitchCV(0.0f)
     , mFeedbackBufferL(0.0f)
     , mFeedbackBufferR(0.0f)
@@ -59,6 +62,21 @@ void CombProcessor::setNumTaps(int numTaps)
 void CombProcessor::setFeedback(float feedback)
 {
     mFeedback = std::max(0.0f, std::min(0.99f, feedback));
+}
+
+void CombProcessor::setSlope(int slope)
+{
+    mSlope = std::max(0, std::min(3, slope));
+}
+
+void CombProcessor::setWave(int wave)
+{
+    mWave = std::max(0, std::min(7, wave));
+}
+
+void CombProcessor::setRate(float rateHz)
+{
+    mRate = std::max(0.01f, std::min(20.0f, rateHz));
 }
 
 void CombProcessor::setSyncMode(bool synced)

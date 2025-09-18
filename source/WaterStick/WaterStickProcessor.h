@@ -138,6 +138,9 @@ public:
     void setSize(float sizeSeconds);  // Comb size (delay time of tap 64)
     void setNumTaps(int numTaps);     // 1-64 active taps
     void setFeedback(float feedback); // 0-1 feedback amount
+    void setSlope(int slope);         // Slope pattern (0-3)
+    void setWave(int wave);           // Waveform (0-7)
+    void setRate(float rateHz);       // Rate in Hz (0.01-20Hz)
     void setSyncMode(bool synced);
     void setClockDivision(int division);
     void setPitchCV(float cv);        // 1V/oct control
@@ -162,6 +165,9 @@ private:
     float mCombSize;        // Base delay time in seconds
     int mNumActiveTaps;     // 1-64
     float mFeedback;        // Feedback amount 0-1
+    int mSlope;             // Slope pattern 0-3
+    int mWave;              // Waveform 0-7
+    float mRate;            // Rate in Hz 0.01-20Hz
     float mPitchCV;         // 1V/oct control voltage
 
     // Feedback buffers and limiters
@@ -267,6 +273,14 @@ private:
     float mTapFilterCutoff[16];
     float mTapFilterResonance[16];
     int mTapFilterType[16];
+
+    // Comb parameters
+    float mCombSize;        // Comb size in seconds (100μs to 2s)
+    int mCombTaps;          // Number of active taps (1-64)
+    int mCombSlope;         // Slope pattern (0-3)
+    int mCombWave;          // Waveform (0-7)
+    float mCombFeedback;    // Feedback amount (0-99%)
+    float mCombRate;        // Rate in Hz (0.01-20Hz)
 
     // Fade-out state for smooth tap disengagement
     bool mTapFadingOut[16];        // True when tap is fading out

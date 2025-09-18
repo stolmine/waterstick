@@ -642,6 +642,14 @@ WaterStickProcessor::WaterStickProcessor()
     mFeedbackBufferL = 0.0f;
     mFeedbackBufferR = 0.0f;
 
+    // Initialize comb parameters with defaults matching controller parameter defaults
+    mCombSize = 0.1f;          // 100ms (corresponds to parameter default 0.5)
+    mCombTaps = 32;            // 32 taps (corresponds to parameter default 31/63)
+    mCombSlope = 0;            // Linear pattern (corresponds to parameter default 0)
+    mCombWave = 0;             // Sine waveform (corresponds to parameter default 0)
+    mCombFeedback = 0.0f;      // No feedback (corresponds to parameter default 0)
+    mCombRate = 1.0f;          // 1Hz (corresponds to parameter default 0.5)
+
     setControllerClass(kWaterStickControllerUID);
 }
 
@@ -738,6 +746,9 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
         mTapFiltersR[i].setSampleRate(mSampleRate);
     }
 
+    // Initialize CombProcessor
+    mCombProcessor.initialize(mSampleRate, 2.0);
+
     return AudioEffect::setupProcessing(newSetup);
 }
 
@@ -778,6 +789,14 @@ void WaterStickProcessor::updateParameters()
         mTapFiltersL[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
         mTapFiltersR[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
     }
+
+    // Update comb processor parameters
+    mCombProcessor.setSize(mCombSize);
+    mCombProcessor.setNumTaps(mCombTaps);
+    mCombProcessor.setFeedback(mCombFeedback);
+    mCombProcessor.setSlope(mCombSlope);
+    mCombProcessor.setWave(mCombWave);
+    mCombProcessor.setRate(mCombRate);
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -1034,6 +1053,37 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                                         break;
                                 }
                             }
+                            // Handle comb parameters
+                            else if (paramId >= kCombSize && paramId <= kCombRate) {
+                                switch (paramId) {
+                                    case kCombSize:
+                                        // Logarithmic scaling: 100μs to 2s, default 0.5 = 100ms
+                                        // Using same scaling as Rainmaker: log scale where 0.5 maps to 100ms
+                                        mCombSize = static_cast<float>(0.0001 * std::pow(20000.0, value)); // 100μs to 2s logarithmic
+                                        break;
+                                    case kCombTaps:
+                                        // Linear scaling: 1-64 taps, parameter max is 63, default 31/63 = 32 taps
+                                        mCombTaps = static_cast<int>(value * 63.0) + 1; // 1 to 64 taps
+                                        break;
+                                    case kCombSlope:
+                                        // Discrete values: 0-3
+                                        mCombSlope = static_cast<int>(value * 3.0 + 0.5); // Round to nearest
+                                        break;
+                                    case kCombWave:
+                                        // Discrete values: 0-7
+                                        mCombWave = static_cast<int>(value * 7.0 + 0.5); // Round to nearest
+                                        break;
+                                    case kCombFeedback:
+                                        // Cubic curve: 0-99%
+                                        mCombFeedback = static_cast<float>(value * value * value * 0.99); // Cubic curve for smooth control
+                                        break;
+                                    case kCombRate:
+                                        // Logarithmic scaling: 0.01-20Hz, default 0.5 = 1Hz
+                                        // Range: 0.01Hz to 20Hz, so ratio is 2000:1
+                                        mCombRate = static_cast<float>(0.01 * std::pow(2000.0, value)); // 0.01Hz to 20Hz logarithmic
+                                        break;
+                                }
+                            }
                             break;
                         }
                     }
@@ -1177,6 +1227,14 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         mFeedbackBufferL = sumL;
         mFeedbackBufferR = sumR;
 
+        // Process through CombProcessor
+        float combOutputL, combOutputR;
+        mCombProcessor.processStereo(sumL, sumR, combOutputL, combOutputR);
+
+        // Use comb output for final mix
+        sumL = combOutputL;
+        sumR = combOutputR;
+
         // Dry/wet mix
         float dryGain = 1.0f - mDryWet;
         float wetGain = mDryWet;
@@ -1214,6 +1272,14 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
         streamer.writeInt32(mTapFilterType[i]);
     }
 
+    // Save comb parameters
+    streamer.writeFloat(mCombSize);
+    streamer.writeInt32(mCombTaps);
+    streamer.writeInt32(mCombSlope);
+    streamer.writeInt32(mCombWave);
+    streamer.writeFloat(mCombFeedback);
+    streamer.writeFloat(mCombRate);
+
     return kResultOk;
 }
 
@@ -1242,6 +1308,14 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
         // Initialize previous state to current state to prevent unwanted buffer clears
         mTapEnabledPrevious[i] = mTapEnabled[i];
     }
+
+    // Load comb parameters
+    streamer.readFloat(mCombSize);
+    streamer.readInt32(mCombTaps);
+    streamer.readInt32(mCombSlope);
+    streamer.readInt32(mCombWave);
+    streamer.readFloat(mCombFeedback);
+    streamer.readFloat(mCombRate);
 
     return kResultOk;
 }

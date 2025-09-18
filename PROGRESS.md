@@ -370,15 +370,70 @@ The foundation provides:
    - Soft saturation limiting prevents harsh clipping
    - Optimized for both crude reverbs and Karplus-Strong synthesis
 
+### Phase 3.1: Comb GUI Implementation ⚠️ PARTIAL COMPLETION
+**Comprehensive Comb Parameter Control Interface:**
+
+1. **✅ Window Layout Expansion**
+   - Increased main window width from 700px to 1050px
+   - Delay section (left 2/3) + Comb section (right 1/3)
+   - Visual separation between delay and comb sections
+
+2. **✅ Comb Control Grid**
+   - Created 2×3 grid for comb parameters
+   - Six primary comb control parameters implemented:
+     - Size
+     - Taps
+     - Slope
+     - Wave
+     - Feedback
+     - Rate
+
+3. **✅ VST3 Integration**
+   - Added 6 new comb-related VST parameters
+   - Total parameter count increased from 104 to 110
+   - Full parameter automation support
+   - VST3 validation passed: 47/47 tests
+
+4. **⚠️ Visual Design Issues**
+   - Professional knob design implemented but oversized
+   - Comb controls exceed window boundaries
+   - Layout positioning partially corrected in recent fixes
+
+5. **❌ Critical Integration Issues**
+   - **Signal Routing**: CombProcessor not integrated into main signal path
+   - **Parameter Disconnection**: GUI comb controls not mapped to CombProcessor methods
+   - **Processing Gap**: Delay taps don't feed into comb section
+   - **Functional Isolation**: Comb controls exist but affect no audio processing
+
+### Phase 3.2: Layout Positioning Fixes ✅ PARTIAL COMPLETION
+**GUI Positioning and Scaling Corrections:**
+
+1. **✅ Delay Section Positioning**
+   - Fixed delay controls centering in left 2/3 (700px) instead of full window
+   - Corrected tap button, mode button, and global control grid calculations
+   - Updated minimap positioning to match delay section boundaries
+
+2. **✅ Comb Knob Sizing Correction**
+   - Reduced comb knob size from 122px to 119px (1/3 of total delay area height)
+   - Improved proportional relationship between delay and comb sections
+   - Centered comb grid horizontally at x=726px in right 1/3 section
+
+3. **⚠️ Remaining Visual Issues**
+   - Comb controls still exceed window boundaries vertically
+   - Grid spacing and vertical positioning needs refinement
+   - Total comb grid height (475px) exceeds available vertical space
+
 ---
 
 ## Next Development Priorities
 
-1. **Comb Parameter Integration**: Add VST parameters for comb size, feedback, pitch, and tap density
-2. **Tap Pattern System**: Implement 16 preset tap distribution patterns (uniform, fibonacci, etc.)
-3. **Signal Routing**: Complete integration into main signal path with wet/dry control
-4. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
-5. **Performance Optimizations**: SIMD optimization and memory efficiency improvements
+1. **Critical: Comb Signal Integration**: Connect CombProcessor to main audio signal path after delay processing
+2. **Critical: Parameter Mapping**: Map GUI comb controls to CombProcessor methods (setSize, setNumTaps, setFeedback)
+3. **Visual Refinement**: Complete comb grid sizing to fit within window boundaries
+4. **Signal Routing Documentation**: Implement Input → Delay → Comb → Output signal flow
+5. **Tap Pattern System**: Implement 16 preset tap distribution patterns (uniform, fibonacci, etc.)
+6. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
+7. **Performance Optimizations**: SIMD optimization and memory efficiency improvements
 
 ---
 
@@ -398,14 +453,17 @@ The foundation provides:
   - Feedback limiting and 1V/oct pitch control
   - Tempo sync and clock division support
   - Ready for parameter integration and signal routing
-- **Phase 3.1**: Comb Integration ✅ COMPLETED
+- **Phase 3.1**: Comb GUI Implementation ⚠️ PARTIAL (GUI created, not connected to audio processing)
+- **Phase 3.2**: Layout Positioning Fixes ✅ PARTIAL (delay section fixed, comb sizing corrected)
+- **Phase 3.3**: Comb Signal Integration 🔄 CRITICAL NEXT
+- **Phase 3.4**: Comb Parameter Mapping 🔄 CRITICAL NEXT
 - **Phase 4**: Advanced Features 🔄 In Planning
 
 ---
 
 ## Current Status
 
-The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, enhanced GUI with dynamic layout capabilities, and clear mode button labeling. All core functionality is implemented with full automation support, professional audio quality, and modular, extensible design.
+The WaterStick VST3 plugin provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, and enhanced GUI layout. **CRITICAL ISSUE**: Comb section GUI exists but is functionally disconnected - CombProcessor is implemented but not integrated into signal path, and GUI controls don't map to processing parameters.
 
 ## Feature Overview
 
@@ -416,13 +474,17 @@ The WaterStick VST3 plugin now provides a professional, production-ready delay e
 - Professional audio quality with low-latency performance
 
 ### Current Features
-- Per-tap enable, volume, pan, and filter controls
-- Multiple parameter navigation modes
-- Global controls for sync, timing, input/output levels, and feedback
-- Sophisticated DSP with Three Sisters-quality filtering
+- **Delay Section (Functional)**: Per-tap enable, volume, pan, and filter controls
+- **Interface**: Multiple parameter navigation modes with contextual switching
+- **Global Controls**: Sync, timing, input/output levels, and feedback
+- **Audio Processing**: Sophisticated DSP with Three Sisters-quality filtering
 
-### Planned Future Developments
-- 64-tap Comb Resonator section
-- Granular pitch shifting per tap
-- Enhanced visual feedback and performance optimizations
-- Preset system with morphing capabilities
+### Critical Implementation Gap
+- **Comb Section (Non-Functional)**: GUI controls exist but don't affect audio
+- **Signal Routing**: CombProcessor isolated from main processing chain
+- **Parameter Mapping**: Comb GUI controls not connected to CombProcessor methods
+
+### Immediate Development Requirements
+- Connect CombProcessor to signal path (Input → Delay → **Comb** → Output)
+- Map GUI comb controls to CombProcessor parameters
+- Complete visual refinement of comb section sizing

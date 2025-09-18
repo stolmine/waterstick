@@ -159,11 +159,21 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Center the grid horizontally in the left 2/3 (700px) of the window
-    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
+    // Calculate the combined height of tap+global areas for proper vertical centering
     const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int delayAreaHeight = kEditorHeight; // Full height for delay section
+    const int headerHeight = 55; // Space for "DELAY" header (30+25)
+    const int availableHeight = delayAreaHeight - headerHeight;
+
+    // Calculate total content height (tap grid + spacing + mode buttons + spacing + global controls)
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
+    const int globalControlsHeight = buttonSize + 20 + 20 + 2; // knob + label + value + gaps
+    const int totalContentHeight = totalGridHeight + modeButtonSpacing + buttonSize + modeButtonSpacing + globalControlsHeight;
+
+    // Center all content vertically within available space
+    const int contentStartY = headerHeight + (availableHeight - totalContentHeight) / 2;
     const int gridLeft = (delayAreaWidth - totalGridWidth) / 2;
-    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+    const int gridTop = contentStartY;
 
     // Create 16 tap buttons in 2x8 grid
     for (int i = 0; i < 16; i++) {
@@ -240,11 +250,21 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Match the tap button positioning - use left 2/3 (700px)
-    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
+    // Use the same centered positioning as tap buttons
     const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int delayAreaHeight = kEditorHeight; // Full height for delay section
+    const int headerHeight = 55; // Space for "DELAY" header (30+25)
+    const int availableHeight = delayAreaHeight - headerHeight;
+
+    // Calculate total content height (tap grid + spacing + mode buttons + spacing + global controls)
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
+    const int globalControlsHeight = buttonSize + 20 + 20 + 2; // knob + label + value + gaps
+    const int totalContentHeight = totalGridHeight + modeButtonSpacing + buttonSize + modeButtonSpacing + globalControlsHeight;
+
+    // Center all content vertically within available space
+    const int contentStartY = headerHeight + (availableHeight - totalContentHeight) / 2;
     const int gridLeft = (delayAreaWidth - totalGridWidth) / 2;
-    const int tapGridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+    const int tapGridTop = contentStartY;
 
     // Calculate mode button position
     // Place 1.5x button spacing below the tap button grid
@@ -311,29 +331,40 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
 void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 {
-    // Calculate knob positioning in bottom 1/3 of window
-    const int bottomThirdTop = (kEditorHeight * 2) / 3;
+    // Use the same centered positioning as tap and mode buttons
+    const int buttonSize = 53; // For calculations
+    const int buttonSpacing = buttonSize / 2;
+    const int gridWidth = 8;
+    const int gridHeight = 2;
+    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
+    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
+
+    // Calculate the same vertical positioning as other elements
+    const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int delayAreaHeight = kEditorHeight; // Full height for delay section
+    const int headerHeight = 55; // Space for "DELAY" header (30+25)
+    const int availableHeight = delayAreaHeight - headerHeight;
+
+    // Calculate total content height (tap grid + spacing + mode buttons + spacing + global controls)
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
+    const int globalControlsHeight = buttonSize + 20 + 20 + 2; // knob + label + value + gaps
+    const int totalContentHeight = totalGridHeight + modeButtonSpacing + buttonSize + modeButtonSpacing + globalControlsHeight;
+
+    // Center all content vertically within available space
+    const int contentStartY = headerHeight + (availableHeight - totalContentHeight) / 2;
+    const int tapGridLeft = (delayAreaWidth - totalGridWidth) / 2;
+
+    // Calculate global controls position
+    const int modeButtonY = contentStartY + totalGridHeight + modeButtonSpacing;
+    const int knobY = modeButtonY + buttonSize + modeButtonSpacing;
 
     // Knob configuration
     const int knobSize = 53; // Same size as tap buttons
-    const int buttonSize = 53; // For tap button calculations
-    const int buttonSpacing = buttonSize / 2;
-    const int gridWidth = 8;
-    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
-
-    // Calculate tap grid positioning to align knob edges with tap edges - use left 2/3 (700px)
-    const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
-    const int tapGridLeft = (delayAreaWidth - totalGridWidth) / 2;
-    const int tapGridRight = tapGridLeft + totalGridWidth;
 
     // Distribute 7 knobs equally across the tap grid width
     // Align leftmost and rightmost knob edges with tap grid edges
     const int availableWidth = totalGridWidth - (7 * knobSize); // Space for 6 gaps between 7 knobs
     const int knobSpacing = availableWidth / 6; // Equal spacing between knobs
-
-    // Position knobs with proper spacing from mode buttons
-    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
-    const int knobY = bottomThirdTop + modeButtonSpacing;
 
     // Label positioning - uniform sizing based on "OUTPUT" label
     const int labelHeight = 20;
@@ -1677,22 +1708,20 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     const int targetHeight = 53;
     const int targetWidth = 150; // Increased to prevent clipping
 
-    // Calculate actual tap grid positioning - use left 2/3 (700px)
+    // Calculate actual tap grid positioning to align minimap with delay section
     const int buttonSize = 53;
     const int buttonSpacing = buttonSize / 2;
     const int gridWidth = 8;
-    const int gridHeight = 2;
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
-    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
-    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
-    const int gridLeft = (delayAreaWidth - totalGridWidth) / 2;
-    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+    const int tapGridLeft = (delayAreaWidth - totalGridWidth) / 2;
+    const int tapGridRight = tapGridLeft + totalGridWidth;
 
-    // Position in upper right corner with proper margins
-    const int margin = 30; // Same as side margins
-    const int minimapTop = margin; // Align with top margin
-    const int minimapLeft = kEditorWidth - margin - targetWidth;
+    // Position minimap in upper right of DELAY section only
+    // Align with "DELAY" text label vertically and right edge with rightmost tap button
+    const int delayHeaderY = 30;
+    const int minimapTop = delayHeaderY; // Align with "DELAY" text label
+    const int minimapLeft = tapGridRight - targetWidth; // Right edge aligned with rightmost tap button
 
     // Create minimap container
     VSTGUI::CRect minimapRect(minimapLeft, minimapTop, minimapLeft + targetWidth, minimapTop + targetHeight);
@@ -1774,11 +1803,24 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
     }
     container->addView(headerLabel);
 
-    // Comb knob grid: 2×3 grid (70px knobs, 35px spacing, centered in comb section)
-    const int knobSize = 119; // 119px (corrected size)
-    const int knobSpacing = static_cast<int>(35 * 1.75); // 61px (35 * 1.75 scaling)
-    const int gridLeft = 726; // Left position centered in 350px comb section
-    const int gridTop = 105;  // Top position as specified
+    // Calculate knob size as 1/3 of combined tap+global area height
+    const int buttonSize = 53;
+    const int buttonSpacing = buttonSize / 2;
+    const int gridHeight = 2;
+    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
+    const int globalControlsHeight = buttonSize + 20 + 20 + 2; // knob + label + value + gaps
+    const int combinedDelayHeight = totalGridHeight + modeButtonSpacing + buttonSize + modeButtonSpacing + globalControlsHeight;
+
+    // Comb knob size: 1/3 of combined delay area height, maintaining circular shape
+    const int knobSize = combinedDelayHeight / 3;
+    const int knobSpacing = knobSize / 2; // Proportional spacing
+
+    // Center comb grid in right 1/3 section
+    const int totalCombGridWidth = (2 * knobSize) + knobSpacing; // 2 columns
+    const int totalCombGridHeight = (3 * knobSize) + (2 * knobSpacing); // 3 rows
+    const int gridLeft = combSectionLeft + (combSectionWidth - totalCombGridWidth) / 2;
+    const int gridTop = headerY + headerHeight + (kEditorHeight - headerY - headerHeight - totalCombGridHeight) / 2;
 
     // Knob configuration
     const char* knobLabels[] = {"SIZE", "TAPS", "SLOPE", "WAVE", "FB", "RATE"};

@@ -300,6 +300,37 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
         setParamNormalized(kTap1FilterType + (i * 3), static_cast<Vst::ParamValue>(tapFilterType) / (kNumFilterTypes - 1));
     }
 
+    // Load comb parameters
+    float combSize, combFeedback, combRate;
+    int32 combTaps, combSlope, combWave;
+
+    if (streamer.readFloat(combSize) == false) return kResultFalse;
+    if (streamer.readInt32(combTaps) == false) return kResultFalse;
+    if (streamer.readInt32(combSlope) == false) return kResultFalse;
+    if (streamer.readInt32(combWave) == false) return kResultFalse;
+    if (streamer.readFloat(combFeedback) == false) return kResultFalse;
+    if (streamer.readFloat(combRate) == false) return kResultFalse;
+
+    // Convert and set comb parameters with proper scaling
+    // Size: logarithmic, need to find value where 0.0001 * pow(20000, value) = combSize
+    float combSizeNormalized = std::log(combSize / 0.0001f) / std::log(20000.0f);
+    setParamNormalized(kCombSize, std::max(0.0f, std::min(1.0f, combSizeNormalized)));
+
+    // Taps: linear 1-64 to 0-1
+    setParamNormalized(kCombTaps, static_cast<Vst::ParamValue>(combTaps - 1) / 63.0);
+
+    // Slope and Wave: discrete values
+    setParamNormalized(kCombSlope, static_cast<Vst::ParamValue>(combSlope) / 3.0);
+    setParamNormalized(kCombWave, static_cast<Vst::ParamValue>(combWave) / 7.0);
+
+    // Feedback: inverse cubic curve - need to find value where value^3 * 0.99 = combFeedback
+    float combFeedbackNormalized = std::cbrt(combFeedback / 0.99f);
+    setParamNormalized(kCombFeedback, std::max(0.0f, std::min(1.0f, combFeedbackNormalized)));
+
+    // Rate: logarithmic, need to find value where 0.01 * pow(2000, value) = combRate
+    float combRateNormalized = std::log(combRate / 0.01f) / std::log(2000.0f);
+    setParamNormalized(kCombRate, std::max(0.0f, std::min(1.0f, combRateNormalized)));
+
     return kResultOk;
 }
 
