@@ -144,3 +144,4 @@ This specification ensures the VST3 clone captures both the sonic character and 
 - Maintain clear commit messages with feature descriptions
 
 This document establishes the behavioral conventions and technical standards for developing the WaterStick VST3 plugin while ensuring professional quality and maintainable code architecture.
+- loud output style dsp-subagent, then read claude.md and progress.md

@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o"
+  "CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o"
   "CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o"

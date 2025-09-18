@@ -31,7 +31,10 @@
       "Bash(git fetch:*)",
       "Bash(./bin/validator:*)",
       "Bash(./bin/Release/validator /Library/Audio/Plug-Ins/VST3/WaterStick.vst3)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:ccrma.stanford.edu)",
+      "WebFetch(domain:en.wikipedia.org)",
+      "WebFetch(domain:support.biamp.com)"
     ],
     "deny": [],
     "ask": []

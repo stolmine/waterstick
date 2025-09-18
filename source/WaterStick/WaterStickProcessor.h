@@ -129,6 +129,56 @@ private:
     float nextOut();
 };
 
+class CombProcessor {
+public:
+    CombProcessor();
+    ~CombProcessor();
+
+    void initialize(double sampleRate, double maxDelaySeconds = 2.0);
+    void setSize(float sizeSeconds);  // Comb size (delay time of tap 64)
+    void setNumTaps(int numTaps);     // 1-64 active taps
+    void setFeedback(float feedback); // 0-1 feedback amount
+    void setSyncMode(bool synced);
+    void setClockDivision(int division);
+    void setPitchCV(float cv);        // 1V/oct control
+
+    void processStereo(float inputL, float inputR, float& outputL, float& outputR);
+    void reset();
+
+    // Get current size for display
+    float getCurrentSize() const { return mCombSize; }
+
+private:
+    static const int MAX_TAPS = 64;
+
+    // Delay buffers for all taps (stereo)
+    std::vector<float> mDelayBufferL;
+    std::vector<float> mDelayBufferR;
+    int mBufferSize;
+    int mWriteIndex;
+    double mSampleRate;
+
+    // Comb parameters
+    float mCombSize;        // Base delay time in seconds
+    int mNumActiveTaps;     // 1-64
+    float mFeedback;        // Feedback amount 0-1
+    float mPitchCV;         // 1V/oct control voltage
+
+    // Feedback buffers and limiters
+    float mFeedbackBufferL;
+    float mFeedbackBufferR;
+
+    // Sync parameters
+    bool mIsSynced;
+    int mClockDivision;
+    float mHostTempo;
+
+    // Calculate tap delays based on comb size
+    float getTapDelay(int tapIndex) const;
+    float applyCVScaling(float baseDelay) const;
+    float tanhLimiter(float input) const;
+};
+
 class TapDistribution {
 public:
     TapDistribution();
@@ -250,6 +300,9 @@ private:
     // Feedback storage for tanh limiting
     float mFeedbackBufferL;
     float mFeedbackBufferR;
+
+    // Comb processor
+    CombProcessor mCombProcessor;
 
     void updateParameters();
 };

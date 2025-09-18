@@ -1046,12 +1046,12 @@ CMakeFiles/WaterStick.dir/all: vst3sdk/public.sdk/samples/vst-hosting/validator/
 CMakeFiles/WaterStick.dir/all: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=2 "Built target WaterStick"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=2,3 "Built target WaterStick"
 .PHONY : CMakeFiles/WaterStick.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/WaterStick.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 58
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/WaterStick.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : CMakeFiles/WaterStick.dir/rule
@@ -1064,7 +1064,7 @@ WaterStick: CMakeFiles/WaterStick.dir/rule
 CMakeFiles/WaterStick.dir/codegen: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 CMakeFiles/WaterStick.dir/codegen: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=2 "Finished codegen for target WaterStick"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=2,3 "Finished codegen for target WaterStick"
 .PHONY : CMakeFiles/WaterStick.dir/codegen
 
 # clean rule for target.
@@ -1086,7 +1086,7 @@ vst3sdk/CMakeFiles/vstgui_support.dir/all: vst3sdk/base/CMakeFiles/base.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/CMakeFiles/vstgui_support.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 35
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 36
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/CMakeFiles/vstgui_support.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/CMakeFiles/vstgui_support.dir/rule
@@ -1177,12 +1177,12 @@ vst3sdk/CMakeFiles/cmake_VST_modules.dir/clean:
 vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/all:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/build.make vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/build.make vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81 "Built target vstgui"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82 "Built target vstgui"
 .PHONY : vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 17
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 18
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/rule
@@ -1194,7 +1194,7 @@ vstgui: vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/rule
 # codegen rule for target.
 vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/build.make vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81 "Finished codegen for target vstgui"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82 "Finished codegen for target vstgui"
 .PHONY : vst3sdk/VSTGUI.build/vstgui/lib/CMakeFiles/vstgui.dir/codegen
 
 # clean rule for target.
@@ -1214,7 +1214,7 @@ vst3sdk/VSTGUI.build/vstgui/uidescription/CMakeFiles/vstgui_uidescription.dir/al
 
 # Build rule for subdir invocation for target.
 vst3sdk/VSTGUI.build/vstgui/uidescription/CMakeFiles/vstgui_uidescription.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 32
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 33
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/VSTGUI.build/vstgui/uidescription/CMakeFiles/vstgui_uidescription.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/VSTGUI.build/vstgui/uidescription/CMakeFiles/vstgui_uidescription.dir/rule
@@ -1241,12 +1241,12 @@ vst3sdk/VSTGUI.build/vstgui/uidescription/CMakeFiles/vstgui_uidescription.dir/cl
 vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/all:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/build.make vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/build.make vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=82,83,84 "Built target vstgui_standalone"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=83,84 "Built target vstgui_standalone"
 .PHONY : vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 2
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/rule
@@ -1258,7 +1258,7 @@ vstgui_standalone: vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_stan
 # codegen rule for target.
 vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/build.make vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=82,83,84 "Finished codegen for target vstgui_standalone"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=83,84 "Finished codegen for target vstgui_standalone"
 .PHONY : vst3sdk/VSTGUI.build/vstgui/standalone/CMakeFiles/vstgui_standalone.dir/codegen
 
 # clean rule for target.
@@ -1338,12 +1338,12 @@ vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/all: vst3sdk/pluginterfaces/CMakeFi
 vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/all: vst3sdk/base/CMakeFiles/base.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/build.make vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/build.make vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=48,49,50 "Built target sdk_common"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=49,50 "Built target sdk_common"
 .PHONY : vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 6
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/rule
@@ -1355,7 +1355,7 @@ sdk_common: vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/rule
 # codegen rule for target.
 vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/build.make vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=48,49,50 "Finished codegen for target sdk_common"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=49,50 "Finished codegen for target sdk_common"
 .PHONY : vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/codegen
 
 # clean rule for target.
@@ -1372,7 +1372,7 @@ vst3sdk/public.sdk/CMakeFiles/sdk.dir/all: vst3sdk/base/CMakeFiles/base.dir/all
 vst3sdk/public.sdk/CMakeFiles/sdk.dir/all: vst3sdk/public.sdk/CMakeFiles/sdk_common.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/CMakeFiles/sdk.dir/build.make vst3sdk/public.sdk/CMakeFiles/sdk.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/CMakeFiles/sdk.dir/build.make vst3sdk/public.sdk/CMakeFiles/sdk.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=45,46,47 "Built target sdk"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=45,46,47,48 "Built target sdk"
 .PHONY : vst3sdk/public.sdk/CMakeFiles/sdk.dir/all
 
 # Build rule for subdir invocation for target.
@@ -1389,7 +1389,7 @@ sdk: vst3sdk/public.sdk/CMakeFiles/sdk.dir/rule
 # codegen rule for target.
 vst3sdk/public.sdk/CMakeFiles/sdk.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/CMakeFiles/sdk.dir/build.make vst3sdk/public.sdk/CMakeFiles/sdk.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=45,46,47 "Finished codegen for target sdk"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=45,46,47,48 "Finished codegen for target sdk"
 .PHONY : vst3sdk/public.sdk/CMakeFiles/sdk.dir/codegen
 
 # clean rule for target.
@@ -1411,7 +1411,7 @@ vst3sdk/public.sdk/CMakeFiles/sdk_hosting.dir/all: vst3sdk/public.sdk/CMakeFiles
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/CMakeFiles/sdk_hosting.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 8
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 7
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/CMakeFiles/sdk_hosting.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/CMakeFiles/sdk_hosting.dir/rule
@@ -1446,7 +1446,7 @@ vst3sdk/public.sdk/samples/vst-hosting/editorhost/CMakeFiles/editorhost.dir/all:
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst-hosting/editorhost/CMakeFiles/editorhost.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 8
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst-hosting/editorhost/CMakeFiles/editorhost.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst-hosting/editorhost/CMakeFiles/editorhost.dir/rule
@@ -1484,7 +1484,7 @@ vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 44
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 43
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/rule
@@ -1519,7 +1519,7 @@ vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all: v
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 18
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 17
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/rule
@@ -1554,7 +1554,7 @@ vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotoo
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 8
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/rule
@@ -1586,12 +1586,12 @@ vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/all: vst3sdk/public.
 vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/all: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build.make vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/depend
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build.make vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=3,4 "Built target adelay"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=4 "Built target adelay"
 .PHONY : vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/all
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 24
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 23
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/rule
@@ -1604,7 +1604,7 @@ adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/rule
 vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/codegen: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/all
 vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/codegen: vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotool.dir/all
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build.make vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=3,4 "Finished codegen for target adelay"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=4 "Finished codegen for target adelay"
 .PHONY : vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/codegen
 
 # clean rule for target.
@@ -1632,7 +1632,7 @@ vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again.dir/all: vst3sdk/public.sd
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again.dir/rule
@@ -1673,7 +1673,7 @@ vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/all: vst3sdk/pu
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/rule
@@ -1791,7 +1791,7 @@ vst3sdk/public.sdk/samples/vst/dataexchange/CMakeFiles/data-exchange.dir/all: vs
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/dataexchange/CMakeFiles/data-exchange.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 58
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/dataexchange/CMakeFiles/data-exchange.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/dataexchange/CMakeFiles/data-exchange.dir/rule
@@ -1832,7 +1832,7 @@ vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/all: vst3
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 58
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 59
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/rule
@@ -1987,7 +1987,7 @@ vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 58
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/rule
@@ -2028,7 +2028,7 @@ vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-t
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/rule
@@ -2069,7 +2069,7 @@ vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/all: vst3sdk/public.
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/rule
@@ -2110,7 +2110,7 @@ vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/all: vst3sd
 
 # Build rule for subdir invocation for target.
 vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 56
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 57
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/why/repos/waterstick/build/CMakeFiles 0
 .PHONY : vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/rule
