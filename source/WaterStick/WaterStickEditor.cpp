@@ -159,9 +159,10 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Center the grid horizontally in the upper 2/3 of the window
+    // Center the grid horizontally in the left 2/3 (700px) of the window
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
-    const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
+    const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int gridLeft = (delayAreaWidth - totalGridWidth) / 2;
     const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
     // Create 16 tap buttons in 2x8 grid
@@ -239,9 +240,10 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Match the tap button positioning
+    // Match the tap button positioning - use left 2/3 (700px)
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
-    const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
+    const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int gridLeft = (delayAreaWidth - totalGridWidth) / 2;
     const int tapGridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
     // Calculate mode button position
@@ -319,8 +321,9 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
     const int gridWidth = 8;
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
 
-    // Calculate tap grid positioning to align knob edges with tap edges
-    const int tapGridLeft = (kEditorWidth - totalGridWidth) / 2;
+    // Calculate tap grid positioning to align knob edges with tap edges - use left 2/3 (700px)
+    const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int tapGridLeft = (delayAreaWidth - totalGridWidth) / 2;
     const int tapGridRight = tapGridLeft + totalGridWidth;
 
     // Distribute 7 knobs equally across the tap grid width
@@ -1674,7 +1677,7 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     const int targetHeight = 53;
     const int targetWidth = 150; // Increased to prevent clipping
 
-    // Calculate actual tap grid positioning
+    // Calculate actual tap grid positioning - use left 2/3 (700px)
     const int buttonSize = 53;
     const int buttonSpacing = buttonSize / 2;
     const int gridWidth = 8;
@@ -1682,7 +1685,8 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
-    const int gridLeft = (kEditorWidth - totalGridWidth) / 2;
+    const int delayAreaWidth = 700; // Left 2/3 of editor (700px)
+    const int gridLeft = (delayAreaWidth - totalGridWidth) / 2;
     const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
     // Position in upper right corner with proper margins
@@ -1771,9 +1775,9 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
     container->addView(headerLabel);
 
     // Comb knob grid: 2×3 grid (70px knobs, 35px spacing, centered in comb section)
-    const int knobSize = static_cast<int>(70 * 1.75); // 122px (70 * 1.75 scaling)
+    const int knobSize = 119; // 119px (corrected size)
     const int knobSpacing = static_cast<int>(35 * 1.75); // 61px (35 * 1.75 scaling)
-    const int gridLeft = 787; // Left position as specified
+    const int gridLeft = 726; // Left position centered in 350px comb section
     const int gridTop = 105;  // Top position as specified
 
     // Knob configuration
