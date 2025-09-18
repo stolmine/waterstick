@@ -112,6 +112,13 @@ enum {
     kTap16FilterCutoff,  // Tap 16 filter cutoff frequency
     kTap16FilterResonance, // Tap 16 filter resonance (-1.0 to +1.0)
     kTap16FilterType,    // Tap 16 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    // Comb section parameters
+    kCombSize,           // Comb size: 100μs-2s, logarithmic, default 100ms
+    kCombTaps,           // Comb taps: 1-64 taps, linear, default 32
+    kCombSlope,          // Comb slope: 4 patterns (0-3), discrete, default 0
+    kCombWave,           // Comb wave: 8 waveforms (0-7), discrete, default 0
+    kCombFeedback,       // Comb feedback: 0-99%, cubic curve, default 0%
+    kCombRate,           // Comb rate: 0.01-20Hz, logarithmic, default 1Hz
     kNumParams
 };
 

@@ -44,6 +44,14 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     outputGainKnob = nullptr;
     dryWetKnob = nullptr;
 
+    // Initialize comb controls
+    combSizeKnob = nullptr;
+    combTapsKnob = nullptr;
+    combSlopeKnob = nullptr;
+    combWaveKnob = nullptr;
+    combFeedbackKnob = nullptr;
+    combRateKnob = nullptr;
+
     // Initialize labels
     syncModeLabel = nullptr;
     timeDivisionLabel = nullptr;
@@ -51,12 +59,28 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     outputGainLabel = nullptr;
     dryWetLabel = nullptr;
 
+    // Initialize comb labels
+    combSizeLabel = nullptr;
+    combTapsLabel = nullptr;
+    combSlopeLabel = nullptr;
+    combWaveLabel = nullptr;
+    combFeedbackLabel = nullptr;
+    combRateLabel = nullptr;
+
     // Initialize value readouts
     syncModeValue = nullptr;
     timeDivisionValue = nullptr;
     inputGainValue = nullptr;
     outputGainValue = nullptr;
     dryWetValue = nullptr;
+
+    // Initialize comb value readouts
+    combSizeValue = nullptr;
+    combTapsValue = nullptr;
+    combSlopeValue = nullptr;
+    combWaveValue = nullptr;
+    combFeedbackValue = nullptr;
+    combRateValue = nullptr;
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -70,6 +94,23 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     auto container = new VSTGUI::CViewContainer(frameSize);
     container->setBackgroundColor(VSTGUI::kWhiteCColor);
 
+    // Add section headers
+    // Delay section header (left 2/3)
+    const int delayHeaderY = 30;
+    const int delayHeaderHeight = 25;
+    VSTGUI::CRect delayHeaderRect(10, delayHeaderY, 690, delayHeaderY + delayHeaderHeight);
+    auto delayHeaderLabel = new VSTGUI::CTextLabel(delayHeaderRect, "DELAY");
+    delayHeaderLabel->setHoriAlign(VSTGUI::kCenterText);
+    delayHeaderLabel->setFontColor(VSTGUI::kBlackCColor);
+    delayHeaderLabel->setBackColor(VSTGUI::kTransparentCColor);
+    delayHeaderLabel->setFrameColor(VSTGUI::kTransparentCColor);
+    delayHeaderLabel->setStyle(VSTGUI::CTextLabel::kNoFrame);
+
+    auto delayHeaderFont = getWorkSansFont(14.0f);
+    if (delayHeaderFont) {
+        delayHeaderLabel->setFont(delayHeaderFont);
+    }
+    container->addView(delayHeaderLabel);
 
     // Create tap buttons
     createTapButtons(container);
@@ -79,6 +120,9 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
     // Create global controls
     createGlobalControls(container);
+
+    // Create comb controls
+    createCombControls(container);
 
     // Create minimap
     createMinimap(container);
@@ -442,6 +486,79 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
             return oss.str();
         }
 
+        case kCombSize:
+        {
+            // Convert normalized to logarithmic range: 100μs-2s, default 100ms
+            // Log scale: log(0.0001) to log(2.0)
+            float logMin = std::log(0.0001f); // 100μs
+            float logMax = std::log(2.0f);    // 2s
+            float logValue = logMin + normalizedValue * (logMax - logMin);
+            float sizeValue = std::exp(logValue);
+
+            if (sizeValue < 0.001f) {
+                oss << std::fixed << std::setprecision(0) << (sizeValue * 1000000.0f) << "μs";
+            } else if (sizeValue < 1.0f) {
+                oss << std::fixed << std::setprecision(1) << (sizeValue * 1000.0f) << "ms";
+            } else {
+                oss << std::fixed << std::setprecision(2) << sizeValue << "s";
+            }
+            return oss.str();
+        }
+
+        case kCombTaps:
+        {
+            // Convert normalized to linear range: 1-64 taps, default 32
+            int tapsValue = 1 + static_cast<int>(normalizedValue * 63);
+            oss << tapsValue << " taps";
+            return oss.str();
+        }
+
+        case kCombSlope:
+        {
+            // Convert normalized to discrete patterns: 4 patterns (0-3), default 0
+            int slopeValue = static_cast<int>(normalizedValue * 3);
+            const char* slopeNames[] = {"Linear", "Exponential", "Logarithmic", "S-Curve"};
+            if (slopeValue >= 0 && slopeValue <= 3) {
+                return slopeNames[slopeValue];
+            }
+            return "Linear";
+        }
+
+        case kCombWave:
+        {
+            // Convert normalized to discrete waveforms: 8 waveforms (0-7), default 0
+            int waveValue = static_cast<int>(normalizedValue * 7);
+            const char* waveNames[] = {"Sine", "Triangle", "Saw", "Square", "Noise", "S&H", "Smooth", "Chaos"};
+            if (waveValue >= 0 && waveValue <= 7) {
+                return waveNames[waveValue];
+            }
+            return "Sine";
+        }
+
+        case kCombFeedback:
+        {
+            // Convert normalized to cubic curve: 0-99%, default 0%
+            float cubicValue = normalizedValue * normalizedValue * normalizedValue; // Cubic curve
+            oss << std::fixed << std::setprecision(0) << (cubicValue * 99.0f) << "%";
+            return oss.str();
+        }
+
+        case kCombRate:
+        {
+            // Convert normalized to logarithmic range: 0.01-20Hz, default 1Hz
+            float logMin = std::log(0.01f); // 0.01Hz
+            float logMax = std::log(20.0f);  // 20Hz
+            float logValue = logMin + normalizedValue * (logMax - logMin);
+            float rateValue = std::exp(logValue);
+
+            if (rateValue < 1.0f) {
+                oss << std::fixed << std::setprecision(2) << rateValue << "Hz";
+            } else {
+                oss << std::fixed << std::setprecision(1) << rateValue << "Hz";
+            }
+            return oss.str();
+        }
+
         default:
             oss << std::fixed << std::setprecision(2) << normalizedValue;
             return oss.str();
@@ -475,6 +592,19 @@ void WaterStickEditor::updateValueReadouts()
             std::string valueText = formatParameterValue(paramId, value);
             valueLabels[i]->setText(valueText.c_str());
             valueLabels[i]->invalid();
+        }
+    }
+
+    // Update comb control value readouts
+    const int combKnobTags[] = {kCombSize, kCombTaps, kCombSlope, kCombWave, kCombFeedback, kCombRate};
+    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combTapsValue, combSlopeValue, combWaveValue, combFeedbackValue, combRateValue};
+
+    for (int i = 0; i < 6; i++) {
+        if (combValueLabels[i]) {
+            float value = controller->getParamNormalized(combKnobTags[i]);
+            std::string valueText = formatParameterValue(combKnobTags[i], value);
+            combValueLabels[i]->setText(valueText.c_str());
+            combValueLabels[i]->invalid();
         }
     }
 }
@@ -1608,6 +1738,137 @@ void WaterStickEditor::updateMinimapState()
             minimapButtons[i]->setValue(static_cast<float>(paramValue));
             minimapButtons[i]->invalid(); // Trigger redraw
         }
+    }
+}
+
+void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
+{
+    // Comb section positioning - right 1/3 of window (350px wide)
+    const int combSectionLeft = 700; // Vertical divider at X=700px
+    const int combSectionWidth = 350;
+
+    // Create visual separator line
+    VSTGUI::CRect separatorRect(combSectionLeft, 0, combSectionLeft + 2, kEditorHeight);
+    auto separator = new VSTGUI::CViewContainer(separatorRect);
+    separator->setBackgroundColor(VSTGUI::CColor(200, 200, 200)); // Light grey separator
+    container->addView(separator);
+
+    // Section header
+    const int headerY = 30;
+    const int headerHeight = 25;
+    VSTGUI::CRect headerRect(combSectionLeft + 10, headerY, combSectionLeft + combSectionWidth - 10, headerY + headerHeight);
+    auto headerLabel = new VSTGUI::CTextLabel(headerRect, "COMB");
+    headerLabel->setHoriAlign(VSTGUI::kCenterText);
+    headerLabel->setFontColor(VSTGUI::kBlackCColor);
+    headerLabel->setBackColor(VSTGUI::kTransparentCColor);
+    headerLabel->setFrameColor(VSTGUI::kTransparentCColor);
+    headerLabel->setStyle(VSTGUI::CTextLabel::kNoFrame);
+
+    auto headerFont = getWorkSansFont(14.0f);
+    if (headerFont) {
+        headerLabel->setFont(headerFont);
+    }
+    container->addView(headerLabel);
+
+    // Comb knob grid: 2×3 grid (70px knobs, 35px spacing, centered in comb section)
+    const int knobSize = static_cast<int>(70 * 1.75); // 122px (70 * 1.75 scaling)
+    const int knobSpacing = static_cast<int>(35 * 1.75); // 61px (35 * 1.75 scaling)
+    const int gridLeft = 787; // Left position as specified
+    const int gridTop = 105;  // Top position as specified
+
+    // Knob configuration
+    const char* knobLabels[] = {"SIZE", "TAPS", "SLOPE", "WAVE", "FB", "RATE"};
+    const int knobTags[] = {kCombSize, kCombTaps, kCombSlope, kCombWave, kCombFeedback, kCombRate};
+    KnobControl** knobPointers[] = {&combSizeKnob, &combTapsKnob, &combSlopeKnob, &combWaveKnob, &combFeedbackKnob, &combRateKnob};
+    VSTGUI::CTextLabel** labelPointers[] = {&combSizeLabel, &combTapsLabel, &combSlopeLabel, &combWaveLabel, &combFeedbackLabel, &combRateLabel};
+    VSTGUI::CTextLabel** valuePointers[] = {&combSizeValue, &combTapsValue, &combSlopeValue, &combWaveValue, &combFeedbackValue, &combRateValue};
+
+    // Create 2×3 grid of knobs
+    for (int i = 0; i < 6; i++) {
+        // Calculate grid position: 2 columns, 3 rows
+        int col = i % 2;        // 0 or 1 for column position
+        int row = i / 2;        // 0, 1, or 2 for row position
+
+        // Calculate knob position
+        int knobX = gridLeft + col * (knobSize + knobSpacing);
+        int knobY = gridTop + row * (knobSize + knobSpacing);
+
+        // Create knob
+        VSTGUI::CRect knobRect(knobX, knobY, knobX + knobSize, knobY + knobSize);
+        *(knobPointers[i]) = new KnobControl(knobRect, this, knobTags[i]);
+
+        // Load initial value from controller
+        auto controller = getController();
+        if (controller) {
+            float value = controller->getParamNormalized(knobTags[i]);
+            (*knobPointers[i])->setValue(value);
+        }
+
+        container->addView(*(knobPointers[i]));
+
+        // Label positioning
+        const int labelHeight = 20;
+        const int labelY = knobY + knobSize + 5; // 5px gap between knob and label
+        const int valueReadoutY = labelY + labelHeight + 2; // 2px gap between label and value
+
+        // Calculate dynamic label width based on text content
+        auto customFont = getWorkSansFont(11.0f);
+        int labelWidth = knobSize; // Default minimum width
+
+        // Approximate width for text
+        const char* text = knobLabels[i];
+        int textLength = static_cast<int>(strlen(text));
+        int approximateWidth = static_cast<int>(textLength * 7.5f + 8);
+        labelWidth = std::max(knobSize, approximateWidth);
+
+        // Center the label horizontally around the knob center
+        int labelLeft = knobX + (knobSize - labelWidth) / 2;
+        int labelRight = labelLeft + labelWidth;
+
+        // Create label
+        VSTGUI::CRect labelRect(labelLeft, labelY, labelRight, labelY + labelHeight);
+        *(labelPointers[i]) = new VSTGUI::CTextLabel(labelRect, knobLabels[i]);
+
+        // Set label styling
+        auto label = *(labelPointers[i]);
+        label->setHoriAlign(VSTGUI::kCenterText);
+        label->setFontColor(VSTGUI::kBlackCColor);
+        label->setBackColor(VSTGUI::kTransparentCColor);
+        label->setFrameColor(VSTGUI::kTransparentCColor);
+        label->setStyle(VSTGUI::CTextLabel::kNoFrame);
+
+        if (customFont) {
+            label->setFont(customFont);
+        }
+
+        container->addView(label);
+
+        // Create value readout
+        VSTGUI::CRect valueRect(knobX, valueReadoutY, knobX + knobSize, valueReadoutY + labelHeight);
+        *(valuePointers[i]) = new VSTGUI::CTextLabel(valueRect, "");
+
+        // Set value readout styling
+        auto valueLabel = *(valuePointers[i]);
+        valueLabel->setHoriAlign(VSTGUI::kCenterText);
+        valueLabel->setFontColor(VSTGUI::kBlackCColor);
+        valueLabel->setBackColor(VSTGUI::kTransparentCColor);
+        valueLabel->setFrameColor(VSTGUI::kTransparentCColor);
+        valueLabel->setStyle(VSTGUI::CTextLabel::kNoFrame);
+
+        // Use smaller font for value readouts
+        auto valueFont = getWorkSansFont(9.0f);
+        if (valueFont) {
+            valueLabel->setFont(valueFont);
+        }
+
+        // Set initial value text
+        if (controller) {
+            float value = controller->getParamNormalized(knobTags[i]);
+            std::string valueText = formatParameterValue(knobTags[i], value);
+            valueLabel->setText(valueText.c_str());
+        }
+
+        container->addView(valueLabel);
     }
 }
 

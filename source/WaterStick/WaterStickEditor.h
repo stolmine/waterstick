@@ -149,7 +149,7 @@ public:
     void updateValueReadouts();
 
 private:
-    static constexpr int kEditorWidth = 700;   // 400 * 1.75
+    static constexpr int kEditorWidth = 1050;  // 600 * 1.75 (expanded for comb section)
     static constexpr int kEditorHeight = 525;  // 300 * 1.75
 
     // Tap button array for easy access
@@ -167,6 +167,14 @@ private:
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
 
+    // Comb section knobs
+    KnobControl* combSizeKnob;
+    KnobControl* combTapsKnob;
+    KnobControl* combSlopeKnob;
+    KnobControl* combWaveKnob;
+    KnobControl* combFeedbackKnob;
+    KnobControl* combRateKnob;
+
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
     VSTGUI::CTextLabel* timeDivisionLabel;
@@ -176,6 +184,14 @@ private:
     VSTGUI::CTextLabel* dryWetLabel;
     VSTGUI::CTextLabel* gridLabel;
 
+    // Comb section labels
+    VSTGUI::CTextLabel* combSizeLabel;
+    VSTGUI::CTextLabel* combTapsLabel;
+    VSTGUI::CTextLabel* combSlopeLabel;
+    VSTGUI::CTextLabel* combWaveLabel;
+    VSTGUI::CTextLabel* combFeedbackLabel;
+    VSTGUI::CTextLabel* combRateLabel;
+
     // Value readout labels
     VSTGUI::CTextLabel* syncModeValue;
     VSTGUI::CTextLabel* timeDivisionValue;
@@ -184,6 +200,14 @@ private:
     VSTGUI::CTextLabel* outputGainValue;
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
+
+    // Comb section value readouts
+    VSTGUI::CTextLabel* combSizeValue;
+    VSTGUI::CTextLabel* combTapsValue;
+    VSTGUI::CTextLabel* combSlopeValue;
+    VSTGUI::CTextLabel* combWaveValue;
+    VSTGUI::CTextLabel* combFeedbackValue;
+    VSTGUI::CTextLabel* combRateValue;
 
     // Mode button labels
     VSTGUI::CTextLabel* modeButtonLabels[8];
@@ -201,6 +225,7 @@ private:
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
+    void createCombControls(VSTGUI::CViewContainer* container);
 };
 
 } // namespace WaterStick

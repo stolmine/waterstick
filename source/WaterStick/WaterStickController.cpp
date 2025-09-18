@@ -198,6 +198,31 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 16 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16FilterType, 0, STR16("Filter"));
 
+    // Comb section parameters
+    parameters.addParameter(STR16("Comb Size"), STR16("s"), 0, 0.5, // Default 100ms (logarithmic scale)
+                           Vst::ParameterInfo::kCanAutomate, kCombSize, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Taps"), nullptr, 63, 31.0/63.0, // Default 32 taps (linear scale)
+                           Vst::ParameterInfo::kCanAutomate, kCombTaps, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Slope"), nullptr, 3, 0.0, // Default 0 (Linear pattern)
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombSlope, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Wave"), nullptr, 7, 0.0, // Default 0 (Sine waveform)
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombWave, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Feedback"), STR16("%"), 0, 0.0, // Default 0% (cubic curve)
+                           Vst::ParameterInfo::kCanAutomate, kCombFeedback, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Rate"), STR16("Hz"), 0, 0.5, // Default 1Hz (logarithmic scale)
+                           Vst::ParameterInfo::kCanAutomate, kCombRate, 0,
+                           STR16("Comb"));
+
     // Initialize parameters to their default values to ensure proper display
     // This is crucial for parameters that don't get set via setComponentState on first load
     setParamNormalized(kInputGain, 40.0/52.0);   // 0dB
