@@ -57,6 +57,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     routeModeKnob = nullptr;
     combPatternKnob = nullptr;
     combSlopeKnob = nullptr;
+    combGainKnob = nullptr;
 
     syncModeLabel = nullptr;
     timeDivisionLabel = nullptr;
@@ -75,6 +76,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     routeModeLabel = nullptr;
     combPatternLabel = nullptr;
     combSlopeLabel = nullptr;
+    combGainLabel = nullptr;
 
     syncModeValue = nullptr;
     timeDivisionValue = nullptr;
@@ -93,6 +95,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     routeModeValue = nullptr;
     combPatternValue = nullptr;
     combSlopeValue = nullptr;
+    combGainValue = nullptr;
 
     delayBypassLabel = nullptr;
     combBypassLabel = nullptr;
@@ -1795,17 +1798,18 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
 
     KnobDefinition combKnobs[] = {
         {"SIZE", kCombSize, &combSizeKnob, &combSizeLabel, &combSizeValue, false},
+        {"C-GAIN", kCombGain, &combGainKnob, &combGainLabel, &combGainValue, false},
         {"FEEDBACK", kCombFeedback, &combFeedbackKnob, &combFeedbackLabel, &combFeedbackValue, false},
-        {"PATTERN", kCombPattern, &combPatternKnob, &combPatternLabel, &combPatternValue, false},
         {"PITCH", kCombPitchCV, &combPitchKnob, &combPitchLabel, &combPitchValue, false},
         {"TAPS", kCombTaps, &combTapsKnob, &combTapsLabel, &combTapsValue, false},
-        {"SLOPE", kCombSlope, &combSlopeKnob, &combSlopeLabel, &combSlopeValue, false},
+        {"PATTERN", kCombPattern, &combPatternKnob, &combPatternLabel, &combPatternValue, false},
         {"SYNC", kCombSync, &combSyncKnob, &combSyncLabel, &combSyncValue, false},
         {"DIVISION", kCombDivision, &combDivisionKnob, &combDivisionLabel, &combDivisionValue, false},
+        {"SLOPE", kCombSlope, &combSlopeKnob, &combSlopeLabel, &combSlopeValue, false},
         {"ROUTE", kRouteMode, &routeModeKnob, &routeModeLabel, &routeModeValue, false}
     };
 
-    factory.createCombKnobsGrid(startX, combStartY, knobSize, combHSpacing, combVSpacing, combColumns, combKnobs, 9);
+    factory.createCombKnobsGrid(startX, combStartY, knobSize, combHSpacing, combVSpacing, combColumns, combKnobs, 10);
 }
 
 //========================================================================

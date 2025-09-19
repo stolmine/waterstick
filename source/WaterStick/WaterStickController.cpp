@@ -258,6 +258,10 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombSlope, 0,
                            STR16("Comb"));
 
+    parameters.addParameter(STR16("Comb Gain"), STR16("dB"), 0, 0.769231,  // Default 0dB (52/52 range, -40dB to +12dB)
+                           Vst::ParameterInfo::kCanAutomate, kCombGain, 0,
+                           STR16("Comb"));
+
     // Initialize all parameters to their default values
     // This ensures proper display even if setComponentState is never called
     setDefaultParameters();
@@ -305,6 +309,7 @@ void WaterStickController::setDefaultParameters()
     setParamNormalized(kCombDivision, static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1)); // 1/4 note
     setParamNormalized(kCombPattern, 0.0);       // Pattern 1
     setParamNormalized(kCombSlope, 0.0);         // Flat
+    setParamNormalized(kCombGain, 0.769231);     // 0dB (40/52 range for -40dB to +12dB)
 
     // Set routing and mix parameters to defaults
     setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
@@ -407,6 +412,7 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kCombDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
     if (id == kCombPattern) return 0.0f;
     if (id == kCombSlope) return 0.0f;
+    if (id == kCombGain) return 0.769231f;  // 0dB (40/52 range for -40dB to +12dB)
 
     return 0.0f;  // Safe default
 }
@@ -1225,6 +1231,15 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
                 return kResultTrue;
             }
             break;
+        }
+        case kCombGain:
+        {
+            // Convert normalized value to dB range (-40dB to +12dB)
+            float gain_dB = (valueNormalized * 52.0f) - 40.0f;
+            char gainStr[32];
+            snprintf(gainStr, sizeof(gainStr), "%.1f dB", gain_dB);
+            Steinberg::UString(string, 128).fromAscii(gainStr);
+            return kResultTrue;
         }
         case kDelayBypass:
         case kCombBypass:

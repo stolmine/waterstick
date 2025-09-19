@@ -188,6 +188,7 @@ public:
     void setPitchCV(float cv);        // 1V/oct control
     void setPattern(int pattern);     // 0-15 tap spacing patterns
     void setSlope(int slope);         // 0-3 envelope slopes
+    void setGain(float gain);         // Linear gain multiplier
     void updateTempo(double hostTempo, bool isValid); // Update tempo for sync calculations
 
     void processStereo(float inputL, float inputR, float& outputL, float& outputR);
@@ -226,6 +227,7 @@ private:
     // Pattern and slope parameters
     int mPattern;           // 0-15 tap spacing pattern
     int mSlope;             // 0-3 envelope slope
+    float mGain;            // Linear gain multiplier
 
     // Calculate tap delays based on comb size
     float getTapDelay(int tapIndex) const;
@@ -279,6 +281,9 @@ class WaterStickProcessor : public Steinberg::Vst::AudioEffect
 public:
     WaterStickProcessor();
     ~WaterStickProcessor() SMTG_OVERRIDE;
+
+    // Friend declarations for helper classes
+    friend struct TapParameterProcessor;
 
     // Create function used by factory
     static Steinberg::FUnknown* createInstance(void* /*context*/)
@@ -343,6 +348,7 @@ private:
     int mCombDivision;        // Comb sync division
     int mCombPattern;         // Comb tap spacing pattern (0-15)
     int mCombSlope;           // Comb envelope slope (0-3)
+    float mCombGain;          // Comb section gain (linear multiplier)
 
     // Bypass fade system state
     bool mDelayBypassPrevious;     // Track previous state for fade triggering

@@ -20,6 +20,7 @@ CombProcessor::CombProcessor()
     , mHostTempoValid(false)
     , mPattern(0)
     , mSlope(0)
+    , mGain(1.0f)
 {
 }
 
@@ -86,6 +87,11 @@ void CombProcessor::setPattern(int pattern)
 void CombProcessor::setSlope(int slope)
 {
     mSlope = std::max(0, std::min(kNumCombSlopes - 1, slope));
+}
+
+void CombProcessor::setGain(float gain)
+{
+    mGain = std::max(0.0f, gain);  // Ensure non-negative gain
 }
 
 void CombProcessor::updateTempo(double hostTempo, bool isValid)
@@ -245,6 +251,10 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
         outputL += tapOutL * totalGain;
         outputR += tapOutR * totalGain;
     }
+
+    // Apply the gain control to the final output
+    outputL *= mGain;
+    outputR *= mGain;
 
     float maxDelay = applyCVScaling(getSyncedCombSize());
     float maxDelaySamples = maxDelay * mSampleRate;

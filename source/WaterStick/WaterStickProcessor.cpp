@@ -768,6 +768,7 @@ WaterStickProcessor::WaterStickProcessor()
 , mCombDivision(kSync_1_4)
 , mCombPattern(0)       // Default pattern 1
 , mCombSlope(0)         // Default flat slope
+, mCombGain(1.0f)       // Default 0dB gain (unity)
 , mDelayBypassPrevious(false)
 , mCombBypassPrevious(false)
 , mDelayFadingOut(false)
@@ -1298,6 +1299,14 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kCombSlope:
                             mCombSlope = static_cast<int>(value * (kNumCombSlopes - 1) + 0.5);
                             mCombProcessor.setSlope(mCombSlope);
+                            break;
+                        case kCombGain:
+                            {
+                                // Convert normalized value to dB range (-40dB to +12dB), then to linear gain
+                                float gain_dB = (value * 52.0f) - 40.0f;
+                                mCombGain = std::pow(10.0f, gain_dB / 20.0f);  // Convert dB to linear gain
+                                mCombProcessor.setGain(mCombGain);
+                            }
                             break;
                         default:
                             TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);

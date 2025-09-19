@@ -196,6 +196,7 @@ private:
     KnobControl* routeModeKnob;
     KnobControl* combPatternKnob;
     KnobControl* combSlopeKnob;
+    KnobControl* combGainKnob;
 
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
@@ -216,6 +217,7 @@ private:
     VSTGUI::CTextLabel* routeModeLabel;
     VSTGUI::CTextLabel* combPatternLabel;
     VSTGUI::CTextLabel* combSlopeLabel;
+    VSTGUI::CTextLabel* combGainLabel;
 
     // Value readout labels
     VSTGUI::CTextLabel* syncModeValue;
@@ -236,6 +238,7 @@ private:
     VSTGUI::CTextLabel* routeModeValue;
     VSTGUI::CTextLabel* combPatternValue;
     VSTGUI::CTextLabel* combSlopeValue;
+    VSTGUI::CTextLabel* combGainValue;
 
     // Mode button labels
     VSTGUI::CTextLabel* modeButtonLabels[8];
