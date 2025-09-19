@@ -326,7 +326,6 @@ private:
     float mInputGain;
     float mOutputGain;
     float mDelayTime;
-    float mDryWet;
     float mFeedback;
     bool mTempoSyncMode;
     int mSyncDivision;
@@ -337,6 +336,7 @@ private:
     RouteMode mRouteMode;
     float mGlobalDryWet;      // Global Dry/Wet mix (affects final output)
     float mDelayDryWet;       // Delay section Dry/Wet mix (delay section only)
+    float mCombDryWet;        // Comb section Dry/Wet mix (comb section only)
     bool mDelayBypass;        // Delay section bypass toggle
     bool mCombBypass;         // Comb section bypass toggle
 

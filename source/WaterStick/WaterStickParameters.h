@@ -7,7 +7,6 @@ enum {
     kInputGain = 0,
     kOutputGain,
     kDelayTime,
-    kDryWet,
     kFeedback,               // Global feedback parameter
     // Tempo sync parameters - added at end to maintain compatibility
     kTempoSyncMode,      // Toggle: 0=Free, 1=Synced
@@ -117,6 +116,7 @@ enum {
     kRouteMode,          // Routing mode: 0=Delay>Comb, 1=Comb>Delay, 2=Delay+Comb
     kGlobalDryWet,       // Global Dry/Wet mix (affects final output)
     kDelayDryWet,        // Delay section Dry/Wet mix (delay section only)
+    kCombDryWet,         // Comb section Dry/Wet mix (comb section only)
     kDelayBypass,        // Delay section bypass toggle
     kCombBypass,         // Comb section bypass toggle
     // Comb control parameters

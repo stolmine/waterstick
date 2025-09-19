@@ -47,6 +47,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     inputGainKnob = nullptr;
     outputGainKnob = nullptr;
     dryWetKnob = nullptr;
+    globalDryWetKnob = nullptr;
 
     combSizeKnob = nullptr;
     combFeedbackKnob = nullptr;
@@ -58,6 +59,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combPatternKnob = nullptr;
     combSlopeKnob = nullptr;
     combGainKnob = nullptr;
+    combDryWetKnob = nullptr;
 
     syncModeLabel = nullptr;
     timeDivisionLabel = nullptr;
@@ -66,6 +68,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     inputGainLabel = nullptr;
     outputGainLabel = nullptr;
     dryWetLabel = nullptr;
+    globalDryWetLabel = nullptr;
 
     combSizeLabel = nullptr;
     combFeedbackLabel = nullptr;
@@ -77,6 +80,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combPatternLabel = nullptr;
     combSlopeLabel = nullptr;
     combGainLabel = nullptr;
+    combDryWetLabel = nullptr;
 
     syncModeValue = nullptr;
     timeDivisionValue = nullptr;
@@ -85,6 +89,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     inputGainValue = nullptr;
     outputGainValue = nullptr;
     dryWetValue = nullptr;
+    globalDryWetValue = nullptr;
 
     combSizeValue = nullptr;
     combFeedbackValue = nullptr;
@@ -96,6 +101,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combPatternValue = nullptr;
     combSlopeValue = nullptr;
     combGainValue = nullptr;
+    combDryWetValue = nullptr;
 
     delayBypassLabel = nullptr;
     combBypassLabel = nullptr;
@@ -311,10 +317,23 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
         {"D-GAIN", kDelayGain, &delayGainKnob, &delayGainLabel, &delayGainValue, false},
         {"INPUT", kInputGain, &inputGainKnob, &inputGainLabel, &inputGainValue, false},
         {"OUTPUT", kOutputGain, &outputGainKnob, &outputGainLabel, &outputGainValue, false},
-        {"DRY/WET", kDryWet, &dryWetKnob, &dryWetLabel, &dryWetValue, false}
+        {"D-MIX", kDelayDryWet, &dryWetKnob, &dryWetLabel, &dryWetValue, false}
     };
 
     factory.createGlobalKnobsHorizontal(tapGridLeft, knobY, knobSize, knobSpacing, globalKnobs, 8);
+
+    // Create G-MIX global dry/wet control (larger, 63px) in upper-right of delay section
+    const int largeMixKnobSize = 63;
+    const int delaySection = (kEditorWidth * 2) / 3;  // 667px delay section
+    const int margin = 30;
+    const int minimapWidth = 150;  // From minimap creation
+
+    // Position G-MIX to the left of the minimap in the upper-right area
+    const int gmixX = delaySection - margin - largeMixKnobSize - 20 - minimapWidth;  // 20px gap from minimap
+    const int gmixY = margin;
+
+    KnobDefinition gmixDef = {"G-MIX", kGlobalDryWet, &globalDryWetKnob, &globalDryWetLabel, &globalDryWetValue, false};
+    factory.createKnobWithLayout(gmixX, gmixY, largeMixKnobSize, gmixDef);
 
     auto controller = getController();
     if (controller) {
@@ -329,10 +348,17 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
                 case kFeedback: paramName = "Feedback"; break;
                 case kGrid: paramName = "Grid"; break;
                 case kDelayGain: paramName = "DelayGain"; break;
-                case kDryWet: paramName = "DryWet"; break;
+                case kDelayDryWet: paramName = "DelayDryWet"; break;
                 default: paramName = "Unknown"; break;
             }
             WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", globalKnobs[i].tag, paramName, value);
+        }
+
+        // Load G-MIX parameter value
+        if (globalDryWetKnob) {
+            float gmixValue = controller->getParamNormalized(kGlobalDryWet);
+            globalDryWetKnob->setValue(gmixValue);
+            WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", kGlobalDryWet, "GlobalDryWet", gmixValue);
         }
     }
 }
@@ -374,7 +400,7 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
             return oss.str();
         }
 
-        case kDryWet:
+        case kGlobalDryWet:
             // Convert to percentage
             oss << std::fixed << std::setprecision(0) << (normalizedValue * 100.0f) << "%";
             return oss.str();
@@ -495,7 +521,7 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kDryWet};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kGlobalDryWet};
     VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, delayGainValue, inputGainValue, outputGainValue, dryWetValue};
 
     for (int i = 0; i < 8; i++) {
@@ -1732,7 +1758,7 @@ void WaterStickEditor::forceParameterSynchronization()
     }
 
     // Sync all global knobs with current parameter values
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kDryWet};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
     KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, dryWetKnob};
 
     for (int i = 0; i < 7; i++) {
@@ -1809,10 +1835,11 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
         {"SYNC", kCombSync, &combSyncKnob, &combSyncLabel, &combSyncValue, false},
         {"DIVISION", kCombDivision, &combDivisionKnob, &combDivisionLabel, &combDivisionValue, false},
         {"SLOPE", kCombSlope, &combSlopeKnob, &combSlopeLabel, &combSlopeValue, false},
-        {"ROUTE", kRouteMode, &routeModeKnob, &routeModeLabel, &routeModeValue, false}
+        {"ROUTE", kRouteMode, &routeModeKnob, &routeModeLabel, &routeModeValue, false},
+        {"C-MIX", kCombDryWet, &combDryWetKnob, &combDryWetLabel, &combDryWetValue, false}
     };
 
-    factory.createCombKnobsGrid(startX, combStartY, knobSize, combHSpacing, combVSpacing, combColumns, combKnobs, 10);
+    factory.createCombKnobsGrid(startX, combStartY, knobSize, combHSpacing, combVSpacing, combColumns, combKnobs, 11);
 }
 
 //========================================================================

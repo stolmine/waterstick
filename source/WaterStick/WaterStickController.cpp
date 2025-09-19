@@ -49,10 +49,6 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate, kDelayTime, 0,
                            STR16("Delay"));
 
-    parameters.addParameter(STR16("Dry/Wet"), STR16("%"), 0, 0.5,
-                           Vst::ParameterInfo::kCanAutomate, kDryWet, 0,
-                           STR16("Mix"));
-
     parameters.addParameter(STR16("Feedback"), STR16("%"), 0, 0.0,
                            Vst::ParameterInfo::kCanAutomate, kFeedback, 0,
                            STR16("Global"));
@@ -221,6 +217,10 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate, kDelayDryWet, 0,
                            STR16("Mix"));
 
+    parameters.addParameter(STR16("Comb Dry/Wet"), STR16("%"), 0, 1.0,
+                           Vst::ParameterInfo::kCanAutomate, kCombDryWet, 0,
+                           STR16("Mix"));
+
     parameters.addParameter(STR16("Delay Bypass"), nullptr, 1, 0.0,
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kDelayBypass, 0,
                            STR16("Control"));
@@ -289,7 +289,6 @@ void WaterStickController::setDefaultParameters()
     setParamNormalized(kInputGain, 40.0/52.0);   // 0dB
     setParamNormalized(kOutputGain, 40.0/52.0);  // 0dB
     setParamNormalized(kDelayTime, 0.05);        // 50ms
-    setParamNormalized(kDryWet, 0.5);            // 50%
     setParamNormalized(kFeedback, 0.0);          // 0%
     setParamNormalized(kTempoSyncMode, 0.0);     // Free mode
     setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1)); // 1/4 note
@@ -320,6 +319,7 @@ void WaterStickController::setDefaultParameters()
     setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
     setParamNormalized(kGlobalDryWet, 0.5);      // 50%
     setParamNormalized(kDelayDryWet, 1.0);       // 100% wet
+    setParamNormalized(kCombDryWet, 1.0);        // 100% wet
     setParamNormalized(kDelayBypass, 0.0);       // Active
     setParamNormalized(kCombBypass, 0.0);        // Active
 }
@@ -396,7 +396,6 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
 
     // Global parameters
     if (id == kDelayTime) return 0.05f;
-    if (id == kDryWet) return 0.5f;
     if (id == kFeedback) return 0.0f;
     if (id == kTempoSyncMode) return 0.0f;
     if (id == kSyncDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
@@ -405,6 +404,7 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kRouteMode) return 0.0f;
     if (id == kGlobalDryWet) return 0.5f;
     if (id == kDelayDryWet) return 1.0f;
+    if (id == kCombDryWet) return 1.0f;
     if (id == kDelayBypass) return 0.0f;
     if (id == kCombBypass) return 0.0f;
 
@@ -634,11 +634,11 @@ tresult WaterStickController::readLegacyState(IBStream* state)
     }
 
     // Dry/Wet
-    if (streamer.readFloat(dryWet) && isValidParameterValue(kDryWet, dryWet)) {
-        setParamNormalized(kDryWet, dryWet);
+    if (streamer.readFloat(dryWet) && isValidParameterValue(kGlobalDryWet, dryWet)) {
+        setParamNormalized(kGlobalDryWet, dryWet);
         validParameterCount++;
     } else {
-        setParamNormalized(kDryWet, getDefaultParameterValue(kDryWet));
+        setParamNormalized(kGlobalDryWet, getDefaultParameterValue(kGlobalDryWet));
         invalidParameterCount++;
     }
 
@@ -888,11 +888,11 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
     }
 
     // Dry/Wet
-    if (streamer.readFloat(dryWet) && isValidParameterValue(kDryWet, dryWet)) {
-        setParamNormalized(kDryWet, dryWet);
+    if (streamer.readFloat(dryWet) && isValidParameterValue(kGlobalDryWet, dryWet)) {
+        setParamNormalized(kGlobalDryWet, dryWet);
         validParameterCount++;
     } else {
-        setParamNormalized(kDryWet, getDefaultParameterValue(kDryWet));
+        setParamNormalized(kGlobalDryWet, getDefaultParameterValue(kGlobalDryWet));
         invalidParameterCount++;
     }
 
@@ -1206,6 +1206,7 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
         }
         case kGlobalDryWet:
         case kDelayDryWet:
+        case kCombDryWet:
         {
             // Convert normalized value to percentage for display
             float percentage = valueNormalized * 100.0f;

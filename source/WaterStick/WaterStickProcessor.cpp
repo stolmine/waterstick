@@ -750,7 +750,6 @@ WaterStickProcessor::WaterStickProcessor()
 : mInputGain(1.0f)
 , mOutputGain(1.0f)
 , mDelayTime(0.1f)
-, mDryWet(0.5f)
 , mFeedback(0.0f)
 , mTempoSyncMode(false)
 , mSyncDivision(kSync_1_4)
@@ -759,6 +758,7 @@ WaterStickProcessor::WaterStickProcessor()
 , mRouteMode(DelayToComb)
 , mGlobalDryWet(0.5f)
 , mDelayDryWet(1.0f)
+, mCombDryWet(1.0f)
 , mDelayBypass(false)
 , mCombBypass(false)
 , mCombSize(0.1f)
@@ -1008,11 +1008,12 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     mFeedbackBufferL = sumL;
     mFeedbackBufferR = sumR;
 
-    // Apply delay section dry/wet mix and delay gain
-    float delayDryGain = 1.0f - mDelayDryWet;
-    float delayWetGain = mDelayDryWet * mDelayGain;  // Combine wet mix with delay gain
-    outputL = (inputL * delayDryGain) + (sumL * delayWetGain);
-    outputR = (inputR * delayDryGain) + (sumR * delayWetGain);
+    // Apply professional equal-power delay section dry/wet mix with delay gain
+    float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
+    float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
+    float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
+    outputL = (inputL * dryGain) + (sumL * delayWetGain);
+    outputR = (inputR * dryGain) + (sumR * delayWetGain);
 
     // Apply delay section bypass fade
     if (mDelayFadingOut) {
@@ -1053,8 +1054,15 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
 
 void WaterStickProcessor::processCombSection(float inputL, float inputR, float& outputL, float& outputR)
 {
-    // Process through comb processor (always 100% wet)
-    mCombProcessor.processStereo(inputL, inputR, outputL, outputR);
+    // Process through comb processor
+    float combWetL, combWetR;
+    mCombProcessor.processStereo(inputL, inputR, combWetL, combWetR);
+
+    // Apply professional equal-power comb section dry/wet mix
+    float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
+    float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
+    outputL = (inputL * dryGain) + (combWetL * wetGain);
+    outputR = (inputR * dryGain) + (combWetR * wetGain);
 
     // Apply comb section bypass fade
     if (mCombFadingOut) {
@@ -1238,9 +1246,6 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kDelayTime:
                             mDelayTime = static_cast<float>(value * 2.0); // 0-2 seconds
                             break;
-                        case kDryWet:
-                            mDryWet = static_cast<float>(value); // 0-1 (dry to wet)
-                            break;
                         case kFeedback:
                             mFeedback = ParameterConverter::convertFeedback(value);
                             break;
@@ -1265,6 +1270,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             break;
                         case kDelayDryWet:
                             mDelayDryWet = static_cast<float>(value); // 0-1 (dry to wet)
+                            break;
+                        case kCombDryWet:
+                            mCombDryWet = static_cast<float>(value); // 0-1 (dry to wet)
                             break;
                         case kDelayBypass:
                             mDelayBypass = value > 0.5; // Toggle: >0.5 = bypassed
@@ -1425,9 +1433,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
             }
         }
 
-        // Apply global dry/wet mix
-        float globalDryGain = 1.0f - mGlobalDryWet;
-        float globalWetGain = mGlobalDryWet;
+        // Apply professional equal-power global dry/wet mix
+        float globalDryGain = std::cos(mGlobalDryWet * M_PI_2);    // Cosine curve for dry
+        float globalWetGain = std::sin(mGlobalDryWet * M_PI_2);    // Sine curve for wet
         float mixedL = (inL * globalDryGain) + (finalOutputL * globalWetGain);
         float mixedR = (inR * globalDryGain) + (finalOutputR * globalWetGain);
 
@@ -1453,7 +1461,6 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeFloat(mInputGain);
     streamer.writeFloat(mOutputGain);
     streamer.writeFloat(mDelayTime);
-    streamer.writeFloat(mDryWet);
     streamer.writeFloat(mFeedback);
     streamer.writeBool(mTempoSyncMode);
     streamer.writeInt32(mSyncDivision);
@@ -1463,6 +1470,7 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeInt32(static_cast<int32>(mRouteMode));
     streamer.writeFloat(mGlobalDryWet);
     streamer.writeFloat(mDelayDryWet);
+    streamer.writeFloat(mCombDryWet);
     streamer.writeBool(mDelayBypass);
     streamer.writeBool(mCombBypass);
 
@@ -1522,7 +1530,6 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
     streamer.readFloat(mInputGain);
     streamer.readFloat(mOutputGain);
     streamer.readFloat(mDelayTime);
-    streamer.readFloat(mDryWet);
     streamer.readFloat(mFeedback);
     streamer.readBool(mTempoSyncMode);
     streamer.readInt32(mSyncDivision);
@@ -1534,6 +1541,7 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
     mRouteMode = static_cast<RouteMode>(routeModeInt);
     streamer.readFloat(mGlobalDryWet);
     streamer.readFloat(mDelayDryWet);
+    if (!streamer.readFloat(mCombDryWet)) mCombDryWet = 1.0f; // Default for older saves
     streamer.readBool(mDelayBypass);
     streamer.readBool(mCombBypass);
 
