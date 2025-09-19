@@ -1,12 +1,15 @@
 #include "WaterStickController.h"
 #include "WaterStickEditor.h"
 #include "WaterStickCIDs.h"
+#include "WaterStickLogger.h"
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ustring.h"
 #include "pluginterfaces/base/ibstream.h"
 #include "pluginterfaces/vst/ivstmessage.h"
 #include "pluginterfaces/vst/vsttypes.h"
 #include <cmath>
+#include <iostream>
+#include <iomanip>
 
 using namespace Steinberg;
 
@@ -25,6 +28,9 @@ WaterStickController::~WaterStickController()
 //------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
 {
+    // Start fresh logging session for debugging
+    WS_LOG_SESSION_START();
+
     tresult result = EditControllerEx1::initialize(context);
     if (result != kResultOk)
     {
@@ -223,6 +229,49 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     // This ensures proper display even if setComponentState is never called
     setDefaultParameters();
 
+    WS_LOG_INFO("Controller::initialize() completed successfully");
+
+    // Log all problematic parameter values after initialization
+    WS_LOG_INFO("=== POST-INITIALIZE PARAMETER VALUES ===");
+
+    // Log global parameters
+    WS_LOG_PARAM_CONTEXT("INIT", kInputGain, "InputGain", getParamNormalized(kInputGain));
+    WS_LOG_PARAM_CONTEXT("INIT", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
+
+    // Log all 16 tap filter types (should be 0.0 for bypass)
+    for (int i = 0; i < 16; i++) {
+        int paramId = kTap1FilterType + (i * 3);
+        std::ostringstream paramName;
+        paramName << "Tap" << (i+1) << "FilterType";
+        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
+    }
+
+    // Log all 16 tap levels (should be 0.8)
+    for (int i = 0; i < 16; i++) {
+        int paramId = kTap1Level + (i * 3);
+        std::ostringstream paramName;
+        paramName << "Tap" << (i+1) << "Level";
+        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
+    }
+
+    // Log all 16 tap pans (should be 0.5)
+    for (int i = 0; i < 16; i++) {
+        int paramId = kTap1Pan + (i * 3);
+        std::ostringstream paramName;
+        paramName << "Tap" << (i+1) << "Pan";
+        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
+    }
+
+    // Log filter cutoffs (should be 0.566323 for 1kHz)
+    for (int i = 0; i < 16; i++) {
+        int paramId = kTap1FilterCutoff + (i * 3);
+        std::ostringstream paramName;
+        paramName << "Tap" << (i+1) << "FilterCutoff";
+        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
+    }
+
+    WS_LOG_INFO("=== END POST-INITIALIZE PARAMETER VALUES ===");
+
     return result;
 }
 
@@ -266,8 +315,10 @@ void WaterStickController::setDefaultParameters()
 //------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
 {
+    WS_LOG_INFO("Controller::setComponentState() called");
+
     if (!state) {
-        // No state provided - use defaults
+        WS_LOG_INFO("No state provided - using defaults");
         setDefaultParameters();
         return kResultOk;
     }
@@ -361,6 +412,15 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     setParamNormalized(kDelayBypass, delayBypass ? 1.0 : 0.0);
     setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
 
+    // DEBUG: Log parameter values after loading state
+    std::cout << "[WaterStick DEBUG] Controller::setComponentState() completed successfully" << std::endl;
+    std::cout << "[WaterStick DEBUG] Sample filter type parameter values after setComponentState:" << std::endl;
+    for (int i = 0; i < 4; i++) {  // Check first 4 filter type parameters
+        int paramId = kTap1FilterType + i * 3;
+        Vst::ParamValue value = getParamNormalized(paramId);
+        std::cout << "  Tap " << (i+1) << " FilterType (ID " << paramId << "): " << std::fixed << std::setprecision(3) << value << std::endl;
+    }
+
     return kResultOk;
 }
 
@@ -368,6 +428,41 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
 Vst::ParamValue PLUGIN_API WaterStickController::getParamNormalized(Vst::ParamID id)
 {
     Vst::ParamValue value = EditControllerEx1::getParamNormalized(id);
+
+    // Log critical parameter queries for debugging
+    bool shouldLog = false;
+    std::string paramName;
+
+    // Check if this is a problematic parameter we want to track
+    if (id >= kTap1FilterType && id <= kTap16FilterType && ((id - kTap1FilterType) % 3 == 2)) {
+        // Filter type parameter
+        int tapIndex = (id - kTap1FilterType) / 3;
+        paramName = "Tap" + std::to_string(tapIndex + 1) + "FilterType";
+        shouldLog = true;
+    } else if (id >= kTap1Level && id <= kTap16Level && ((id - kTap1Level) % 3 == 0)) {
+        // Level parameter
+        int tapIndex = (id - kTap1Level) / 3;
+        paramName = "Tap" + std::to_string(tapIndex + 1) + "Level";
+        shouldLog = true;
+    } else if (id >= kTap1Pan && id <= kTap16Pan && ((id - kTap1Pan) % 3 == 0)) {
+        // Pan parameter
+        int tapIndex = (id - kTap1Pan) / 3;
+        paramName = "Tap" + std::to_string(tapIndex + 1) + "Pan";
+        shouldLog = true;
+    } else if (id >= kTap1FilterCutoff && id <= kTap16FilterCutoff && ((id - kTap1FilterCutoff) % 3 == 0)) {
+        // Filter cutoff parameter
+        int tapIndex = (id - kTap1FilterCutoff) / 3;
+        paramName = "Tap" + std::to_string(tapIndex + 1) + "FilterCutoff";
+        shouldLog = true;
+    } else if (id == kInputGain || id == kOutputGain) {
+        paramName = (id == kInputGain) ? "InputGain" : "OutputGain";
+        shouldLog = true;
+    }
+
+    if (shouldLog) {
+        WS_LOG_PARAM_CONTEXT("GET", id, paramName, value);
+    }
+
     return value;
 }
 
@@ -548,9 +643,40 @@ tresult PLUGIN_API WaterStickController::getParamValueByString(Vst::ParamID id, 
 //------------------------------------------------------------------------
 IPlugView* PLUGIN_API WaterStickController::createView(FIDString name)
 {
+    WS_LOG_INFO("Controller::createView() called");
+
     if (FIDStringsEqual(name, Vst::ViewType::kEditor))
     {
-        return new WaterStickEditor(this);
+        WS_LOG_INFO("=== PRE-GUI PARAMETER VALUES ===");
+
+        // Log all problematic parameter values before GUI creation
+        for (int i = 0; i < 16; i++) {
+            int filterTypeId = kTap1FilterType + (i * 3);
+            int levelId = kTap1Level + (i * 3);
+            int panId = kTap1Pan + (i * 3);
+            int cutoffId = kTap1FilterCutoff + (i * 3);
+
+            std::ostringstream filterTypeName, levelName, panName, cutoffName;
+            filterTypeName << "Tap" << (i+1) << "FilterType";
+            levelName << "Tap" << (i+1) << "Level";
+            panName << "Tap" << (i+1) << "Pan";
+            cutoffName << "Tap" << (i+1) << "FilterCutoff";
+
+            WS_LOG_PARAM_CONTEXT("PRE-GUI", filterTypeId, filterTypeName.str(), getParamNormalized(filterTypeId));
+            WS_LOG_PARAM_CONTEXT("PRE-GUI", levelId, levelName.str(), getParamNormalized(levelId));
+            WS_LOG_PARAM_CONTEXT("PRE-GUI", panId, panName.str(), getParamNormalized(panId));
+            WS_LOG_PARAM_CONTEXT("PRE-GUI", cutoffId, cutoffName.str(), getParamNormalized(cutoffId));
+        }
+
+        // Log global parameters
+        WS_LOG_PARAM_CONTEXT("PRE-GUI", kInputGain, "InputGain", getParamNormalized(kInputGain));
+        WS_LOG_PARAM_CONTEXT("PRE-GUI", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
+
+        WS_LOG_INFO("=== END PRE-GUI PARAMETER VALUES ===");
+
+        auto* editor = new WaterStickEditor(this);
+        WS_LOG_INFO("GUI editor created successfully");
+        return editor;
     }
     return nullptr;
 }

@@ -453,10 +453,58 @@ The foundation provides:
   - All routing modes functional
   - Click-free bypass transitions verified
 
-- **Phase 3.5**: VST3 Parameter Lifecycle Compliance ✅ COMPLETED
+- **Phase 3.5**: VST3 Parameter Lifecycle Compliance 🔄 MAJOR ISSUE DISCOVERED
   - Fixed filter type parameter defaults (1.0 → 0.0 for proper Bypass display)
   - Resolved VST3 lifecycle timing issues with setComponentState/createView sequence
   - Implemented forceParameterSynchronization() for robust parameter loading
+
+### 🚨 CRITICAL RUNTIME DISCOVERY (2025-09-18): Parameter State Override Issue
+
+**Problem Identified via Runtime Logging:**
+- Runtime debugging revealed that parameter defaults are correctly set during `initialize()` but then immediately overwritten by `setComponentState()`
+- The VST3 host is calling `setComponentState()` with saved state data that contains zeros/wrong values, completely overriding our carefully configured defaults
+
+**Specific Evidence from Log Analysis:**
+```
+POST-INITIALIZE (Lines 7-122): ✅ CORRECT VALUES
+- Tap Levels: 0.800000 (80% as intended)
+- Tap Pans: 0.500000 (center as intended)
+- Filter Cutoffs: 0.566323 (1kHz as intended)
+- Filter Types: 0.000000 (Bypass as intended)
+- Input/Output Gains: 0.769231 (0dB as intended)
+
+PRE-GUI (Lines 127-242): ❌ VALUES OVERWRITTEN
+- Tap Levels: 0.000000 (overwritten to zero!)
+- Tap Pans: 0.000000 (overwritten to full left!)
+- Filter Cutoffs: 0.000000 (overwritten to minimum!)
+- Filter Types: 1.000000 (overwritten to Notch!)
+- Input/Output Gains: 1.000000 (overwritten to 12dB!)
+```
+
+**Root Cause Analysis:**
+1. `Controller::initialize()` correctly sets all parameter defaults (line 5-123)
+2. `Controller::setComponentState()` is called (line 124) and overwrites parameters with saved/cached state
+3. This saved state contains incorrect values (likely from previous development iterations or DAW project files)
+4. `Controller::createView()` then creates GUI with the overwritten (incorrect) values (line 125)
+
+**Technical Impact:**
+- Parameter initialization code is actually working correctly
+- The issue is NOT in our parameter creation or GUI synchronization
+- The problem is VST3 state persistence overriding defaults with previously saved incorrect values
+- This explains why multiple attempts to fix parameter defaults failed - they were being correctly set then immediately overwritten
+
+**Solution Needed:**
+- Investigate `setComponentState()` to ensure it handles missing/invalid state properly
+- Implement proper fallback to defaults when no valid saved state exists
+- Verify state validation logic distinguishes between "no state" and "state with default values"
+- Consider implementing state migration for users with existing projects containing old parameter values
+
+**Files Requiring Investigation:**
+- `/Users/why/repos/waterstick/source/WaterStick/WaterStickController.cpp` (setComponentState method)
+- VST3 host state management behavior
+- Project file parameter persistence mechanisms
+
+**Status:** Issue identified and documented. Requires targeted fix to state loading logic rather than parameter initialization.
   - Enhanced GUI reliability across different DAW host implementations
   - VST3 validator: 47/47 tests passed with professional compliance
 

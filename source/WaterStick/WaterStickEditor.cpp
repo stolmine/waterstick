@@ -1,5 +1,6 @@
 #include "WaterStickEditor.h"
 #include "WaterStickParameters.h"
+#include "WaterStickLogger.h"
 #include "vstgui/lib/cviewcontainer.h"
 #include "vstgui/lib/controls/ctextlabel.h"
 #include "vstgui/lib/controls/ccontrol.h"
@@ -12,6 +13,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 namespace WaterStick {
 
@@ -322,6 +324,19 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
             float value = controller->getParamNormalized(knobTags[i]);
             (*knobPointers[i])->setValue(value);
 
+            // Log global control initialization with descriptive names
+            std::string paramName;
+            switch (knobTags[i]) {
+                case kInputGain: paramName = "InputGain"; break;
+                case kOutputGain: paramName = "OutputGain"; break;
+                case kTempoSyncMode: paramName = "TempoSyncMode"; break;
+                case kDelayTime: paramName = "DelayTime"; break;
+                case kFeedback: paramName = "Feedback"; break;
+                case kGrid: paramName = "Grid"; break;
+                case kDryWet: paramName = "DryWet"; break;
+                default: paramName = "Unknown"; break;
+            }
+            WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", knobTags[i], paramName, value);
         }
 
         container->addView(*(knobPointers[i]));
@@ -618,6 +633,12 @@ void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
 
 void WaterStickEditor::switchToContext(TapContext newContext)
 {
+    std::string contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType"};
+    std::string oldContextName = (currentContext < TapContext::COUNT) ? contextNames[static_cast<int>(currentContext)] : "Unknown";
+    std::string newContextName = (newContext < TapContext::COUNT) ? contextNames[static_cast<int>(newContext)] : "Unknown";
+
+    WS_LOG_INFO("Context switch: " + oldContextName + " -> " + newContextName);
+
     if (newContext == currentContext) {
         return; // Already in this context
     }
@@ -643,6 +664,11 @@ void WaterStickEditor::switchToContext(TapContext newContext)
     // Switch to new context
     currentContext = newContext;
 
+    // DEBUG: Log context switching
+    if (newContext == TapContext::FilterType) {
+        std::cout << "[WaterStick DEBUG] Switching to FilterType context (mode 6)" << std::endl;
+    }
+
     // Load new context values from VST parameters
     if (controller) {
         for (int i = 0; i < 16; i++) {
@@ -656,6 +682,13 @@ void WaterStickEditor::switchToContext(TapContext newContext)
 
                 // Load the parameter value
                 float paramValue = controller->getParamNormalized(newParamId);
+
+                // DEBUG: Log FilterType context switching for first 4 taps
+                if (i < 4 && newContext == TapContext::FilterType) {
+                    std::cout << "[WaterStick DEBUG] Context switch - Tap " << (i+1)
+                              << " FilterType param " << newParamId << " value: "
+                              << std::fixed << std::setprecision(3) << paramValue << std::endl;
+                }
 
                 // Set the button's value and internal storage
                 tapButton->setValue(paramValue);
@@ -1030,6 +1063,11 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             } else {
                 letter = 'N';  // Notch
             }
+
+            // DEBUG: Log what letter is being displayed
+            std::cout << "[WaterStick DEBUG] TapButton draw - Tag " << getTag()
+                      << " FilterType value: " << std::fixed << std::setprecision(3) << currentValue
+                      << " -> Letter: '" << letter << "'" << std::endl;
 
             // Use WorkSans-Regular custom font sized to fill the circle area
             // Circle diameter is 48px, make font large enough so ascenders/descenders reach edges
@@ -1619,6 +1657,8 @@ void WaterStickEditor::forceParameterSynchronization()
     auto controller = getController();
     if (!controller) return;
 
+    std::cout << "[WaterStick DEBUG] GUI::forceParameterSynchronization() called" << std::endl;
+
     // VST3 Lifecycle Compliance: Ensure GUI displays correct parameter values regardless of
     // timing between setComponentState, createView, and host parameter cache behavior
 
@@ -1633,6 +1673,31 @@ void WaterStickEditor::forceParameterSynchronization()
                 int paramId = getTapParameterIdForContext(i, context);
                 float paramValue = controller->getParamNormalized(paramId);
                 tapButton->setContextValue(context, paramValue);
+
+                // Log critical parameter loading for all problematic contexts
+                std::ostringstream contextStr, paramName;
+                contextStr << "TAP-LOAD[" << (i+1) << "]";
+
+                switch (context) {
+                    case TapContext::FilterType:
+                        paramName << "Tap" << (i+1) << "FilterType";
+                        WS_LOG_PARAM_CONTEXT(contextStr.str(), paramId, paramName.str(), paramValue);
+                        break;
+                    case TapContext::Volume:
+                        paramName << "Tap" << (i+1) << "Level";
+                        WS_LOG_PARAM_CONTEXT(contextStr.str(), paramId, paramName.str(), paramValue);
+                        break;
+                    case TapContext::Pan:
+                        paramName << "Tap" << (i+1) << "Pan";
+                        WS_LOG_PARAM_CONTEXT(contextStr.str(), paramId, paramName.str(), paramValue);
+                        break;
+                    case TapContext::FilterCutoff:
+                        paramName << "Tap" << (i+1) << "FilterCutoff";
+                        WS_LOG_PARAM_CONTEXT(contextStr.str(), paramId, paramName.str(), paramValue);
+                        break;
+                    default:
+                        break;
+                }
             }
 
             // Set the button's displayed value to match its current context
@@ -1640,6 +1705,12 @@ void WaterStickEditor::forceParameterSynchronization()
             float currentContextValue = tapButton->getContextValue(buttonContext);
             tapButton->setValue(currentContextValue);
             tapButton->invalid();
+
+            // DEBUG: Log final displayed value for filter type context
+            if (i < 4 && buttonContext == TapContext::FilterType) {
+                std::cout << "[WaterStick DEBUG] Tap " << (i+1) << " FilterType final display value: "
+                          << std::fixed << std::setprecision(3) << currentContextValue << std::endl;
+            }
         }
     }
 
@@ -1670,6 +1741,8 @@ void WaterStickEditor::forceParameterSynchronization()
     // Force visual updates
     updateValueReadouts();
     updateMinimapState();
+
+    std::cout << "[WaterStick DEBUG] GUI::forceParameterSynchronization() completed" << std::endl;
 }
 
 } // namespace WaterStick
