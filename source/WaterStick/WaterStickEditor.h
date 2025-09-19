@@ -186,6 +186,7 @@ private:
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
     KnobControl* delayGainKnob;
+    KnobControl* globalDryWetKnob;  // G-MIX: Global dry/wet control (larger, in delay section upper-right)
 
     // Comb control knobs
     KnobControl* combSizeKnob;
@@ -198,6 +199,7 @@ private:
     KnobControl* combPatternKnob;
     KnobControl* combSlopeKnob;
     KnobControl* combGainKnob;
+    KnobControl* combDryWetKnob;  // C-MIX: Comb dry/wet control
 
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
@@ -208,6 +210,7 @@ private:
     VSTGUI::CTextLabel* dryWetLabel;
     VSTGUI::CTextLabel* gridLabel;
     VSTGUI::CTextLabel* delayGainLabel;
+    VSTGUI::CTextLabel* globalDryWetLabel;
 
     // Comb knob labels
     VSTGUI::CTextLabel* combSizeLabel;
@@ -220,6 +223,7 @@ private:
     VSTGUI::CTextLabel* combPatternLabel;
     VSTGUI::CTextLabel* combSlopeLabel;
     VSTGUI::CTextLabel* combGainLabel;
+    VSTGUI::CTextLabel* combDryWetLabel;
 
     // Value readout labels
     VSTGUI::CTextLabel* syncModeValue;
@@ -230,6 +234,7 @@ private:
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
     VSTGUI::CTextLabel* delayGainValue;
+    VSTGUI::CTextLabel* globalDryWetValue;
 
     // Comb value readout labels
     VSTGUI::CTextLabel* combSizeValue;
@@ -242,6 +247,7 @@ private:
     VSTGUI::CTextLabel* combPatternValue;
     VSTGUI::CTextLabel* combSlopeValue;
     VSTGUI::CTextLabel* combGainValue;
+    VSTGUI::CTextLabel* combDryWetValue;
 
     // Mode button labels
     VSTGUI::CTextLabel* modeButtonLabels[8];

@@ -401,6 +401,8 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
         }
 
         case kGlobalDryWet:
+        case kDelayDryWet:
+        case kCombDryWet:
             // Convert to percentage
             oss << std::fixed << std::setprecision(0) << (normalizedValue * 100.0f) << "%";
             return oss.str();
@@ -521,7 +523,7 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kGlobalDryWet};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kDelayDryWet};
     VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, delayGainValue, inputGainValue, outputGainValue, dryWetValue};
 
     for (int i = 0; i < 8; i++) {
@@ -545,11 +547,19 @@ void WaterStickEditor::updateValueReadouts()
         }
     }
 
-    // Update comb control value readouts
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPattern, kCombPitchCV, kCombTaps, kCombSlope, kCombSync, kCombDivision, kRouteMode};
-    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPatternValue, combPitchValue, combTapsValue, combSlopeValue, combSyncValue, combDivisionValue, routeModeValue};
+    // Update G-MIX value readout
+    if (globalDryWetValue) {
+        float gmixValue = controller->getParamNormalized(kGlobalDryWet);
+        std::string gmixText = formatParameterValue(kGlobalDryWet, gmixValue);
+        globalDryWetValue->setText(gmixText.c_str());
+        globalDryWetValue->invalid();
+    }
 
-    for (int i = 0; i < 9; i++) {
+    // Update comb control value readouts
+    const int combTags[] = {kCombSize, kCombFeedback, kCombPattern, kCombPitchCV, kCombTaps, kCombSlope, kCombSync, kCombDivision, kRouteMode, kCombDryWet};
+    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPatternValue, combPitchValue, combTapsValue, combSlopeValue, combSyncValue, combDivisionValue, routeModeValue, combDryWetValue};
+
+    for (int i = 0; i < 10; i++) {
         if (combValueLabels[i]) {
             float value = controller->getParamNormalized(combTags[i]);
             std::string valueText = formatParameterValue(combTags[i], value);
@@ -1758,10 +1768,10 @@ void WaterStickEditor::forceParameterSynchronization()
     }
 
     // Sync all global knobs with current parameter values
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
-    KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, dryWetKnob};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kDelayDryWet};
+    KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, delayGainKnob, inputGainKnob, outputGainKnob, dryWetKnob};
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
         if (knobs[i]) {
             int paramId = knobTags[i];
 
@@ -1781,11 +1791,18 @@ void WaterStickEditor::forceParameterSynchronization()
         }
     }
 
-    // Sync all comb knobs with current parameter values
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPitchCV, kCombTaps, kCombSync, kCombDivision, kRouteMode};
-    KnobControl* combKnobs[] = {combSizeKnob, combFeedbackKnob, combPitchKnob, combTapsKnob, combSyncKnob, combDivisionKnob, routeModeKnob};
+    // Sync G-MIX knob with current parameter value
+    if (globalDryWetKnob) {
+        float gmixValue = controller->getParamNormalized(kGlobalDryWet);
+        globalDryWetKnob->setValue(gmixValue);
+        globalDryWetKnob->invalid();
+    }
 
-    for (int i = 0; i < 7; i++) {
+    // Sync all comb knobs with current parameter values
+    const int combTags[] = {kCombSize, kCombFeedback, kCombPitchCV, kCombTaps, kCombSync, kCombDivision, kRouteMode, kCombDryWet};
+    KnobControl* combKnobs[] = {combSizeKnob, combFeedbackKnob, combPitchKnob, combTapsKnob, combSyncKnob, combDivisionKnob, routeModeKnob, combDryWetKnob};
+
+    for (int i = 0; i < 8; i++) {
         if (combKnobs[i]) {
             float paramValue = controller->getParamNormalized(combTags[i]);
             combKnobs[i]->setValue(paramValue);
