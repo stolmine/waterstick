@@ -2104,33 +2104,21 @@ VSTGUI::CMouseEventResult BypassToggle::onMouseDown(VSTGUI::CPoint& where, const
 
 void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
 {
-    // Position bypass toggles within the delay section boundary (667px)
-    const int buttonSize = 53;           // Match tap/mode button size
-    const int buttonSpacing = buttonSize / 2;
+    // Position bypass toggles in top left corner of the window
     const int toggleWidth = 50;          // Smaller width for bypass toggles
     const int toggleHeight = 30;         // Smaller height for bypass toggles
 
-    // Match mode button positioning
-    const int delayMargin = 30;
-    const int gridLeft = delayMargin;
-    const int delaySectionWidth = (kEditorWidth * 2) / 3;  // 667px boundary
+    // Top left corner positioning with clean margins
+    const int topMargin = 20;            // Distance from top edge
+    const int leftMargin = 30;           // Distance from left edge (matching delay section margin)
+    const int toggleGap = 10;            // Gap between the two bypass toggles
 
-    // Calculate mode button Y position (matches createModeButtons logic)
-    const int gridWidth = 8;
-    const int gridHeight = 2;
-    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
-    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
-    const int tapGridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
-    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 1.5);
+    // Calculate positions for both toggles in top left
+    const int firstToggleX = leftMargin;
+    const int secondToggleX = firstToggleX + toggleWidth + toggleGap;
+    const int toggleY = topMargin;
 
-    // Position bypass toggles WITHIN delay section - stack vertically to the right of mode buttons
-    // Place them at the right edge of delay section with margin
-    const int rightMargin = 30;
-    const int toggleGap = 10;  // Gap between the two bypass toggles
-    const int firstToggleX = delaySectionWidth - rightMargin - toggleWidth - toggleGap - toggleWidth;  // Room for both toggles
-    const int toggleY = modeButtonY + (buttonSize - toggleHeight) / 2;  // Center vertically with mode buttons
-
-    // Create delay bypass toggle
+    // Create delay bypass toggle in top left
     VSTGUI::CRect delayToggleRect(firstToggleX, toggleY, firstToggleX + toggleWidth, toggleY + toggleHeight);
     delayBypassToggle = new BypassToggle(delayToggleRect, this, kDelayBypass);
 
@@ -2143,9 +2131,9 @@ void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
 
     container->addView(delayBypassToggle);
 
-    // Create delay bypass label
+    // Create delay bypass label below the toggle
     const int labelHeight = 20;
-    const int labelY = modeButtonY + buttonSize + 15;  // Match mode button label positioning
+    const int labelY = toggleY + toggleHeight + 5;  // Position label 5px below toggle
     VSTGUI::CRect delayLabelRect(firstToggleX, labelY, firstToggleX + toggleWidth, labelY + labelHeight);
     delayBypassLabel = new VSTGUI::CTextLabel(delayLabelRect, "D-BYP");
 
@@ -2163,8 +2151,7 @@ void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
 
     container->addView(delayBypassLabel);
 
-    // Create comb bypass toggle (position after delay bypass)
-    const int secondToggleX = firstToggleX + toggleWidth + toggleGap;  // Use consistent gap
+    // Create comb bypass toggle (positioned to the right of delay bypass)
     VSTGUI::CRect combToggleRect(secondToggleX, toggleY, secondToggleX + toggleWidth, toggleY + toggleHeight);
     combBypassToggle = new BypassToggle(combToggleRect, this, kCombBypass);
 
