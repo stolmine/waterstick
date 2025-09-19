@@ -631,6 +631,68 @@ Multi-layered approach implemented to prevent cached state from overriding corre
 - Self-documenting code structure
 - Prepared codebase for future enhancements
 
+### ✅ macOS Code Signing Resolution ✅ COMPLETED (2025-09-19)
+
+**Critical VST3 Bundle Signing Issues Solved:**
+
+1. **Root Cause Identified**
+   - VST3 SDK creates `moduleinfo.json` after initial bundle signing, corrupting sealed resources
+   - Error signature: "a sealed resource is missing or invalid" + "file added: moduleinfo.json"
+   - Apple Reference: Technical Note TN2318 - identical issue documented for dot files/Apple Double files
+
+2. **Diagnostic Commands Established**
+   ```bash
+   # Primary signature verification (from Apple TN2318)
+   codesign --verify -vvvv -R='anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.1] exists and (certificate leaf[field.1.2.840.113635.100.6.1.2] exists or certificate leaf[field.1.2.840.113635.100.6.1.4] exists)' /path/to/plugin.vst3
+
+   # Check for problematic dot files
+   find /project/path -name "._*" -type f
+
+   # Extended attributes inspection
+   xattr -l /path/to/moduleinfo.json
+   ```
+
+3. **Immediate Fix Protocol Implemented**
+   ```bash
+   # 1. Remove extended attributes from corrupted files
+   xattr -cr /path/to/WaterStick.vst3/Contents/Resources/moduleinfo.json
+
+   # 2. Clean project of dot files
+   dot_clean /path/to/project
+
+   # 3. Re-sign entire bundle consistently
+   codesign --force --sign - /path/to/WaterStick.vst3
+
+   # 4. Verify signature integrity
+   codesign --verify -vvvv /path/to/WaterStick.vst3
+   ```
+
+4. **Build System Prevention Added**
+   ```cmake
+   # Prevent moduleinfo.json signing corruption
+   if(APPLE)
+       add_custom_command(TARGET ${target} POST_BUILD
+           COMMAND dot_clean "$<TARGET_BUNDLE_DIR:${target}>"
+           COMMAND xattr -cr "$<TARGET_BUNDLE_DIR:${target}>/Contents/Resources/moduleinfo.json"
+           COMMAND codesign --force --deep --sign - "$<TARGET_BUNDLE_DIR:${target}>"
+           COMMENT "Preventing VST3 SDK moduleinfo.json signing corruption"
+           VERBATIM
+       )
+   endif()
+   ```
+
+5. **Professional Distribution Requirements**
+   - Ad-hoc signing: Sufficient for signature integrity but rejected by DAW security
+   - Apple Developer Certificate: Required for production DAW compatibility
+   - Environment Variable: `export DEVELOPER_CERTIFICATE="Developer ID Application: Your Name"`
+
+6. **Signature Verification Targets Achieved**
+   - `valid on disk` ✓
+   - `satisfies its Designated Requirement` ✓
+   - Gatekeeper acceptance requires developer certificate (not ad-hoc)
+
+**Status**: Build signing issue completely resolved with comprehensive prevention measures.
+
 - **Phase 4**: Advanced Features 🚀 Planning Stage
 
 ---

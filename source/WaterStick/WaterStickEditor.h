@@ -185,6 +185,7 @@ private:
     KnobControl* outputGainKnob;
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
+    KnobControl* delayGainKnob;
 
     // Comb control knobs
     KnobControl* combSizeKnob;
@@ -206,6 +207,7 @@ private:
     VSTGUI::CTextLabel* outputGainLabel;
     VSTGUI::CTextLabel* dryWetLabel;
     VSTGUI::CTextLabel* gridLabel;
+    VSTGUI::CTextLabel* delayGainLabel;
 
     // Comb knob labels
     VSTGUI::CTextLabel* combSizeLabel;
@@ -227,6 +229,7 @@ private:
     VSTGUI::CTextLabel* outputGainValue;
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
+    VSTGUI::CTextLabel* delayGainValue;
 
     // Comb value readout labels
     VSTGUI::CTextLabel* combSizeValue;

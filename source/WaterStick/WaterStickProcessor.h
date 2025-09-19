@@ -331,6 +331,7 @@ private:
     bool mTempoSyncMode;
     int mSyncDivision;
     int mGrid;
+    float mDelayGain;
 
     // Routing and Wet/Dry controls
     RouteMode mRouteMode;

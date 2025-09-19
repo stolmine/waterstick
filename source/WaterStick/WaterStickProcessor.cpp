@@ -755,6 +755,7 @@ WaterStickProcessor::WaterStickProcessor()
 , mTempoSyncMode(false)
 , mSyncDivision(kSync_1_4)
 , mGrid(kGrid_4)
+, mDelayGain(1.0f)
 , mRouteMode(DelayToComb)
 , mGlobalDryWet(0.5f)
 , mDelayDryWet(1.0f)
@@ -1007,9 +1008,9 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     mFeedbackBufferL = sumL;
     mFeedbackBufferR = sumR;
 
-    // Apply delay section dry/wet mix
+    // Apply delay section dry/wet mix and delay gain
     float delayDryGain = 1.0f - mDelayDryWet;
-    float delayWetGain = mDelayDryWet;
+    float delayWetGain = mDelayDryWet * mDelayGain;  // Combine wet mix with delay gain
     outputL = (inputL * delayDryGain) + (sumL * delayWetGain);
     outputR = (inputR * delayDryGain) + (sumR * delayWetGain);
 
@@ -1251,6 +1252,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             break;
                         case kGrid:
                             mGrid = static_cast<int>(value * (kNumGridValues - 1) + 0.5);
+                            break;
+                        case kDelayGain:
+                            mDelayGain = ParameterConverter::convertGain(value);
                             break;
                         // Routing and Wet/Dry controls
                         case kRouteMode:

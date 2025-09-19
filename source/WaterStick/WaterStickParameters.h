@@ -14,6 +14,7 @@ enum {
     kSyncDivision,       // Sync division: 1/64 to 8 bars
     // Tap distribution parameters
     kGrid,               // Grid parameter: 1, 2, 3, 4, 6, 8, 12, 16 (Taps/Beat)
+    kDelayGain,          // Delay section gain (-40dB to +12dB)
     // Per-tap parameters (16 taps)
     kTap1Enable,         // Tap 1 enable/disable
     kTap1Level,          // Tap 1 level

@@ -296,8 +296,8 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
     const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int delayMargin = 30;
     const int tapGridLeft = delayMargin;
-    const int availableWidth = totalGridWidth - (7 * knobSize);
-    const int knobSpacing = availableWidth / 6;
+    const int availableWidth = totalGridWidth - (8 * knobSize);
+    const int knobSpacing = availableWidth / 7;
     const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
     const int knobY = bottomThirdTop + modeButtonSpacing;
 
@@ -308,16 +308,17 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
         {"TIME", kDelayTime, &timeDivisionKnob, &timeDivisionLabel, &timeDivisionValue, true},
         {"FEEDBACK", kFeedback, &feedbackKnob, &feedbackLabel, &feedbackValue, false},
         {"GRID", kGrid, &gridKnob, &gridLabel, &gridValue, false},
+        {"D-GAIN", kDelayGain, &delayGainKnob, &delayGainLabel, &delayGainValue, false},
         {"INPUT", kInputGain, &inputGainKnob, &inputGainLabel, &inputGainValue, false},
         {"OUTPUT", kOutputGain, &outputGainKnob, &outputGainLabel, &outputGainValue, false},
         {"DRY/WET", kDryWet, &dryWetKnob, &dryWetLabel, &dryWetValue, false}
     };
 
-    factory.createGlobalKnobsHorizontal(tapGridLeft, knobY, knobSize, knobSpacing, globalKnobs, 7);
+    factory.createGlobalKnobsHorizontal(tapGridLeft, knobY, knobSize, knobSpacing, globalKnobs, 8);
 
     auto controller = getController();
     if (controller) {
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 8; i++) {
             float value = controller->getParamNormalized(globalKnobs[i].tag);
             std::string paramName;
             switch (globalKnobs[i].tag) {
@@ -327,6 +328,7 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
                 case kDelayTime: paramName = "DelayTime"; break;
                 case kFeedback: paramName = "Feedback"; break;
                 case kGrid: paramName = "Grid"; break;
+                case kDelayGain: paramName = "DelayGain"; break;
                 case kDryWet: paramName = "DryWet"; break;
                 default: paramName = "Unknown"; break;
             }
@@ -364,6 +366,7 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
 
         case kInputGain:
         case kOutputGain:
+        case kDelayGain:
         {
             // Convert normalized to dB (-40dB to +12dB range)
             float dbValue = -40.0f + (normalizedValue * 52.0f);
@@ -492,10 +495,10 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kDryWet};
-    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, dryWetValue};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kDryWet};
+    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, delayGainValue, inputGainValue, outputGainValue, dryWetValue};
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
         if (valueLabels[i]) {
             int paramId = knobTags[i];
 
