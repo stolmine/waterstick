@@ -17,6 +17,8 @@ CombProcessor::CombProcessor()
     , mIsSynced(false)
     , mClockDivision(0)
     , mHostTempo(120.0f)
+    , mPattern(0)
+    , mSlope(0)
 {
 }
 
@@ -76,11 +78,52 @@ void CombProcessor::setPitchCV(float cv)
     mPitchCV = cv;
 }
 
+void CombProcessor::setPattern(int pattern)
+{
+    mPattern = std::max(0, std::min(kNumCombPatterns - 1, pattern));
+}
+
+void CombProcessor::setSlope(int slope)
+{
+    mSlope = std::max(0, std::min(kNumCombSlopes - 1, slope));
+}
+
 float CombProcessor::getTapDelay(int tapIndex) const
 {
-    // Uniform tap distribution (can be enhanced with patterns later)
-    // Tap 0 = shortest delay, Tap 63 = full comb size
-    float tapRatio = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
+    // Apply tap spacing pattern
+    float tapRatio;
+
+    if (mPattern == 0) {
+        // Pattern 1: Uniform spacing (original implementation)
+        tapRatio = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
+    } else {
+        // Patterns 2-16: Various non-uniform spacing algorithms
+        // For now, implement a few example patterns
+        switch (mPattern) {
+            case 1: // Pattern 2: Logarithmic spacing
+                tapRatio = std::log(tapIndex + 1.0f) / std::log(MAX_TAPS);
+                break;
+            case 2: // Pattern 3: Exponential spacing
+                tapRatio = (std::exp(static_cast<float>(tapIndex + 1) / MAX_TAPS) - 1.0f) / (std::exp(1.0f) - 1.0f);
+                break;
+            case 3: // Pattern 4: Square law spacing
+                tapRatio = std::pow(static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS), 2.0f);
+                break;
+            case 4: // Pattern 5: Square root spacing
+                tapRatio = std::sqrt(static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS));
+                break;
+            default:
+                // For patterns 6-16, use variations of the above with different curves
+                float normalizedIndex = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
+                float patternOffset = static_cast<float>(mPattern - 5) / 10.0f; // 0.0 to 1.1
+                tapRatio = std::pow(normalizedIndex, 1.0f + patternOffset);
+                break;
+        }
+    }
+
+    // Ensure tapRatio is in valid range
+    tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
+
     return applyCVScaling(mCombSize * tapRatio);
 }
 
@@ -90,6 +133,39 @@ float CombProcessor::applyCVScaling(float baseDelay) const
     // delay_scaled = delay_base * 2^(-cv)
     float scaleFactor = std::pow(2.0f, -mPitchCV);
     return baseDelay * scaleFactor;
+}
+
+float CombProcessor::getTapGain(int tapIndex) const
+{
+    // Calculate slope envelope gain for this tap
+    float tapPosition = static_cast<float>(tapIndex) / static_cast<float>(mNumActiveTaps - 1);
+    float slopeGain = 1.0f;
+
+    switch (mSlope) {
+        case 0: // Flat
+            slopeGain = 1.0f;
+            break;
+        case 1: // Rising
+            slopeGain = tapPosition;
+            break;
+        case 2: // Falling
+            slopeGain = 1.0f - tapPosition;
+            break;
+        case 3: // Rise/Fall
+            // Triangle wave: rises to middle, then falls
+            if (tapPosition <= 0.5f) {
+                slopeGain = tapPosition * 2.0f; // Rise to 1.0 at middle
+            } else {
+                slopeGain = 2.0f - (tapPosition * 2.0f); // Fall from 1.0 to 0.0
+            }
+            break;
+        default:
+            slopeGain = 1.0f;
+            break;
+    }
+
+    // Ensure gain is in valid range
+    return std::max(0.0f, std::min(1.0f, slopeGain));
 }
 
 float CombProcessor::tanhLimiter(float input) const
@@ -137,9 +213,14 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
         float tapOutR = mDelayBufferR[readIdx1] * (1.0f - delayFrac) +
                        mDelayBufferR[readIdx2] * delayFrac;
 
-        // Accumulate (could add tap-specific gains later)
-        outputL += tapOutL / static_cast<float>(mNumActiveTaps);
-        outputR += tapOutR / static_cast<float>(mNumActiveTaps);
+        // Accumulate with appropriate gain compensation for tap density and slope envelope
+        // Use sqrt(N) scaling to balance density vs output level
+        float densityGain = 1.0f / std::sqrt(static_cast<float>(mNumActiveTaps));
+        float slopeGain = getTapGain(tap);
+        float totalGain = densityGain * slopeGain;
+
+        outputL += tapOutL * totalGain;
+        outputR += tapOutR * totalGain;
     }
 
     // Read tap 64 for feedback (longest delay)

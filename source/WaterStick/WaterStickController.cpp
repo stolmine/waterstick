@@ -226,11 +226,11 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            STR16("Control"));
 
     // Comb control parameters
-    parameters.addParameter(STR16("Comb Size"), STR16("s"), 0, 0.05,  // Default 0.1s (0.05 normalized for log scale)
+    parameters.addParameter(STR16("Comb Size"), STR16("s"), 0, 0.4,  // Default ~10ms (0.4 normalized for log scale)
                            Vst::ParameterInfo::kCanAutomate, kCombSize, 0,
                            STR16("Comb"));
 
-    parameters.addParameter(STR16("Comb Feedback"), STR16("%"), 0, 0.0,  // Default 0.0
+    parameters.addParameter(STR16("Comb Feedback"), STR16("%"), 0, 0.6,  // Default moderate feedback (0.6 normalized)
                            Vst::ParameterInfo::kCanAutomate, kCombFeedback, 0,
                            STR16("Comb"));
 
@@ -238,7 +238,7 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate, kCombPitchCV, 0,
                            STR16("Comb"));
 
-    parameters.addParameter(STR16("Comb Taps"), nullptr, 63, 15.0/63.0,  // Default 16 taps (15/63 normalized for 1-64 range)
+    parameters.addParameter(STR16("Comb Taps"), nullptr, 63, 31.0/63.0,  // Default 32 taps (31/63 normalized for 1-64 range)
                            Vst::ParameterInfo::kCanAutomate, kCombTaps, 0,
                            STR16("Comb"));
 
@@ -249,6 +249,14 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Comb Division"), nullptr, kNumSyncDivisions - 1,
                            static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1),  // Default 1/4 note
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombDivision, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Pattern"), nullptr, kNumCombPatterns - 1, 0.0,  // Default Pattern 1
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombPattern, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Slope"), nullptr, kNumCombSlopes - 1, 0.0,  // Default Flat
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombSlope, 0,
                            STR16("Comb"));
 
     // Initialize all parameters to their default values
@@ -329,6 +337,16 @@ void WaterStickController::setDefaultParameters()
         setParamNormalized(kTap1FilterResonance + (i * 3), 0.5);  // Moderate resonance
         setParamNormalized(kTap1FilterType + (i * 3), 0.0);       // Bypass filter
     }
+
+    // Set comb processor parameters to musical defaults
+    setParamNormalized(kCombSize, 0.4);          // ~10ms (log scale: 0.0001 * 20000^0.4 ≈ 0.01s)
+    setParamNormalized(kCombFeedback, 0.6);      // Moderate feedback (cubic: 0.6^3 * 0.99 ≈ 0.21)
+    setParamNormalized(kCombPitchCV, 0.5);       // 0V pitch CV (center position)
+    setParamNormalized(kCombTaps, 0.5);          // 32 taps (middle density)
+    setParamNormalized(kCombSync, 0.0);          // Free mode
+    setParamNormalized(kCombDivision, static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1)); // 1/4 note
+    setParamNormalized(kCombPattern, 0.0);       // Pattern 1
+    setParamNormalized(kCombSlope, 0.0);         // Flat
 
     // Set routing and mix parameters to defaults
     setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
@@ -421,6 +439,16 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kDelayDryWet) return 1.0f;
     if (id == kDelayBypass) return 0.0f;
     if (id == kCombBypass) return 0.0f;
+
+    // Comb processor parameter defaults
+    if (id == kCombSize) return 0.4f;
+    if (id == kCombFeedback) return 0.6f;
+    if (id == kCombPitchCV) return 0.5f;
+    if (id == kCombTaps) return 0.5f;
+    if (id == kCombSync) return 0.0f;
+    if (id == kCombDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
+    if (id == kCombPattern) return 0.0f;
+    if (id == kCombSlope) return 0.0f;
 
     return 0.0f;  // Safe default
 }
@@ -1317,6 +1345,29 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             snprintf(percentText, sizeof(percentText), "%.1f%%", percentage);
             Steinberg::UString(string, 128).fromAscii(percentText);
             return kResultTrue;
+        }
+        case kCombPattern:
+        {
+            int pattern = static_cast<int>(valueNormalized * (kNumCombPatterns - 1) + 0.5);
+            if (pattern >= 0 && pattern < kNumCombPatterns) {
+                char patternText[128];
+                snprintf(patternText, sizeof(patternText), "Pattern %d", pattern + 1);
+                Steinberg::UString(string, 128).fromAscii(patternText);
+                return kResultTrue;
+            }
+            break;
+        }
+        case kCombSlope:
+        {
+            int slope = static_cast<int>(valueNormalized * (kNumCombSlopes - 1) + 0.5);
+            if (slope >= 0 && slope < kNumCombSlopes) {
+                static const char* slopeTexts[kNumCombSlopes] = {
+                    "Flat", "Rising", "Falling", "Rise/Fall"
+                };
+                Steinberg::UString(string, 128).fromAscii(slopeTexts[slope]);
+                return kResultTrue;
+            }
+            break;
         }
         case kDelayBypass:
         case kCombBypass:

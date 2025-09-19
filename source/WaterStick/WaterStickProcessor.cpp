@@ -1437,6 +1437,18 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             mCombProcessor.setClockDivision(mCombDivision);
                             break;
                         }
+                        case kCombPattern:
+                        {
+                            mCombPattern = static_cast<int>(value * (kNumCombPatterns - 1) + 0.5); // Round to nearest
+                            mCombProcessor.setPattern(mCombPattern);
+                            break;
+                        }
+                        case kCombSlope:
+                        {
+                            mCombSlope = static_cast<int>(value * (kNumCombSlopes - 1) + 0.5); // Round to nearest
+                            mCombProcessor.setSlope(mCombSlope);
+                            break;
+                        }
                         default:
                         {
                             // Handle per-tap filter parameters

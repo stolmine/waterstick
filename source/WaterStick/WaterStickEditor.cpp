@@ -60,6 +60,8 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combSyncKnob = nullptr;
     combDivisionKnob = nullptr;
     routeModeKnob = nullptr;
+    combPatternKnob = nullptr;
+    combSlopeKnob = nullptr;
 
     // Initialize labels
     syncModeLabel = nullptr;
@@ -78,6 +80,8 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combSyncLabel = nullptr;
     combDivisionLabel = nullptr;
     routeModeLabel = nullptr;
+    combPatternLabel = nullptr;
+    combSlopeLabel = nullptr;
 
     // Initialize value readouts
     syncModeValue = nullptr;
@@ -96,6 +100,8 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combSyncValue = nullptr;
     combDivisionValue = nullptr;
     routeModeValue = nullptr;
+    combPatternValue = nullptr;
+    combSlopeValue = nullptr;
 
     // Initialize bypass labels
     delayBypassLabel = nullptr;
@@ -555,6 +561,25 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
             return "1/4";
         }
 
+        case kCombPattern:
+        {
+            // Format as pattern number
+            int pattern = 1 + static_cast<int>(normalizedValue * (kNumCombPatterns - 1));
+            oss << "Pattern " << pattern;
+            return oss.str();
+        }
+
+        case kCombSlope:
+        {
+            // Format as slope type
+            int slope = static_cast<int>(normalizedValue * (kNumCombSlopes - 1));
+            const char* slopeNames[] = {"Flat", "Rising", "Falling", "Rise/Fall"};
+            if (slope >= 0 && slope < kNumCombSlopes) {
+                return slopeNames[slope];
+            }
+            return "Flat";
+        }
+
         case kRouteMode:
         {
             // Format as routing mode
@@ -608,10 +633,10 @@ void WaterStickEditor::updateValueReadouts()
     }
 
     // Update comb control value readouts
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPitchCV, kCombTaps, kCombSync, kCombDivision, kRouteMode};
-    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPitchValue, combTapsValue, combSyncValue, combDivisionValue, routeModeValue};
+    const int combTags[] = {kCombSize, kCombFeedback, kCombPattern, kCombPitchCV, kCombTaps, kCombSlope, kCombSync, kCombDivision, kRouteMode};
+    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPatternValue, combPitchValue, combTapsValue, combSlopeValue, combSyncValue, combDivisionValue, routeModeValue};
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 9; i++) {
         if (combValueLabels[i]) {
             float value = controller->getParamNormalized(combTags[i]);
             std::string valueText = formatParameterValue(combTags[i], value);
@@ -1904,11 +1929,11 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
     const int combMargin = 25;                           // Internal margins
     const int knobSize = 53;                             // Match global knobs
 
-    // Grid layout parameters for 2×4 arrangement (2 columns, up to 4 rows)
-    const int combColumns = 2;
-    const int combHSpacing = 90;    // Horizontal spacing between columns
-    const int combVSpacing = 70;    // Reduced vertical spacing to fit in 600px window
-    const int combStartY = 120;     // Moved up to optimize space usage
+    // Grid layout parameters for 3×3 arrangement (3 columns, 3 rows)
+    const int combColumns = 3;
+    const int combHSpacing = 75;    // Reduced horizontal spacing for 3 columns
+    const int combVSpacing = 70;    // Keep vertical spacing to fit in 600px window
+    const int combStartY = 120;     // Keep position optimized for space usage
 
     const int labelHeight = 20;
     const int valueHeight = 18;
@@ -1922,12 +1947,14 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
         int tag;
     };
 
-    // Map to actual VST3 parameter IDs
+    // Map to actual VST3 parameter IDs - arranged in 3×3 grid layout
     CombKnobDef combKnobs[] = {
         {"SIZE", &combSizeKnob, &combSizeLabel, &combSizeValue, kCombSize},
         {"FEEDBACK", &combFeedbackKnob, &combFeedbackLabel, &combFeedbackValue, kCombFeedback},
+        {"PATTERN", &combPatternKnob, &combPatternLabel, &combPatternValue, kCombPattern},
         {"PITCH", &combPitchKnob, &combPitchLabel, &combPitchValue, kCombPitchCV},
         {"TAPS", &combTapsKnob, &combTapsLabel, &combTapsValue, kCombTaps},
+        {"SLOPE", &combSlopeKnob, &combSlopeLabel, &combSlopeValue, kCombSlope},
         {"SYNC", &combSyncKnob, &combSyncLabel, &combSyncValue, kCombSync},
         {"DIVISION", &combDivisionKnob, &combDivisionLabel, &combDivisionValue, kCombDivision},
         {"ROUTE", &routeModeKnob, &routeModeLabel, &routeModeValue, kRouteMode}
@@ -1936,9 +1963,9 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
     const int numCombKnobs = sizeof(combKnobs) / sizeof(CombKnobDef);
 
     for (int i = 0; i < numCombKnobs; i++) {
-        // Calculate grid position (2 columns)
-        int col = i % combColumns;  // 0 or 1
-        int row = i / combColumns;  // 0, 1, 2, or 3
+        // Calculate grid position (3 columns, 3 rows)
+        int col = i % combColumns;  // 0, 1, or 2
+        int row = i / combColumns;  // 0, 1, or 2
 
         // Calculate knob position in grid
         int knobX = combSectionLeft + combMargin + (col * (knobSize + combHSpacing));
