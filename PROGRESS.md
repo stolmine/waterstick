@@ -527,6 +527,65 @@ Multi-layered approach implemented to prevent cached state from overriding corre
 
 **Status:** Issue completely resolved. Robust multi-layer validation prevents parameter initialization override while maintaining VST3 compliance and user state persistence.
 
+### Phase 3.6: Complete Comb Parameter Implementation ✅ COMPLETED
+**Missing Rainmaker Comb Parameters Added:**
+
+1. **✅ kCombPattern Parameter (0-15)**
+   - 16 different tap spacing patterns for varied resonator timbres
+   - Patterns include uniform, logarithmic, exponential, power law variations
+   - Discrete list parameter with full VST3 automation support
+   - Default: Pattern 1 (uniform spacing)
+
+2. **✅ kCombSlope Parameter (0-3)**
+   - 4 envelope patterns: Flat, Rising, Falling, Rise/Fall
+   - Controls amplitude envelope across comb taps
+   - Enables effects like rising/falling reverb tails and rhythmic pumping
+   - Default: Flat (uniform gain)
+
+3. **✅ GUI Layout Expansion**
+   - Expanded comb section from 2×4 to 3×3 grid layout
+   - Professional spacing maintained with 75px horizontal, 70px vertical spacing
+   - All 9 comb parameters now visible and accessible
+   - Balanced symmetric appearance with logical parameter grouping
+
+4. **✅ DSP Implementation**
+   - Pattern algorithms implemented with mathematical curve variations
+   - Slope envelope processing integrated into tap gain calculations
+   - Total parameter count: 117 parameters
+   - VST3 validation: 47/47 tests passed
+
+### 🔍 INVESTIGATION REQUIRED - Parameter Interaction Issues
+
+**Critical Issues Identified for Future Resolution:**
+
+1. **Comb Parameter Interaction Clarity**
+   - Pitch control appears to control all tap delay timing
+   - Unclear how Size parameter contributes vs Pitch parameter
+   - Need investigation of parameter interaction and scaling relationships
+
+2. **Feedback Path Issues**
+   - Comb feedback does not seem to work properly
+   - Feedback should be path-specific: comb feedback within comb processing only
+   - Delay feedback should be within delay path only (currently may be global)
+
+3. **Sync System Problems**
+   - Comb sync parameter seems to have no audible effect
+   - Comb sync division parameter seems to have no audible effect
+   - Sync implementation may need debugging
+
+4. **Routing and Control Issues**
+   - Routing control remains spotty/unreliable despite implementation verification
+   - Bypass controls produce unintuitive results
+   - Global dry/wet control appears to be in wrong position in signal path
+   - Missing separate dry/wet control for delay section specifically
+
+**Next Development Priorities:**
+- Debug parameter interaction and scaling relationships
+- Fix feedback path routing to be section-specific
+- Investigate sync system implementation
+- Implement dedicated delay dry/wet control
+- Resolve routing control reliability issues
+
 - **Phase 4**: Advanced Features 🔄 In Planning
 
 ---
