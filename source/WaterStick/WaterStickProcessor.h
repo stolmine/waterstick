@@ -324,6 +324,14 @@ private:
     bool mDelayBypass;        // Delay section bypass toggle
     bool mCombBypass;         // Comb section bypass toggle
 
+    // Comb control parameters
+    float mCombSize;          // Comb delay size in seconds
+    float mCombFeedback;      // Comb feedback amount
+    float mCombPitchCV;       // Comb pitch CV in volts
+    int mCombTaps;            // Number of active comb taps
+    bool mCombSync;           // Comb sync mode
+    int mCombDivision;        // Comb sync division
+
     // Bypass fade system state
     bool mDelayBypassPrevious;     // Track previous state for fade triggering
     bool mCombBypassPrevious;      // Track previous state for fade triggering

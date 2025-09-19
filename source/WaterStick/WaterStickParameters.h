@@ -118,6 +118,13 @@ enum {
     kDelayDryWet,        // Delay section Dry/Wet mix (delay section only)
     kDelayBypass,        // Delay section bypass toggle
     kCombBypass,         // Comb section bypass toggle
+    // Comb control parameters
+    kCombSize,           // Comb delay size (0.0001f to 2.0f seconds)
+    kCombFeedback,       // Comb feedback (0.0f to 0.99f)
+    kCombPitchCV,        // Comb pitch CV (-5.0f to +5.0f volts)
+    kCombTaps,           // Number of active taps (1 to 64)
+    kCombSync,           // Comb sync mode (0=free, 1=tempo-synced)
+    kCombDivision,       // Comb sync division (0 to 21)
     kNumParams
 };
 

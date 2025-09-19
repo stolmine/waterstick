@@ -225,6 +225,32 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombBypass, 0,
                            STR16("Control"));
 
+    // Comb control parameters
+    parameters.addParameter(STR16("Comb Size"), STR16("s"), 0, 0.05,  // Default 0.1s (0.05 normalized for log scale)
+                           Vst::ParameterInfo::kCanAutomate, kCombSize, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Feedback"), STR16("%"), 0, 0.0,  // Default 0.0
+                           Vst::ParameterInfo::kCanAutomate, kCombFeedback, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Pitch CV"), STR16("V"), 0, 0.5,  // Default 0.0V (0.5 normalized for -5 to +5V range)
+                           Vst::ParameterInfo::kCanAutomate, kCombPitchCV, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Taps"), nullptr, 63, 15.0/63.0,  // Default 16 taps (15/63 normalized for 1-64 range)
+                           Vst::ParameterInfo::kCanAutomate, kCombTaps, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Sync"), nullptr, 1, 0.0,  // Default free mode
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombSync, 0,
+                           STR16("Comb"));
+
+    parameters.addParameter(STR16("Comb Division"), nullptr, kNumSyncDivisions - 1,
+                           static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1),  // Default 1/4 note
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombDivision, 0,
+                           STR16("Comb"));
+
     // Initialize all parameters to their default values
     // This ensures proper display even if setComponentState is never called
     setDefaultParameters();
