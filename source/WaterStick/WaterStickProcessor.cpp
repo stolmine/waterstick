@@ -9,18 +9,119 @@ using namespace Steinberg;
 
 namespace WaterStick {
 
-//------------------------------------------------------------------------
-// TempoSync Implementation
-//------------------------------------------------------------------------
 
-// Division text lookup table
+struct ParameterConverter {
+    static float convertFilterCutoff(double value) {
+        return static_cast<float>(20.0 * std::pow(1000.0, value));
+    }
+
+    static float convertFilterResonance(double value) {
+        if (value >= 0.5) {
+            float positiveValue = (value - 0.5f) * 2.0f;
+            if (positiveValue >= 0.9f) {
+                float highResValue = (positiveValue - 0.9f) / 0.1f;
+                return 0.7f + highResValue * 0.3f;
+            } else {
+                float lowResValue = positiveValue / 0.9f;
+                return lowResValue * 0.7f;
+            }
+        } else {
+            return static_cast<float>((value - 0.5f) * 2.0f);
+        }
+    }
+
+    static int convertFilterType(double value) {
+        return static_cast<int>(value * (kNumFilterTypes - 1) + 0.5);
+    }
+
+    static float convertGain(double value) {
+        float dbValue = -40.0f + (static_cast<float>(value) * 52.0f);
+        return std::pow(10.0f, dbValue / 20.0f);
+    }
+
+    static float convertFeedback(double value) {
+        float normalizedValue = static_cast<float>(value);
+        return normalizedValue * normalizedValue * normalizedValue;
+    }
+
+    static float convertCombSize(double value) {
+        float normalizedValue = static_cast<float>(value);
+        return 0.0001f * std::pow(20000.0f, normalizedValue);
+    }
+
+    static float convertCombFeedback(double value) {
+        float normalizedValue = static_cast<float>(value);
+        return normalizedValue * normalizedValue * normalizedValue * 0.99f;
+    }
+
+    static float convertCombPitchCV(double value) {
+        return -5.0f + (static_cast<float>(value) * 10.0f);
+    }
+
+    static int convertCombTaps(double value) {
+        return static_cast<int>(value * 63.0 + 1.0 + 0.5);
+    }
+};
+
+struct TapParameterRange {
+    Vst::ParamID startId;
+    Vst::ParamID endId;
+    int paramsPerTap;
+
+    bool contains(Vst::ParamID paramId) const {
+        return paramId >= startId && paramId <= endId;
+    }
+
+    void getIndices(Vst::ParamID paramId, int& tapIndex, int& paramType) const {
+        int paramOffset = paramId - startId;
+        tapIndex = paramOffset / paramsPerTap;
+        paramType = paramOffset % paramsPerTap;
+    }
+};
+
+struct TapParameterProcessor {
+    static const TapParameterRange kTapBasicRange;
+    static const TapParameterRange kTapFilterRange;
+
+    static void processTapParameter(Vst::ParamID paramId, Vst::ParamValue value, WaterStickProcessor* processor) {
+        if (kTapBasicRange.contains(paramId)) {
+            int tapIndex, paramType;
+            kTapBasicRange.getIndices(paramId, tapIndex, paramType);
+
+            if (tapIndex < 16) {
+                switch (paramType) {
+                    case 0: processor->mTapEnabled[tapIndex] = value > 0.5; break;
+                    case 1: processor->mTapLevel[tapIndex] = static_cast<float>(value); break;
+                    case 2: processor->mTapPan[tapIndex] = static_cast<float>(value); break;
+                }
+            }
+            return;
+        }
+
+        if (kTapFilterRange.contains(paramId)) {
+            int tapIndex, paramType;
+            kTapFilterRange.getIndices(paramId, tapIndex, paramType);
+
+            if (tapIndex < 16) {
+                switch (paramType) {
+                    case 0: processor->mTapFilterCutoff[tapIndex] = ParameterConverter::convertFilterCutoff(value); break;
+                    case 1: processor->mTapFilterResonance[tapIndex] = ParameterConverter::convertFilterResonance(value); break;
+                    case 2: processor->mTapFilterType[tapIndex] = ParameterConverter::convertFilterType(value); break;
+                }
+            }
+        }
+    }
+};
+
+const TapParameterRange TapParameterProcessor::kTapBasicRange = {kTap1Enable, kTap16Pan, 3};
+const TapParameterRange TapParameterProcessor::kTapFilterRange = {kTap1FilterCutoff, kTap16FilterType, 3};
+
 const char* TempoSync::sDivisionTexts[kNumSyncDivisions] = {
     "1/64", "1/32T", "1/64.", "1/32", "1/16T", "1/32.", "1/16",
     "1/8T", "1/16.", "1/8", "1/4T", "1/8.", "1/4",
     "1/2T", "1/4.", "1/2", "1T", "1/2.", "1", "2", "4", "8"
 };
 
-// Division values (in quarter note units)
 const float TempoSync::sDivisionValues[kNumSyncDivisions] = {
     0.0625f,     // 1/64
     0.08333f,    // 1/32T (1/32 triplet)
@@ -51,8 +152,8 @@ TempoSync::TempoSync()
 , mHostTempo(120.0)
 , mHostTempoValid(false)
 , mIsSynced(false)
-, mSyncDivision(kSync_1_4) // Default to 1/4 note
-, mFreeTime(0.25f)         // Default to 250ms
+, mSyncDivision(kSync_1_4)
+, mFreeTime(0.25f)
 {
 }
 
@@ -100,16 +201,11 @@ float TempoSync::getDelayTime() const
 float TempoSync::calculateSyncTime() const
 {
     if (!mHostTempoValid || mHostTempo <= 0.0) {
-        return mFreeTime; // Fallback to free time
+        return mFreeTime;
     }
 
-    // Calculate time for one quarter note in seconds
     double quarterNoteTime = 60.0 / mHostTempo;
-
-    // Get division multiplier (in quarter note units)
     float divisionValue = sDivisionValues[mSyncDivision];
-
-    // Calculate final delay time
     return static_cast<float>(quarterNoteTime * divisionValue);
 }
 
@@ -123,30 +219,23 @@ const char* TempoSync::getModeText() const
     return mIsSynced ? "Synced" : "Free";
 }
 
-//------------------------------------------------------------------------
-// TapDistribution Implementation
-//------------------------------------------------------------------------
-
-// Grid values lookup table
 const float TapDistribution::sGridValues[kNumGridValues] = {
     1.0f, 2.0f, 3.0f, 4.0f, 6.0f, 8.0f, 12.0f, 16.0f
 };
 
-// Grid text lookup table
 const char* TapDistribution::sGridTexts[kNumGridValues] = {
     "1", "2", "3", "4", "6", "8", "12", "16"
 };
 
 TapDistribution::TapDistribution()
 : mSampleRate(44100.0)
-, mBeatTime(0.5f)  // Default to 120 BPM (0.5s per beat)
-, mGrid(kGrid_4)   // Default to 4 taps per beat
+, mBeatTime(0.5f)
+, mGrid(kGrid_4)
 {
-    // Initialize all taps as disabled with 80% gain and center pan
     for (int i = 0; i < NUM_TAPS; i++) {
         mTapEnabled[i] = false;
         mTapLevel[i] = 0.8f;
-        mTapPan[i] = 0.5f;      // Center pan
+        mTapPan[i] = 0.5f;
         mTapDelayTimes[i] = 0.0f;
     }
     calculateTapTimes();
@@ -163,7 +252,6 @@ void TapDistribution::initialize(double sampleRate)
 
 void TapDistribution::updateTempo(const TempoSync& tempoSync)
 {
-    // Get beat time from tempo sync
     mBeatTime = tempoSync.getDelayTime();
     calculateTapTimes();
 }
@@ -186,13 +274,8 @@ void TapDistribution::setTapEnable(int tapIndex, bool enabled)
 void TapDistribution::setTapLevel(int tapIndex, float level)
 {
     if (tapIndex >= 0 && tapIndex < NUM_TAPS) {
-        // Enhanced parameter validation
         mTapLevel[tapIndex] = std::isfinite(level) ? std::max(0.0f, std::min(level, 1.0f)) : 1.0f;
     } else {
-        // Optional: Add runtime logging or error tracking
-        #ifdef DEBUG
-        fprintf(stderr, "Warning: Invalid tap index in setTapLevel: %d\n", tapIndex);
-        #endif
     }
 }
 
@@ -205,15 +288,11 @@ void TapDistribution::setTapPan(int tapIndex, float pan)
 
 void TapDistribution::calculateTapTimes()
 {
-    // Rainmaker formula: tap delay time = BEAT TIME * tap number / GRID
     float gridValue = sGridValues[mGrid];
 
     for (int tap = 0; tap < NUM_TAPS; tap++) {
-        // Tap numbers are 1-16 (not 0-15)
         int tapNumber = tap + 1;
         mTapDelayTimes[tap] = mBeatTime * static_cast<float>(tapNumber) / gridValue;
-
-        // Ensure minimum delay time for stability
         mTapDelayTimes[tap] = std::max(mTapDelayTimes[tap], 0.001f);
     }
 }
@@ -255,9 +334,6 @@ const char* TapDistribution::getGridText() const
     return sGridTexts[mGrid];
 }
 
-//------------------------------------------------------------------------
-// DualDelayLine Implementation - Crossfading STK DelayA Algorithm
-//------------------------------------------------------------------------
 
 DualDelayLine::DualDelayLine()
 : mBufferSize(0)
@@ -269,13 +345,12 @@ DualDelayLine::DualDelayLine()
 , mTargetDelayTime(0.1f)
 , mCurrentDelayTime(0.1f)
 , mStabilityCounter(0)
-, mStabilityThreshold(2048) // ~46ms at 44.1kHz
+, mStabilityThreshold(2048)
 , mCrossfadeLength(0)
 , mCrossfadePosition(0)
 , mCrossfadeGainA(1.0f)
 , mCrossfadeGainB(0.0f)
 {
-    // Initialize delay states
     mStateA.delayInSamples = 0.5f;
     mStateA.readIndex = 0;
     mStateA.allpassCoeff = 0.0f;
@@ -284,7 +359,7 @@ DualDelayLine::DualDelayLine()
     mStateA.doNextOut = true;
     mStateA.nextOutput = 0.0f;
 
-    mStateB = mStateA; // Copy state
+    mStateB = mStateA;
 }
 
 DualDelayLine::~DualDelayLine()
@@ -302,19 +377,17 @@ void DualDelayLine::initialize(double sampleRate, double maxDelaySeconds)
     mWriteIndexA = 0;
     mWriteIndexB = 0;
 
-    // Initialize both delay line states
     updateDelayState(mStateA, mCurrentDelayTime);
     updateDelayState(mStateB, mCurrentDelayTime);
 
-    // Calculate stability threshold (proportional to sample rate)
-    mStabilityThreshold = static_cast<int>(sampleRate * 0.05); // 50ms
+    mStabilityThreshold = static_cast<int>(sampleRate * 0.05);
 }
 
 void DualDelayLine::setDelayTime(float delayTimeSeconds)
 {
     if (std::abs(delayTimeSeconds - mTargetDelayTime) > 0.001f) {
         mTargetDelayTime = delayTimeSeconds;
-        mStabilityCounter = 0; // Reset stability counter on movement
+        mStabilityCounter = 0;
     }
 }
 
@@ -376,9 +449,6 @@ float DualDelayLine::processDelayLine(std::vector<float>& buffer, int& writeInde
 
 int DualDelayLine::calculateCrossfadeLength(float delayTime)
 {
-    // Crossfade length proportional to delay time
-    // Short delays: 50-100ms crossfade
-    // Long delays: 200-500ms crossfade
     float baseCrossfadeMs = 50.0f + (delayTime * 1000.0f * 0.25f);
     baseCrossfadeMs = std::min(baseCrossfadeMs, 500.0f);
 
@@ -391,7 +461,6 @@ void DualDelayLine::startCrossfade()
     mCrossfadeLength = calculateCrossfadeLength(mTargetDelayTime);
     mCrossfadePosition = 0;
 
-    // Update standby line with new delay time
     if (mUsingLineA) {
         updateDelayState(mStateB, mTargetDelayTime);
     } else {
@@ -406,7 +475,6 @@ void DualDelayLine::updateCrossfade()
     float progress = static_cast<float>(mCrossfadePosition) / static_cast<float>(mCrossfadeLength);
     progress = std::min(progress, 1.0f);
 
-    // Smooth crossfade curve (cosine)
     float fadeOut = 0.5f * (1.0f + cosf(progress * 3.14159265f));
     float fadeIn = 1.0f - fadeOut;
 
@@ -421,7 +489,6 @@ void DualDelayLine::updateCrossfade()
     mCrossfadePosition++;
 
     if (mCrossfadePosition >= mCrossfadeLength) {
-        // Crossfade complete
         mCrossfadeState = STABLE;
         mUsingLineA = !mUsingLineA;
         mCurrentDelayTime = mTargetDelayTime;
@@ -438,7 +505,6 @@ void DualDelayLine::updateCrossfade()
 
 void DualDelayLine::processSample(float input, float& output)
 {
-    // Movement detection and crossfade triggering
     if (std::abs(mTargetDelayTime - mCurrentDelayTime) > 0.001f) {
         mStabilityCounter++;
 
@@ -449,14 +515,11 @@ void DualDelayLine::processSample(float input, float& output)
         mStabilityCounter = 0;
     }
 
-    // Update crossfade if active
     updateCrossfade();
 
-    // Process both delay lines
     float outputA = processDelayLine(mBufferA, mWriteIndexA, mStateA, input);
     float outputB = processDelayLine(mBufferB, mWriteIndexB, mStateB, input);
 
-    // Mix outputs based on crossfade state
     if (mCrossfadeState == STABLE) {
         output = mUsingLineA ? outputA : outputB;
     } else {
@@ -479,7 +542,6 @@ void DualDelayLine::reset()
     mCrossfadeGainA = 1.0f;
     mCrossfadeGainB = 0.0f;
 
-    // Reset delay states
     mStateA.delayInSamples = 0.5f;
     mStateA.readIndex = 0;
     mStateA.apInput = 0.0f;
@@ -491,9 +553,6 @@ void DualDelayLine::reset()
     mStateB = mStateA;
 }
 
-//------------------------------------------------------------------------
-// STKDelayLine Implementation - Exact STK DelayA Algorithm (Legacy)
-//------------------------------------------------------------------------
 
 STKDelayLine::STKDelayLine()
 : mBufferSize(0)
@@ -521,7 +580,6 @@ void STKDelayLine::initialize(double sampleRate, double maxDelaySeconds)
     mWriteIndex = 0;
     mReadIndex = 0;
 
-    // STK default: 0.5 samples minimum delay
     mDelayInSamples = 0.5f;
     updateAllpassCoeff();
 
@@ -533,35 +591,28 @@ void STKDelayLine::initialize(double sampleRate, double maxDelaySeconds)
 
 void STKDelayLine::setDelayTime(float delayTimeSeconds)
 {
-    // Convert to samples - STK approach: NO SMOOTHING
     float delaySamples = delayTimeSeconds * static_cast<float>(mSampleRate);
     float maxDelaySamples = static_cast<float>(mBufferSize - 1);
 
-    // STK range: 0.5 to maxDelay
     mDelayInSamples = std::max(0.5f, std::min(delaySamples, maxDelaySamples));
     updateAllpassCoeff();
 }
 
 void STKDelayLine::updateAllpassCoeff()
 {
-    // STK DelayA coefficient calculation for fractional part
     float integerPart = floorf(mDelayInSamples);
     float fracPart = mDelayInSamples - integerPart;
 
-    // Ensure minimum fractional delay of 0.5
     if (fracPart < 0.5f) {
         fracPart = 0.5f;
     }
 
-    // STK allpass coefficient: a = (1-D)/(1+D) where D is fractional delay
     mAllpassCoeff = (1.0f - fracPart) / (1.0f + fracPart);
 }
 
 float STKDelayLine::nextOut()
 {
-    // Exact STK DelayA nextOut implementation
     if (mDoNextOut) {
-        // Do allpass interpolation delay
         mNextOutput = -mAllpassCoeff * mLastOutput;
         mNextOutput += mApInput + (mAllpassCoeff * mBuffer[mReadIndex]);
         mDoNextOut = false;
@@ -571,24 +622,19 @@ float STKDelayLine::nextOut()
 
 void STKDelayLine::processSample(float input, float& output)
 {
-    // Calculate integer delay part
     int integerDelay = static_cast<int>(floorf(mDelayInSamples));
 
-    // Update read index for integer delay
     mReadIndex = mWriteIndex - integerDelay;
     if (mReadIndex < 0) mReadIndex += mBufferSize;
     mReadIndex %= mBufferSize;
 
-    // Write input to buffer
     mBuffer[mWriteIndex] = input;
 
-    // Get output using STK allpass interpolation
     output = nextOut();
     mLastOutput = output;
     mDoNextOut = true;
     mApInput = mBuffer[mReadIndex];
 
-    // Advance write index
     mWriteIndex = (mWriteIndex + 1) % mBufferSize;
 }
 
@@ -605,15 +651,10 @@ void STKDelayLine::reset()
     mNextOutput = 0.0f;
 }
 
-//------------------------------------------------------------------------
-// RoutingManager Implementation
-//------------------------------------------------------------------------
-
-// Text lookup table for route modes
 const char* RoutingManager::sRouteModeTexts[3] = {
-    "Delay>Comb",   // DelayToComb
-    "Comb>Delay",   // CombToDelay
-    "Delay+Comb"    // DelayPlusComb
+    "Delay>Comb",
+    "Comb>Delay",
+    "Delay+Comb"
 };
 
 RoutingManager::RoutingManager()
@@ -634,7 +675,6 @@ void RoutingManager::initialize(double sampleRate)
 {
     mSampleRate = sampleRate;
 
-    // Set transition time to 10ms for smooth routing changes
     mTransitionSamples = static_cast<int>(sampleRate * 0.01);
 
     reset();
@@ -649,7 +689,6 @@ void RoutingManager::setRouteMode(RouteMode mode)
 
 bool RoutingManager::isValidRouting() const
 {
-    // Enhanced routing mode validation
     return (mRouteMode >= DelayToComb && mRouteMode <= DelayPlusComb) &&
            (mPendingRouteMode >= DelayToComb && mPendingRouteMode <= DelayPlusComb);
 }
@@ -660,18 +699,14 @@ void RoutingManager::processRouteTransition()
         return;
     }
 
-    // Prevent potential integer overflow with safe increment
     mTransitionCounter = (mTransitionCounter < mTransitionSamples)
         ? mTransitionCounter + 1
         : mTransitionSamples;
 
-    // Explicit transition with comprehensive safety checks
     if (mTransitionCounter >= mTransitionSamples) {
-        // Validate pending route mode with strict bounds checking
         if (mPendingRouteMode >= DelayToComb && mPendingRouteMode <= DelayPlusComb) {
             completeTransition();
         } else {
-            // Critical safety fallback: reset to known safe state
             mPendingRouteMode = DelayToComb;
             mRouteMode = DelayToComb;
             mTransitionInProgress = false;
@@ -710,31 +745,29 @@ void RoutingManager::completeTransition()
     mTransitionCounter = 0;
 }
 
-//------------------------------------------------------------------------
-// WaterStickProcessor Implementation
-//------------------------------------------------------------------------
 
 WaterStickProcessor::WaterStickProcessor()
-: mInputGain(1.0f)  // 0dB linear gain (parameter default 0.769231 → 0dB → 1.0 linear)
-, mOutputGain(1.0f)  // 0dB linear gain (parameter default 0.769231 → 0dB → 1.0 linear)
-, mDelayTime(0.1f)  // 100ms default
-, mDryWet(0.5f)     // 50% wet default
-, mFeedback(0.0f)   // No feedback default
-, mTempoSyncMode(false)  // Default to free mode
-, mSyncDivision(kSync_1_4)  // Default to 1/4 note
-, mGrid(kGrid_4)    // Default to 4 taps per beat
-, mRouteMode(DelayToComb)  // Default routing mode
-, mGlobalDryWet(0.5f)  // 50% global wet default
-, mDelayDryWet(1.0f)   // 100% delay wet default (delay section always 100% wet)
-, mDelayBypass(false)  // Delay section enabled by default
-, mCombBypass(false)   // Comb section enabled by default
-// Comb control parameters
-, mCombSize(0.1f)       // Default 100ms comb size
-, mCombFeedback(0.0f)   // Default no feedback
-, mCombPitchCV(0.0f)    // Default 0V pitch CV
-, mCombTaps(16)         // Default 16 active taps
-, mCombSync(false)      // Default free mode
-, mCombDivision(kSync_1_4)  // Default 1/4 note
+: mInputGain(1.0f)
+, mOutputGain(1.0f)
+, mDelayTime(0.1f)
+, mDryWet(0.5f)
+, mFeedback(0.0f)
+, mTempoSyncMode(false)
+, mSyncDivision(kSync_1_4)
+, mGrid(kGrid_4)
+, mRouteMode(DelayToComb)
+, mGlobalDryWet(0.5f)
+, mDelayDryWet(1.0f)
+, mDelayBypass(false)
+, mCombBypass(false)
+, mCombSize(0.1f)
+, mCombFeedback(0.0f)
+, mCombPitchCV(0.0f)
+, mCombTaps(16)
+, mCombSync(false)
+, mCombDivision(kSync_1_4)
+, mCombPattern(0)       // Default pattern 1
+, mCombSlope(0)         // Default flat slope
 , mDelayBypassPrevious(false)
 , mCombBypassPrevious(false)
 , mDelayFadingOut(false)
@@ -749,24 +782,20 @@ WaterStickProcessor::WaterStickProcessor()
 , mCombFadeGain(1.0f)
 , mSampleRate(44100.0)
 {
-    // Initialize tap parameters
     for (int i = 0; i < 16; i++) {
-        mTapEnabled[i] = false;            // All taps disabled by default
-        mTapEnabledPrevious[i] = false;    // Initialize previous state
-        mTapLevel[i] = 0.8f;               // 80% gain
-        mTapPan[i] = 0.5f;                 // Center pan
+        mTapEnabled[i] = false;
+        mTapEnabledPrevious[i] = false;
+        mTapLevel[i] = 0.8f;
+        mTapPan[i] = 0.5f;
 
-        // Initialize per-tap filter parameters
-        mTapFilterCutoff[i] = 1000.0f;     // 1 kHz default
-        mTapFilterResonance[i] = 0.0f;     // No resonance default
-        mTapFilterType[i] = kFilterType_Bypass;   // Bypass default (no filtering)
+        mTapFilterCutoff[i] = 1000.0f;
+        mTapFilterResonance[i] = 0.0f;
+        mTapFilterType[i] = kFilterType_Bypass;
 
-        // Initialize fade-out state
         mTapFadingOut[i] = false;
         mTapFadeOutRemaining[i] = 0;
         mTapFadeOutTotalLength[i] = 0;
 
-        // Initialize fade-in state
         mTapFadingIn[i] = false;
         mTapFadeInRemaining[i] = 0;
         mTapFadeInTotalLength[i] = 0;
@@ -774,7 +803,6 @@ WaterStickProcessor::WaterStickProcessor()
         mTapFadeGain[i] = 1.0f;
     }
 
-    // Initialize feedback buffers
     mFeedbackBufferL = 0.0f;
     mFeedbackBufferR = 0.0f;
 
@@ -1120,6 +1148,7 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
     return AudioEffect::setupProcessing(newSetup);
 }
 
+
 void WaterStickProcessor::updateParameters()
 {
     // Update tempo sync settings
@@ -1199,19 +1228,11 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                     switch (paramQueue->getParameterId())
                     {
                         case kInputGain:
-                        {
-                            // Convert normalized to dB (-40dB to +12dB range), then to linear gain
-                            float dbValue = -40.0f + (static_cast<float>(value) * 52.0f);
-                            mInputGain = std::pow(10.0f, dbValue / 20.0f);
+                            mInputGain = ParameterConverter::convertGain(value);
                             break;
-                        }
                         case kOutputGain:
-                        {
-                            // Convert normalized to dB (-40dB to +12dB range), then to linear gain
-                            float dbValue = -40.0f + (static_cast<float>(value) * 52.0f);
-                            mOutputGain = std::pow(10.0f, dbValue / 20.0f);
+                            mOutputGain = ParameterConverter::convertGain(value);
                             break;
-                        }
                         case kDelayTime:
                             mDelayTime = static_cast<float>(value * 2.0); // 0-2 seconds
                             break;
@@ -1219,13 +1240,8 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             mDryWet = static_cast<float>(value); // 0-1 (dry to wet)
                             break;
                         case kFeedback:
-                        {
-                            // Convert normalized value to feedback amount with logarithmic curve
-                            // Provides more control at lower values, runaway possible at very top
-                            float normalizedValue = static_cast<float>(value);
-                            mFeedback = normalizedValue * normalizedValue * normalizedValue; // Cubic curve for smooth control
+                            mFeedback = ParameterConverter::convertFeedback(value);
                             break;
-                        }
                         case kTempoSyncMode:
                             mTempoSyncMode = value > 0.5; // Toggle: >0.5 = synced
                             break;
@@ -1233,154 +1249,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             mSyncDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5); // Round to nearest
                             break;
                         case kGrid:
-                            mGrid = static_cast<int>(value * (kNumGridValues - 1) + 0.5); // Round to nearest
-                            break;
-                        // Tap enable parameters
-                        case kTap1Enable:
-                            mTapEnabled[0] = value > 0.5;
-                            break;
-                        case kTap2Enable:
-                            mTapEnabled[1] = value > 0.5;
-                            break;
-                        case kTap3Enable:
-                            mTapEnabled[2] = value > 0.5;
-                            break;
-                        case kTap4Enable:
-                            mTapEnabled[3] = value > 0.5;
-                            break;
-                        case kTap5Enable:
-                            mTapEnabled[4] = value > 0.5;
-                            break;
-                        case kTap6Enable:
-                            mTapEnabled[5] = value > 0.5;
-                            break;
-                        case kTap7Enable:
-                            mTapEnabled[6] = value > 0.5;
-                            break;
-                        case kTap8Enable:
-                            mTapEnabled[7] = value > 0.5;
-                            break;
-                        case kTap9Enable:
-                            mTapEnabled[8] = value > 0.5;
-                            break;
-                        case kTap10Enable:
-                            mTapEnabled[9] = value > 0.5;
-                            break;
-                        case kTap11Enable:
-                            mTapEnabled[10] = value > 0.5;
-                            break;
-                        case kTap12Enable:
-                            mTapEnabled[11] = value > 0.5;
-                            break;
-                        case kTap13Enable:
-                            mTapEnabled[12] = value > 0.5;
-                            break;
-                        case kTap14Enable:
-                            mTapEnabled[13] = value > 0.5;
-                            break;
-                        case kTap15Enable:
-                            mTapEnabled[14] = value > 0.5;
-                            break;
-                        case kTap16Enable:
-                            mTapEnabled[15] = value > 0.5;
-                            break;
-                        // Tap level parameters
-                        case kTap1Level:
-                            mTapLevel[0] = static_cast<float>(value);
-                            break;
-                        case kTap2Level:
-                            mTapLevel[1] = static_cast<float>(value);
-                            break;
-                        case kTap3Level:
-                            mTapLevel[2] = static_cast<float>(value);
-                            break;
-                        case kTap4Level:
-                            mTapLevel[3] = static_cast<float>(value);
-                            break;
-                        case kTap5Level:
-                            mTapLevel[4] = static_cast<float>(value);
-                            break;
-                        case kTap6Level:
-                            mTapLevel[5] = static_cast<float>(value);
-                            break;
-                        case kTap7Level:
-                            mTapLevel[6] = static_cast<float>(value);
-                            break;
-                        case kTap8Level:
-                            mTapLevel[7] = static_cast<float>(value);
-                            break;
-                        case kTap9Level:
-                            mTapLevel[8] = static_cast<float>(value);
-                            break;
-                        case kTap10Level:
-                            mTapLevel[9] = static_cast<float>(value);
-                            break;
-                        case kTap11Level:
-                            mTapLevel[10] = static_cast<float>(value);
-                            break;
-                        case kTap12Level:
-                            mTapLevel[11] = static_cast<float>(value);
-                            break;
-                        case kTap13Level:
-                            mTapLevel[12] = static_cast<float>(value);
-                            break;
-                        case kTap14Level:
-                            mTapLevel[13] = static_cast<float>(value);
-                            break;
-                        case kTap15Level:
-                            mTapLevel[14] = static_cast<float>(value);
-                            break;
-                        case kTap16Level:
-                            mTapLevel[15] = static_cast<float>(value);
-                            break;
-                        // Tap pan parameters
-                        case kTap1Pan:
-                            mTapPan[0] = static_cast<float>(value);
-                            break;
-                        case kTap2Pan:
-                            mTapPan[1] = static_cast<float>(value);
-                            break;
-                        case kTap3Pan:
-                            mTapPan[2] = static_cast<float>(value);
-                            break;
-                        case kTap4Pan:
-                            mTapPan[3] = static_cast<float>(value);
-                            break;
-                        case kTap5Pan:
-                            mTapPan[4] = static_cast<float>(value);
-                            break;
-                        case kTap6Pan:
-                            mTapPan[5] = static_cast<float>(value);
-                            break;
-                        case kTap7Pan:
-                            mTapPan[6] = static_cast<float>(value);
-                            break;
-                        case kTap8Pan:
-                            mTapPan[7] = static_cast<float>(value);
-                            break;
-                        case kTap9Pan:
-                            mTapPan[8] = static_cast<float>(value);
-                            break;
-                        case kTap10Pan:
-                            mTapPan[9] = static_cast<float>(value);
-                            break;
-                        case kTap11Pan:
-                            mTapPan[10] = static_cast<float>(value);
-                            break;
-                        case kTap12Pan:
-                            mTapPan[11] = static_cast<float>(value);
-                            break;
-                        case kTap13Pan:
-                            mTapPan[12] = static_cast<float>(value);
-                            break;
-                        case kTap14Pan:
-                            mTapPan[13] = static_cast<float>(value);
-                            break;
-                        case kTap15Pan:
-                            mTapPan[14] = static_cast<float>(value);
-                            break;
-                        case kTap16Pan:
-                            mTapPan[15] = static_cast<float>(value);
+                            mGrid = static_cast<int>(value * (kNumGridValues - 1) + 0.5);
                             break;
                         // Routing and Wet/Dry controls
                         case kRouteMode:
@@ -1398,101 +1267,41 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kCombBypass:
                             mCombBypass = value > 0.5; // Toggle: >0.5 = bypassed
                             break;
-                        // Comb control parameters
                         case kCombSize:
-                        {
-                            // Convert normalized to seconds with logarithmic scaling (0.0001f to 2.0f)
-                            float normalizedValue = static_cast<float>(value);
-                            mCombSize = 0.0001f * std::pow(20000.0f, normalizedValue); // Log scale for musical control
+                            mCombSize = ParameterConverter::convertCombSize(value);
                             mCombProcessor.setSize(mCombSize);
                             break;
-                        }
                         case kCombFeedback:
-                        {
-                            // Convert normalized value to feedback amount with cubic curve (0.0f to 0.99f)
-                            float normalizedValue = static_cast<float>(value);
-                            mCombFeedback = normalizedValue * normalizedValue * normalizedValue * 0.99f; // Cubic curve for smooth control
+                            mCombFeedback = ParameterConverter::convertCombFeedback(value);
                             mCombProcessor.setFeedback(mCombFeedback);
                             break;
-                        }
                         case kCombPitchCV:
-                        {
-                            // Convert normalized to CV (-5.0f to +5.0f volts)
-                            mCombPitchCV = -5.0f + (static_cast<float>(value) * 10.0f);
+                            mCombPitchCV = ParameterConverter::convertCombPitchCV(value);
                             mCombProcessor.setPitchCV(mCombPitchCV);
                             break;
-                        }
                         case kCombTaps:
-                        {
-                            // Convert normalized to integer taps (1 to 64)
-                            mCombTaps = static_cast<int>(value * 63.0 + 1.0 + 0.5); // Round to nearest
+                            mCombTaps = ParameterConverter::convertCombTaps(value);
                             mCombProcessor.setNumTaps(mCombTaps);
                             break;
-                        }
                         case kCombSync:
-                            mCombSync = value > 0.5; // Toggle: >0.5 = synced
+                            mCombSync = value > 0.5;
                             mCombProcessor.setSyncMode(mCombSync);
                             break;
                         case kCombDivision:
-                        {
-                            mCombDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5); // Round to nearest
+                            mCombDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5);
                             mCombProcessor.setClockDivision(mCombDivision);
                             break;
-                        }
                         case kCombPattern:
-                        {
-                            mCombPattern = static_cast<int>(value * (kNumCombPatterns - 1) + 0.5); // Round to nearest
+                            mCombPattern = static_cast<int>(value * (kNumCombPatterns - 1) + 0.5);
                             mCombProcessor.setPattern(mCombPattern);
                             break;
-                        }
                         case kCombSlope:
-                        {
-                            mCombSlope = static_cast<int>(value * (kNumCombSlopes - 1) + 0.5); // Round to nearest
+                            mCombSlope = static_cast<int>(value * (kNumCombSlopes - 1) + 0.5);
                             mCombProcessor.setSlope(mCombSlope);
                             break;
-                        }
                         default:
-                        {
-                            // Handle per-tap filter parameters
-                            Vst::ParamID paramId = paramQueue->getParameterId();
-                            if (paramId >= kTap1FilterCutoff && paramId <= kTap16FilterType) {
-                                int paramOffset = paramId - kTap1FilterCutoff;
-                                int tapIndex = paramOffset / 3; // Which tap (0-15)
-                                int paramType = paramOffset % 3; // 0=cutoff, 1=resonance, 2=type
-
-                                switch (paramType) {
-                                    case 0: // Filter Cutoff
-                                        // Logarithmic frequency scaling: 20Hz to 20kHz
-                                        mTapFilterCutoff[tapIndex] = static_cast<float>(20.0 * std::pow(1000.0, value));
-                                        break;
-                                    case 1: // Filter Resonance
-                                        // Enhanced resonance scaling: upper 10% of parameter range occupies upper 30% of control throw
-                                        if (value >= 0.5) {
-                                            // Positive resonance: 0.0 to +1.0 with enhanced high-resonance control
-                                            float positiveValue = (value - 0.5f) * 2.0f; // 0.0 to 1.0
-
-                                            // Non-linear scaling: upper 10% of parameter (0.9-1.0) maps to upper 30% of control (0.7-1.0)
-                                            if (positiveValue >= 0.9f) {
-                                                // Upper 10% of parameter range (high resonance territory)
-                                                float highResValue = (positiveValue - 0.9f) / 0.1f; // 0.0 to 1.0 in high-res zone
-                                                mTapFilterResonance[tapIndex] = 0.7f + highResValue * 0.3f; // 0.7 to 1.0
-                                            } else {
-                                                // Lower 90% of parameter range maps to lower 70% of control
-                                                float lowResValue = positiveValue / 0.9f; // 0.0 to 1.0 in low-res zone
-                                                mTapFilterResonance[tapIndex] = lowResValue * 0.7f; // 0.0 to 0.7
-                                            }
-                                        } else {
-                                            // Negative resonance: -1.0 to 0.0 with linear mapping
-                                            mTapFilterResonance[tapIndex] = static_cast<float>((value - 0.5f) * 2.0f); // -1.0 to 0.0
-                                        }
-                                        break;
-                                    case 2: // Filter Type
-                                        mTapFilterType[tapIndex] = static_cast<int>(value * (kNumFilterTypes - 1) + 0.5); // Round to nearest
-                                        break;
-                                }
-                            }
+                            TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);
                             break;
-                        }
                     }
                 }
             }

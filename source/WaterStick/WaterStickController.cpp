@@ -28,7 +28,6 @@ WaterStickController::~WaterStickController()
 //------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
 {
-    // Start fresh logging session for debugging
     WS_LOG_SESSION_START();
 
     tresult result = EditControllerEx1::initialize(context);
@@ -263,48 +262,7 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     // This ensures proper display even if setComponentState is never called
     setDefaultParameters();
 
-    WS_LOG_INFO("Controller::initialize() completed successfully");
 
-    // Log all problematic parameter values after initialization
-    WS_LOG_INFO("=== POST-INITIALIZE PARAMETER VALUES ===");
-
-    // Log global parameters
-    WS_LOG_PARAM_CONTEXT("INIT", kInputGain, "InputGain", getParamNormalized(kInputGain));
-    WS_LOG_PARAM_CONTEXT("INIT", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
-
-    // Log all 16 tap filter types (should be 0.0 for bypass)
-    for (int i = 0; i < 16; i++) {
-        int paramId = kTap1FilterType + (i * 3);
-        std::ostringstream paramName;
-        paramName << "Tap" << (i+1) << "FilterType";
-        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
-    }
-
-    // Log all 16 tap levels (should be 0.8)
-    for (int i = 0; i < 16; i++) {
-        int paramId = kTap1Level + (i * 3);
-        std::ostringstream paramName;
-        paramName << "Tap" << (i+1) << "Level";
-        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
-    }
-
-    // Log all 16 tap pans (should be 0.5)
-    for (int i = 0; i < 16; i++) {
-        int paramId = kTap1Pan + (i * 3);
-        std::ostringstream paramName;
-        paramName << "Tap" << (i+1) << "Pan";
-        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
-    }
-
-    // Log filter cutoffs (should be 0.566323 for 1kHz)
-    for (int i = 0; i < 16; i++) {
-        int paramId = kTap1FilterCutoff + (i * 3);
-        std::ostringstream paramName;
-        paramName << "Tap" << (i+1) << "FilterCutoff";
-        WS_LOG_PARAM_CONTEXT("INIT", paramId, paramName.str(), getParamNormalized(paramId));
-    }
-
-    WS_LOG_INFO("=== END POST-INITIALIZE PARAMETER VALUES ===");
 
     return result;
 }
@@ -469,7 +427,6 @@ bool WaterStickController::isSemanticallySuspiciousState()
     }
 
     if (allLevelsZero) {
-        WS_LOG_INFO("Semantic validation: All tap levels are 0.0 - suspicious");
         return true;
     }
 
@@ -477,7 +434,6 @@ bool WaterStickController::isSemanticallySuspiciousState()
     float inputGain = getParamNormalized(kInputGain);
     float outputGain = getParamNormalized(kOutputGain);
     if (std::abs(inputGain - 1.0f) < 0.001f && std::abs(outputGain - 1.0f) < 0.001f) {
-        WS_LOG_INFO("Semantic validation: Both gains are 1.0 - suspicious");
         return true;
     }
 
@@ -492,7 +448,6 @@ bool WaterStickController::isSemanticallySuspiciousState()
     }
 
     if (!anyTapEnabled) {
-        WS_LOG_INFO("Semantic validation: No taps enabled - likely fresh instance");
         return true;
     }
 
@@ -507,7 +462,6 @@ bool WaterStickController::isSemanticallySuspiciousState()
     }
 
     if (allFiltersNonBypass) {
-        WS_LOG_INFO("Semantic validation: All filters non-bypass - suspicious");
         return true;
     }
 
@@ -563,11 +517,6 @@ bool WaterStickController::hasValidStateSignature(IBStream* state, bool& hasSign
     // Reset position
     state->seek(originalPos, IBStream::kIBSeekSet, nullptr);
 
-    if (isValid) {
-        WS_LOG_INFO("Valid state signature detected: 0x" + std::to_string(signature));
-    } else {
-        WS_LOG_INFO("Invalid state signature detected: 0x" + std::to_string(signature) + " (expected 0x" + std::to_string(kStateMagicNumber) + ")");
-    }
 
     return isValid;
 }
@@ -575,10 +524,8 @@ bool WaterStickController::hasValidStateSignature(IBStream* state, bool& hasSign
 //------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
 {
-    WS_LOG_INFO("Controller::setComponentState() called with enhanced freshness detection");
 
     if (!state) {
-        WS_LOG_INFO("No state provided - using defaults");
         setDefaultParameters();
         return kResultOk;
     }
@@ -588,13 +535,8 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     bool validSignature = hasValidStateSignature(state, hasSignature);
 
     if (hasSignature && !validSignature) {
-        WS_LOG_INFO("Invalid state signature detected - treating as corrupted cache, using defaults");
         setDefaultParameters();
         return kResultOk;
-    }
-
-    if (!hasSignature) {
-        WS_LOG_INFO("No state signature found - checking if legacy or fresh state");
     }
 
     // Try to read state version first
@@ -602,10 +544,8 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     tresult readResult;
 
     if (tryReadStateVersion(state, stateVersion)) {
-        WS_LOG_INFO("State version detected: " + std::to_string(stateVersion));
         readResult = readVersionedState(state, stateVersion);
     } else {
-        WS_LOG_INFO("No version header found - treating as legacy state");
         // Reset stream position for legacy reading
         state->seek(0, IBStream::kIBSeekSet, nullptr);
         readResult = readLegacyState(state);
@@ -614,11 +554,8 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
     // After loading state, perform semantic validation
     if (readResult == kResultOk) {
         if (isSemanticallySuspiciousState()) {
-            WS_LOG_INFO("Semantic validation failed - state appears corrupted/cached, using defaults");
             setDefaultParameters();
             return kResultOk;
-        } else {
-            WS_LOG_INFO("Semantic validation passed - state appears to be valid user data");
         }
     }
 
@@ -646,7 +583,6 @@ bool WaterStickController::tryReadStateVersion(IBStream* state, Steinberg::int32
 //------------------------------------------------------------------------
 tresult WaterStickController::readLegacyState(IBStream* state)
 {
-    WS_LOG_INFO("Reading legacy (unversioned) state with enhanced validation");
 
     IBStreamer streamer(state, kLittleEndian);
     int invalidParameterCount = 0;
@@ -661,24 +597,20 @@ tresult WaterStickController::readLegacyState(IBStream* state)
     if (streamer.readFloat(inputGain) && isValidParameterValue(kInputGain, inputGain)) {
         setParamNormalized(kInputGain, inputGain);
         validParameterCount++;
-        WS_LOG_INFO("Loaded valid InputGain: " + std::to_string(inputGain));
     } else {
         float defaultValue = getDefaultParameterValue(kInputGain);
         setParamNormalized(kInputGain, defaultValue);
         invalidParameterCount++;
-        WS_LOG_INFO("Invalid InputGain, using default: " + std::to_string(defaultValue));
     }
 
     // Output Gain
     if (streamer.readFloat(outputGain) && isValidParameterValue(kOutputGain, outputGain)) {
         setParamNormalized(kOutputGain, outputGain);
         validParameterCount++;
-        WS_LOG_INFO("Loaded valid OutputGain: " + std::to_string(outputGain));
     } else {
         float defaultValue = getDefaultParameterValue(kOutputGain);
         setParamNormalized(kOutputGain, defaultValue);
         invalidParameterCount++;
-        WS_LOG_INFO("Invalid OutputGain, using default: " + std::to_string(defaultValue));
     }
 
     // Delay Time
@@ -759,8 +691,7 @@ tresult WaterStickController::readLegacyState(IBStream* state)
             float defaultValue = getDefaultParameterValue(kTap1Level + (i * 3));
             setParamNormalized(kTap1Level + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Level, using default: " + std::to_string(defaultValue));
-        }
+            }
 
         // Tap Pan
         if (streamer.readFloat(tapPan) && isValidParameterValue(kTap1Pan + (i * 3), tapPan)) {
@@ -770,8 +701,7 @@ tresult WaterStickController::readLegacyState(IBStream* state)
             float defaultValue = getDefaultParameterValue(kTap1Pan + (i * 3));
             setParamNormalized(kTap1Pan + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Pan, using default: " + std::to_string(defaultValue));
-        }
+            }
 
         // Tap Filter Cutoff
         if (streamer.readFloat(tapFilterCutoff) && tapFilterCutoff >= 20.0f && tapFilterCutoff <= 20000.0f) {
@@ -784,14 +714,12 @@ tresult WaterStickController::readLegacyState(IBStream* state)
                 float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
                 setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
                 invalidParameterCount++;
-                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff, using default");
-            }
+                }
         } else {
             float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
             setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff frequency, using default");
-        }
+            }
 
         // Tap Filter Resonance
         if (streamer.readFloat(tapFilterResonance) && tapFilterResonance >= -1.0f && tapFilterResonance <= 1.0f) {
@@ -827,14 +755,12 @@ tresult WaterStickController::readLegacyState(IBStream* state)
                 float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
                 setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
                 invalidParameterCount++;
-                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType, using default: " + std::to_string(defaultValue));
-            }
+                }
         } else {
             float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
             setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType value, using default: " + std::to_string(defaultValue));
-        }
+            }
     }
 
     // Load routing and wet/dry parameters with individual validation
@@ -888,32 +814,10 @@ tresult WaterStickController::readLegacyState(IBStream* state)
     }
 
     // Log validation results
-    WS_LOG_INFO("Parameter validation complete: " + std::to_string(validParameterCount) + " valid, " + std::to_string(invalidParameterCount) + " invalid (using defaults)");
 
     // Log key parameter values after enhanced validation
-    WS_LOG_INFO("=== POST-VALIDATION PARAMETER VALUES ===");
 
-    // Log input/output gains
-    WS_LOG_PARAM_CONTEXT("POST-VAL", kInputGain, "InputGain", getParamNormalized(kInputGain));
-    WS_LOG_PARAM_CONTEXT("POST-VAL", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
 
-    // Log first few tap levels and filter types as examples
-    for (int i = 0; i < 4; i++) {
-        int levelId = kTap1Level + (i * 3);
-        int typeId = kTap1FilterType + (i * 3);
-        int panId = kTap1Pan + (i * 3);
-
-        std::ostringstream levelName, typeName, panName;
-        levelName << "Tap" << (i+1) << "Level";
-        typeName << "Tap" << (i+1) << "FilterType";
-        panName << "Tap" << (i+1) << "Pan";
-
-        WS_LOG_PARAM_CONTEXT("POST-VAL", levelId, levelName.str(), getParamNormalized(levelId));
-        WS_LOG_PARAM_CONTEXT("POST-VAL", typeId, typeName.str(), getParamNormalized(typeId));
-        WS_LOG_PARAM_CONTEXT("POST-VAL", panId, panName.str(), getParamNormalized(panId));
-    }
-
-    WS_LOG_INFO("=== END POST-VALIDATION PARAMETER VALUES ===");
 
     return kResultOk;
 }
@@ -921,7 +825,6 @@ tresult WaterStickController::readLegacyState(IBStream* state)
 //------------------------------------------------------------------------
 tresult WaterStickController::readCurrentVersionState(IBStream* state)
 {
-    WS_LOG_INFO("Reading current version (v1) state with enhanced validation");
 
     IBStreamer streamer(state, kLittleEndian);
     int invalidParameterCount = 0;
@@ -931,13 +834,10 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
     Steinberg::int32 signature;
     if (streamer.readInt32(signature)) {
         if (signature == kStateMagicNumber) {
-            WS_LOG_INFO("Valid signature found in versioned state: 0x" + std::to_string(signature));
         } else {
-            WS_LOG_INFO("Invalid signature in versioned state: 0x" + std::to_string(signature) + " (expected 0x" + std::to_string(kStateMagicNumber) + ")");
             // Continue reading but this is suspicious
         }
     } else {
-        WS_LOG_INFO("No signature found in versioned state - old format");
         // Reset stream position and continue without signature
         state->seek(-4, IBStream::kIBSeekCur, nullptr);
     }
@@ -951,24 +851,20 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
     if (streamer.readFloat(inputGain) && isValidParameterValue(kInputGain, inputGain)) {
         setParamNormalized(kInputGain, inputGain);
         validParameterCount++;
-        WS_LOG_INFO("Loaded valid InputGain: " + std::to_string(inputGain));
     } else {
         float defaultValue = getDefaultParameterValue(kInputGain);
         setParamNormalized(kInputGain, defaultValue);
         invalidParameterCount++;
-        WS_LOG_INFO("Invalid InputGain, using default: " + std::to_string(defaultValue));
     }
 
     // Output Gain
     if (streamer.readFloat(outputGain) && isValidParameterValue(kOutputGain, outputGain)) {
         setParamNormalized(kOutputGain, outputGain);
         validParameterCount++;
-        WS_LOG_INFO("Loaded valid OutputGain: " + std::to_string(outputGain));
     } else {
         float defaultValue = getDefaultParameterValue(kOutputGain);
         setParamNormalized(kOutputGain, defaultValue);
         invalidParameterCount++;
-        WS_LOG_INFO("Invalid OutputGain, using default: " + std::to_string(defaultValue));
     }
 
     // Delay Time
@@ -1049,8 +945,7 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
             float defaultValue = getDefaultParameterValue(kTap1Level + (i * 3));
             setParamNormalized(kTap1Level + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Level, using default: " + std::to_string(defaultValue));
-        }
+            }
 
         // Tap Pan
         if (streamer.readFloat(tapPan) && isValidParameterValue(kTap1Pan + (i * 3), tapPan)) {
@@ -1060,8 +955,7 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
             float defaultValue = getDefaultParameterValue(kTap1Pan + (i * 3));
             setParamNormalized(kTap1Pan + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Pan, using default: " + std::to_string(defaultValue));
-        }
+            }
 
         // Tap Filter Cutoff
         if (streamer.readFloat(tapFilterCutoff) && tapFilterCutoff >= 20.0f && tapFilterCutoff <= 20000.0f) {
@@ -1074,14 +968,12 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
                 float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
                 setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
                 invalidParameterCount++;
-                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff, using default");
-            }
+                }
         } else {
             float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
             setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff frequency, using default");
-        }
+            }
 
         // Tap Filter Resonance
         if (streamer.readFloat(tapFilterResonance) && tapFilterResonance >= -1.0f && tapFilterResonance <= 1.0f) {
@@ -1117,14 +1009,12 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
                 float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
                 setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
                 invalidParameterCount++;
-                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType, using default: " + std::to_string(defaultValue));
-            }
+                }
         } else {
             float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
             setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
             invalidParameterCount++;
-            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType value, using default: " + std::to_string(defaultValue));
-        }
+            }
     }
 
     // Load routing and wet/dry parameters with individual validation
@@ -1177,33 +1067,6 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
         invalidParameterCount++;
     }
 
-    // Log validation results
-    WS_LOG_INFO("Version 1 parameter validation complete: " + std::to_string(validParameterCount) + " valid, " + std::to_string(invalidParameterCount) + " invalid (using defaults)");
-
-    // Log key parameter values after enhanced validation
-    WS_LOG_INFO("=== POST-V1-VALIDATION PARAMETER VALUES ===");
-
-    // Log input/output gains
-    WS_LOG_PARAM_CONTEXT("POST-V1-VAL", kInputGain, "InputGain", getParamNormalized(kInputGain));
-    WS_LOG_PARAM_CONTEXT("POST-V1-VAL", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
-
-    // Log first few tap levels and filter types as examples
-    for (int i = 0; i < 4; i++) {
-        int levelId = kTap1Level + (i * 3);
-        int typeId = kTap1FilterType + (i * 3);
-        int panId = kTap1Pan + (i * 3);
-
-        std::ostringstream levelName, typeName, panName;
-        levelName << "Tap" << (i+1) << "Level";
-        typeName << "Tap" << (i+1) << "FilterType";
-        panName << "Tap" << (i+1) << "Pan";
-
-        WS_LOG_PARAM_CONTEXT("POST-V1-VAL", levelId, levelName.str(), getParamNormalized(levelId));
-        WS_LOG_PARAM_CONTEXT("POST-V1-VAL", typeId, typeName.str(), getParamNormalized(typeId));
-        WS_LOG_PARAM_CONTEXT("POST-V1-VAL", panId, panName.str(), getParamNormalized(panId));
-    }
-
-    WS_LOG_INFO("=== END POST-V1-VALIDATION PARAMETER VALUES ===");
 
     return kResultOk;
 }
@@ -1211,7 +1074,6 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
 //------------------------------------------------------------------------
 tresult WaterStickController::readVersionedState(IBStream* state, Steinberg::int32 version)
 {
-    WS_LOG_INFO("Reading versioned state (version " + std::to_string(version) + ")");
 
     switch (version) {
         case kStateVersionCurrent:
@@ -1219,7 +1081,6 @@ tresult WaterStickController::readVersionedState(IBStream* state, Steinberg::int
             return readCurrentVersionState(state);
 
         default:
-            WS_LOG_INFO("Unknown state version: " + std::to_string(version) + " - falling back to defaults");
             setDefaultParameters();
             return kResultOk;
     }
@@ -1232,7 +1093,6 @@ Vst::ParamValue PLUGIN_API WaterStickController::getParamNormalized(Vst::ParamID
 {
     Vst::ParamValue value = EditControllerEx1::getParamNormalized(id);
 
-    // Log critical parameter queries for debugging
     bool shouldLog = false;
     std::string paramName;
 
@@ -1262,9 +1122,6 @@ Vst::ParamValue PLUGIN_API WaterStickController::getParamNormalized(Vst::ParamID
         shouldLog = true;
     }
 
-    if (shouldLog) {
-        WS_LOG_PARAM_CONTEXT("GET", id, paramName, value);
-    }
 
     return value;
 }
@@ -1469,11 +1326,9 @@ tresult PLUGIN_API WaterStickController::getParamValueByString(Vst::ParamID id, 
 //------------------------------------------------------------------------
 IPlugView* PLUGIN_API WaterStickController::createView(FIDString name)
 {
-    WS_LOG_INFO("Controller::createView() called");
 
     if (FIDStringsEqual(name, Vst::ViewType::kEditor))
     {
-        WS_LOG_INFO("=== PRE-GUI PARAMETER VALUES ===");
 
         // Log all problematic parameter values before GUI creation
         for (int i = 0; i < 16; i++) {
@@ -1488,20 +1343,11 @@ IPlugView* PLUGIN_API WaterStickController::createView(FIDString name)
             panName << "Tap" << (i+1) << "Pan";
             cutoffName << "Tap" << (i+1) << "FilterCutoff";
 
-            WS_LOG_PARAM_CONTEXT("PRE-GUI", filterTypeId, filterTypeName.str(), getParamNormalized(filterTypeId));
-            WS_LOG_PARAM_CONTEXT("PRE-GUI", levelId, levelName.str(), getParamNormalized(levelId));
-            WS_LOG_PARAM_CONTEXT("PRE-GUI", panId, panName.str(), getParamNormalized(panId));
-            WS_LOG_PARAM_CONTEXT("PRE-GUI", cutoffId, cutoffName.str(), getParamNormalized(cutoffId));
         }
 
-        // Log global parameters
-        WS_LOG_PARAM_CONTEXT("PRE-GUI", kInputGain, "InputGain", getParamNormalized(kInputGain));
-        WS_LOG_PARAM_CONTEXT("PRE-GUI", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
 
-        WS_LOG_INFO("=== END PRE-GUI PARAMETER VALUES ===");
 
         auto* editor = new WaterStickEditor(this);
-        WS_LOG_INFO("GUI editor created successfully");
         return editor;
     }
     return nullptr;
