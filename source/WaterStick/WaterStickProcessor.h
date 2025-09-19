@@ -129,6 +129,51 @@ private:
     float nextOut();
 };
 
+// Routing modes for signal path control
+enum RouteMode {
+    DelayToComb = 0,    // Delay section feeds into Comb section
+    CombToDelay,        // Comb section feeds into Delay section
+    DelayPlusComb       // Parallel processing: both sections process input independently
+};
+
+class RoutingManager {
+public:
+    RoutingManager();
+    ~RoutingManager();
+
+    void initialize(double sampleRate);
+    void setRouteMode(RouteMode mode);
+    RouteMode getRouteMode() const { return mRouteMode; }
+
+    // Signal path validation
+    bool isValidRouting() const;
+
+    // State management for routing transitions
+    void processRouteTransition();
+    bool isTransitionInProgress() const { return mTransitionInProgress; }
+
+    // Get text representation for display
+    const char* getRouteModeText() const;
+
+    void reset();
+
+private:
+    RouteMode mRouteMode;
+    RouteMode mPendingRouteMode;
+    bool mTransitionInProgress;
+    double mSampleRate;
+
+    // Transition state management
+    int mTransitionSamples;
+    int mTransitionCounter;
+
+    // Text lookup for route modes
+    static const char* sRouteModeTexts[3];
+
+    void startTransition(RouteMode newMode);
+    void completeTransition();
+};
+
 class CombProcessor {
 public:
     CombProcessor();
@@ -246,6 +291,9 @@ public:
 private:
     // Helper methods
     void checkTapStateChangesAndClearBuffers();
+    void checkBypassStateChanges();
+    void processDelaySection(float inputL, float inputR, float& outputL, float& outputR);
+    void processCombSection(float inputL, float inputR, float& outputL, float& outputR);
 
     // Parameters
     float mInputGain;
@@ -256,6 +304,27 @@ private:
     bool mTempoSyncMode;
     int mSyncDivision;
     int mGrid;
+
+    // Routing and Wet/Dry controls
+    RouteMode mRouteMode;
+    float mGlobalDryWet;      // Global Dry/Wet mix (affects final output)
+    float mDelayDryWet;       // Delay section Dry/Wet mix (delay section only)
+    bool mDelayBypass;        // Delay section bypass toggle
+    bool mCombBypass;         // Comb section bypass toggle
+
+    // Bypass fade system state
+    bool mDelayBypassPrevious;     // Track previous state for fade triggering
+    bool mCombBypassPrevious;      // Track previous state for fade triggering
+    bool mDelayFadingOut;          // True when delay section is fading out
+    bool mDelayFadingIn;           // True when delay section is fading in
+    bool mCombFadingOut;           // True when comb section is fading out
+    bool mCombFadingIn;            // True when comb section is fading in
+    int mDelayFadeRemaining;       // Samples remaining in delay fade
+    int mDelayFadeTotalLength;     // Total delay fade length for calculation
+    int mCombFadeRemaining;        // Samples remaining in comb fade
+    int mCombFadeTotalLength;      // Total comb fade length for calculation
+    float mDelayFadeGain;          // Current delay fade gain (0.0 to 1.0)
+    float mCombFadeGain;           // Current comb fade gain (0.0 to 1.0)
 
     // Per-tap parameters
     bool mTapEnabled[16];
@@ -303,6 +372,9 @@ private:
 
     // Comb processor
     CombProcessor mCombProcessor;
+
+    // Routing manager
+    RoutingManager mRoutingManager;
 
     void updateParameters();
 };

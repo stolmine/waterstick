@@ -112,6 +112,12 @@ enum {
     kTap16FilterCutoff,  // Tap 16 filter cutoff frequency
     kTap16FilterResonance, // Tap 16 filter resonance (-1.0 to +1.0)
     kTap16FilterType,    // Tap 16 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    // Routing and Wet/Dry controls
+    kRouteMode,          // Routing mode: 0=Delay>Comb, 1=Comb>Delay, 2=Delay+Comb
+    kGlobalDryWet,       // Global Dry/Wet mix (affects final output)
+    kDelayDryWet,        // Delay section Dry/Wet mix (delay section only)
+    kDelayBypass,        // Delay section bypass toggle
+    kCombBypass,         // Comb section bypass toggle
     kNumParams
 };
 
