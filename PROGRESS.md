@@ -470,9 +470,12 @@ The foundation provides:
    - Ensures accurate delay time representation
 
 2. **Bypass Controls Positioning**
-   - Fixed placement and visibility of D-BYP and C-BYP toggles
-   - Corrected layout to match design specifications
-   - Improved user interaction and control clarity
+   - Relocated D-BYP and C-BYP bypass controls to top left corner
+   - Precise positioning: 30px from left edge, 20px from top edge
+   - Added 10px horizontal spacing between D-BYP and C-BYP controls
+   - Simplified `createBypassControls()` positioning logic
+   - Professional layout improvement for enhanced user accessibility
+   - Maintained VST3 validation compliance (47/47 tests passed)
 
 3. **Build Error Resolution**
    - Updated deprecated graphics path drawing method
