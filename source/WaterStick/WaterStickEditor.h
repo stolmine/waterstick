@@ -116,6 +116,18 @@ private:
     bool isTimeDivisionKnob = false;
 };
 
+// Custom bypass toggle button class for section bypass controls
+class BypassToggle : public VSTGUI::CControl
+{
+public:
+    BypassToggle(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    CLASS_METHODS(BypassToggle, VSTGUI::CControl)
+};
+
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
 {
 public:
@@ -152,14 +164,18 @@ public:
     void forceParameterSynchronization();
 
 private:
-    static constexpr int kEditorWidth = 700;   // 400 * 1.75
-    static constexpr int kEditorHeight = 525;  // 300 * 1.75
+    static constexpr int kEditorWidth = 1000;  // Expanded for comb controls
+    static constexpr int kEditorHeight = 600;  // Increased to prevent comb control clipping
 
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];
 
     // Mode button references (8 total, one under each column)
     ModeButton* modeButtons[8];
+
+    // Bypass toggle controls
+    BypassToggle* delayBypassToggle;
+    BypassToggle* combBypassToggle;
 
     // Global control knobs
     KnobControl* syncModeKnob;
@@ -170,6 +186,15 @@ private:
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
 
+    // Comb control knobs
+    KnobControl* combSizeKnob;
+    KnobControl* combFeedbackKnob;
+    KnobControl* combPitchKnob;
+    KnobControl* combTapsKnob;
+    KnobControl* combSyncKnob;
+    KnobControl* combDivisionKnob;
+    KnobControl* routeModeKnob;
+
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
     VSTGUI::CTextLabel* timeDivisionLabel;
@@ -178,6 +203,15 @@ private:
     VSTGUI::CTextLabel* outputGainLabel;
     VSTGUI::CTextLabel* dryWetLabel;
     VSTGUI::CTextLabel* gridLabel;
+
+    // Comb knob labels
+    VSTGUI::CTextLabel* combSizeLabel;
+    VSTGUI::CTextLabel* combFeedbackLabel;
+    VSTGUI::CTextLabel* combPitchLabel;
+    VSTGUI::CTextLabel* combTapsLabel;
+    VSTGUI::CTextLabel* combSyncLabel;
+    VSTGUI::CTextLabel* combDivisionLabel;
+    VSTGUI::CTextLabel* routeModeLabel;
 
     // Value readout labels
     VSTGUI::CTextLabel* syncModeValue;
@@ -188,8 +222,21 @@ private:
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
 
+    // Comb value readout labels
+    VSTGUI::CTextLabel* combSizeValue;
+    VSTGUI::CTextLabel* combFeedbackValue;
+    VSTGUI::CTextLabel* combPitchValue;
+    VSTGUI::CTextLabel* combTapsValue;
+    VSTGUI::CTextLabel* combSyncValue;
+    VSTGUI::CTextLabel* combDivisionValue;
+    VSTGUI::CTextLabel* routeModeValue;
+
     // Mode button labels
     VSTGUI::CTextLabel* modeButtonLabels[8];
+
+    // Bypass toggle labels
+    VSTGUI::CTextLabel* delayBypassLabel;
+    VSTGUI::CTextLabel* combBypassLabel;
 
     // Minimap components
     VSTGUI::CViewContainer* minimapContainer;
@@ -201,9 +248,11 @@ private:
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);
     void createModeButtons(VSTGUI::CViewContainer* container);
+    void createBypassControls(VSTGUI::CViewContainer* container);
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
+    void createCombControls(VSTGUI::CViewContainer* container);
 };
 
 } // namespace WaterStick

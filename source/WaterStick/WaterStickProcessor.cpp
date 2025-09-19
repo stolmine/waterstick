@@ -728,6 +728,13 @@ WaterStickProcessor::WaterStickProcessor()
 , mDelayDryWet(1.0f)   // 100% delay wet default (delay section always 100% wet)
 , mDelayBypass(false)  // Delay section enabled by default
 , mCombBypass(false)   // Comb section enabled by default
+// Comb control parameters
+, mCombSize(0.1f)       // Default 100ms comb size
+, mCombFeedback(0.0f)   // Default no feedback
+, mCombPitchCV(0.0f)    // Default 0V pitch CV
+, mCombTaps(16)         // Default 16 active taps
+, mCombSync(false)      // Default free mode
+, mCombDivision(kSync_1_4)  // Default 1/4 note
 , mDelayBypassPrevious(false)
 , mCombBypassPrevious(false)
 , mDelayFadingOut(false)
@@ -1389,6 +1396,47 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kCombBypass:
                             mCombBypass = value > 0.5; // Toggle: >0.5 = bypassed
                             break;
+                        // Comb control parameters
+                        case kCombSize:
+                        {
+                            // Convert normalized to seconds with logarithmic scaling (0.0001f to 2.0f)
+                            float normalizedValue = static_cast<float>(value);
+                            mCombSize = 0.0001f * std::pow(20000.0f, normalizedValue); // Log scale for musical control
+                            mCombProcessor.setSize(mCombSize);
+                            break;
+                        }
+                        case kCombFeedback:
+                        {
+                            // Convert normalized value to feedback amount with cubic curve (0.0f to 0.99f)
+                            float normalizedValue = static_cast<float>(value);
+                            mCombFeedback = normalizedValue * normalizedValue * normalizedValue * 0.99f; // Cubic curve for smooth control
+                            mCombProcessor.setFeedback(mCombFeedback);
+                            break;
+                        }
+                        case kCombPitchCV:
+                        {
+                            // Convert normalized to CV (-5.0f to +5.0f volts)
+                            mCombPitchCV = -5.0f + (static_cast<float>(value) * 10.0f);
+                            mCombProcessor.setPitchCV(mCombPitchCV);
+                            break;
+                        }
+                        case kCombTaps:
+                        {
+                            // Convert normalized to integer taps (1 to 64)
+                            mCombTaps = static_cast<int>(value * 63.0 + 1.0 + 0.5); // Round to nearest
+                            mCombProcessor.setNumTaps(mCombTaps);
+                            break;
+                        }
+                        case kCombSync:
+                            mCombSync = value > 0.5; // Toggle: >0.5 = synced
+                            mCombProcessor.setSyncMode(mCombSync);
+                            break;
+                        case kCombDivision:
+                        {
+                            mCombDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5); // Round to nearest
+                            mCombProcessor.setClockDivision(mCombDivision);
+                            break;
+                        }
                         default:
                         {
                             // Handle per-tap filter parameters
@@ -1582,6 +1630,14 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeBool(mDelayBypass);
     streamer.writeBool(mCombBypass);
 
+    // Save comb control parameters
+    streamer.writeFloat(mCombSize);
+    streamer.writeFloat(mCombFeedback);
+    streamer.writeFloat(mCombPitchCV);
+    streamer.writeInt32(mCombTaps);
+    streamer.writeBool(mCombSync);
+    streamer.writeInt32(mCombDivision);
+
     // Save all tap parameters
     for (int i = 0; i < 16; i++) {
         streamer.writeBool(mTapEnabled[i]);
@@ -1644,6 +1700,22 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
     streamer.readFloat(mDelayDryWet);
     streamer.readBool(mDelayBypass);
     streamer.readBool(mCombBypass);
+
+    // Load comb control parameters (with defaults for older state versions)
+    if (!streamer.readFloat(mCombSize)) mCombSize = 0.1f;
+    if (!streamer.readFloat(mCombFeedback)) mCombFeedback = 0.0f;
+    if (!streamer.readFloat(mCombPitchCV)) mCombPitchCV = 0.0f;
+    if (!streamer.readInt32(mCombTaps)) mCombTaps = 16;
+    if (!streamer.readBool(mCombSync)) mCombSync = false;
+    if (!streamer.readInt32(mCombDivision)) mCombDivision = kSync_1_4;
+
+    // Apply loaded comb parameters to processor
+    mCombProcessor.setSize(mCombSize);
+    mCombProcessor.setFeedback(mCombFeedback);
+    mCombProcessor.setPitchCV(mCombPitchCV);
+    mCombProcessor.setNumTaps(mCombTaps);
+    mCombProcessor.setSyncMode(mCombSync);
+    mCombProcessor.setClockDivision(mCombDivision);
 
     // Load all tap parameters
     for (int i = 0; i < 16; i++) {
