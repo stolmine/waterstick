@@ -2,6 +2,7 @@
 #include "WaterStickCIDs.h"
 #include "pluginterfaces/vst/ivstparameterchanges.h"
 #include "base/source/fstreamer.h"
+#include "pluginterfaces/base/ibstream.h"
 #include <cmath>
 
 using namespace Steinberg;
@@ -1558,6 +1559,13 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
 {
     IBStreamer streamer(state, kLittleEndian);
 
+    // Write current state version as first 4 bytes
+    streamer.writeInt32(kStateVersionCurrent);
+
+    // Write magic number signature for freshness detection
+    streamer.writeInt32(kStateMagicNumber);
+
+    // Write all parameters in version 1 format
     streamer.writeFloat(mInputGain);
     streamer.writeFloat(mOutputGain);
     streamer.writeFloat(mDelayTime);
@@ -1589,6 +1597,33 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
 }
 
 tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
+{
+    if (!state) {
+        return kResultOk;
+    }
+
+    // Try to read state version first
+    IBStreamer streamer(state, kLittleEndian);
+    Steinberg::int32 stateVersion;
+
+    if (streamer.readInt32(stateVersion)) {
+        // Check if this looks like a valid version
+        if (stateVersion >= kStateVersionLegacy && stateVersion <= kStateVersionCurrent) {
+            // This is a versioned state
+            return readVersionedProcessorState(state, stateVersion);
+        } else {
+            // This is probably the first float from legacy state
+            // Reset stream and read as legacy
+            state->seek(0, IBStream::kIBSeekSet, nullptr);
+            return readLegacyProcessorState(state);
+        }
+    } else {
+        // Failed to read anything, treat as empty state
+        return kResultOk;
+    }
+}
+
+tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
 {
     IBStreamer streamer(state, kLittleEndian);
 
@@ -1629,6 +1664,43 @@ tresult PLUGIN_API WaterStickProcessor::setState(IBStream* state)
     mCombBypassPrevious = mCombBypass;
 
     return kResultOk;
+}
+
+tresult WaterStickProcessor::readVersionedProcessorState(IBStream* state, Steinberg::int32 version)
+{
+    switch (version) {
+        case kStateVersionCurrent:
+            // Version 1 state format - read signature then parameters
+            return readCurrentVersionProcessorState(state);
+
+        default:
+            // Unknown version - skip state loading
+            return kResultOk;
+    }
+
+    return kResultOk;
+}
+
+tresult WaterStickProcessor::readCurrentVersionProcessorState(IBStream* state)
+{
+    IBStreamer streamer(state, kLittleEndian);
+
+    // Read and validate signature (version was already read)
+    Steinberg::int32 signature;
+    if (streamer.readInt32(signature)) {
+        if (signature == kStateMagicNumber) {
+            // Valid signature - continue reading state
+        } else {
+            // Invalid signature - this is suspicious but continue reading
+            // The data structure should still be correct
+        }
+    } else {
+        // No signature found - old v1 format, rewind
+        state->seek(-4, IBStream::kIBSeekCur, nullptr);
+    }
+
+    // Read parameters using the legacy format (same structure)
+    return readLegacyProcessorState(state);
 }
 
 } // namespace WaterStick

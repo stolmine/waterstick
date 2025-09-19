@@ -313,9 +313,215 @@ void WaterStickController::setDefaultParameters()
 }
 
 //------------------------------------------------------------------------
+bool WaterStickController::isValidParameterValue(Vst::ParamID id, float value)
+{
+    // Check if parameter value is within expected range
+    if (std::isnan(value) || std::isinf(value)) {
+        return false;
+    }
+
+    // Most normalized parameters should be 0.0-1.0
+    if (value < 0.0f || value > 1.0f) {
+        return false;
+    }
+
+    // Additional specific validation for certain parameter types
+    if (id >= kTap1Level && id <= kTap16Level && ((id - kTap1Level) % 3 == 0)) {
+        // Tap levels: 0.0-1.0
+        return true;  // Already validated above
+    }
+
+    if (id >= kTap1Pan && id <= kTap16Pan && ((id - kTap1Pan) % 3 == 0)) {
+        // Tap pans: 0.0-1.0
+        return true;  // Already validated above
+    }
+
+    if (id >= kTap1FilterCutoff && id <= kTap16FilterCutoff && ((id - kTap1FilterCutoff) % 3 == 0)) {
+        // Filter cutoffs: 0.0-1.0
+        return true;  // Already validated above
+    }
+
+    if (id >= kTap1FilterType && id <= kTap16FilterType && ((id - kTap1FilterType) % 3 == 2)) {
+        // Filter types: 0.0-1.0 (but should normalize to valid enum values)
+        return true;  // Already validated above
+    }
+
+    if (id == kInputGain || id == kOutputGain) {
+        // Input/Output gains: 0.0-1.0
+        return true;  // Already validated above
+    }
+
+    return true;  // Default case: basic 0.0-1.0 range is valid
+}
+
+//------------------------------------------------------------------------
+float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
+{
+    // Return appropriate default for specific parameter types
+    if (id >= kTap1Level && id <= kTap16Level && ((id - kTap1Level) % 3 == 0)) {
+        return 0.8f;  // Tap levels default to 80%
+    }
+
+    if (id >= kTap1Pan && id <= kTap16Pan && ((id - kTap1Pan) % 3 == 0)) {
+        return 0.5f;  // Tap pans default to center
+    }
+
+    if (id >= kTap1FilterCutoff && id <= kTap16FilterCutoff && ((id - kTap1FilterCutoff) % 3 == 0)) {
+        return 0.566323334778673f;  // Filter cutoffs default to 1kHz
+    }
+
+    if (id >= kTap1FilterType && id <= kTap16FilterType && ((id - kTap1FilterType) % 3 == 2)) {
+        return 0.0f;  // Filter types default to Bypass
+    }
+
+    if (id == kInputGain || id == kOutputGain) {
+        return 40.0f/52.0f;  // Input/Output gains default to 0dB
+    }
+
+    if (id >= kTap1FilterResonance && id <= kTap16FilterResonance && ((id - kTap1FilterResonance) % 3 == 1)) {
+        return 0.5f;  // Filter resonance default to moderate
+    }
+
+    // Global parameters
+    if (id == kDelayTime) return 0.05f;
+    if (id == kDryWet) return 0.5f;
+    if (id == kFeedback) return 0.0f;
+    if (id == kTempoSyncMode) return 0.0f;
+    if (id == kSyncDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
+    if (id == kGrid) return static_cast<float>(kGrid_4) / (kNumGridValues - 1);
+    if (id >= kTap1Enable && id <= kTap16Enable && ((id - kTap1Enable) % 3 == 0)) return 0.0f;
+    if (id == kRouteMode) return 0.0f;
+    if (id == kGlobalDryWet) return 0.5f;
+    if (id == kDelayDryWet) return 1.0f;
+    if (id == kDelayBypass) return 0.0f;
+    if (id == kCombBypass) return 0.0f;
+
+    return 0.0f;  // Safe default
+}
+
+//------------------------------------------------------------------------
+bool WaterStickController::isSemanticallySuspiciousState()
+{
+    // Check for patterns that indicate corrupted/old cache state
+
+    // Pattern 1: All tap levels are 0.0 (likely corrupted)
+    bool allLevelsZero = true;
+    for (int i = 0; i < 16; i++) {
+        float level = getParamNormalized(kTap1Level + (i * 3));
+        if (level > 0.001f) {  // Use small epsilon for floating point comparison
+            allLevelsZero = false;
+            break;
+        }
+    }
+
+    if (allLevelsZero) {
+        WS_LOG_INFO("Semantic validation: All tap levels are 0.0 - suspicious");
+        return true;
+    }
+
+    // Pattern 2: All gains are exactly 1.0 (likely from old development state)
+    float inputGain = getParamNormalized(kInputGain);
+    float outputGain = getParamNormalized(kOutputGain);
+    if (std::abs(inputGain - 1.0f) < 0.001f && std::abs(outputGain - 1.0f) < 0.001f) {
+        WS_LOG_INFO("Semantic validation: Both gains are 1.0 - suspicious");
+        return true;
+    }
+
+    // Pattern 3: No taps enabled (likely fresh instance)
+    bool anyTapEnabled = false;
+    for (int i = 0; i < 16; i++) {
+        float enabled = getParamNormalized(kTap1Enable + (i * 3));
+        if (enabled > 0.5f) {
+            anyTapEnabled = true;
+            break;
+        }
+    }
+
+    if (!anyTapEnabled) {
+        WS_LOG_INFO("Semantic validation: No taps enabled - likely fresh instance");
+        return true;
+    }
+
+    // Pattern 4: All filter types are not bypass (unusual for default state)
+    bool allFiltersNonBypass = true;
+    for (int i = 0; i < 16; i++) {
+        float filterType = getParamNormalized(kTap1FilterType + (i * 3));
+        if (filterType < 0.001f) {  // 0.0 is bypass
+            allFiltersNonBypass = false;
+            break;
+        }
+    }
+
+    if (allFiltersNonBypass) {
+        WS_LOG_INFO("Semantic validation: All filters non-bypass - suspicious");
+        return true;
+    }
+
+    return false;  // State appears semantically valid
+}
+
+//------------------------------------------------------------------------
+bool WaterStickController::hasValidStateSignature(IBStream* state, bool& hasSignature)
+{
+    hasSignature = false;
+
+    if (!state) {
+        return false;
+    }
+
+    // Save current position
+    int64 originalPos;
+    state->tell(&originalPos);
+
+    // Go to beginning
+    state->seek(0, IBStream::kIBSeekSet, nullptr);
+
+    IBStreamer streamer(state, kLittleEndian);
+
+    // Try to read version first
+    Steinberg::int32 version;
+    if (!streamer.readInt32(version)) {
+        // Reset position and return
+        state->seek(originalPos, IBStream::kIBSeekSet, nullptr);
+        return false;
+    }
+
+    // Check if version is reasonable
+    if (version < kStateVersionLegacy || version > kStateVersionCurrent) {
+        // This is probably not a versioned state
+        state->seek(originalPos, IBStream::kIBSeekSet, nullptr);
+        return false;
+    }
+
+    // Try to read signature
+    Steinberg::int32 signature;
+    if (!streamer.readInt32(signature)) {
+        // No signature present (old format)
+        state->seek(originalPos, IBStream::kIBSeekSet, nullptr);
+        return false;
+    }
+
+    hasSignature = true;
+
+    // Check if signature matches
+    bool isValid = (signature == kStateMagicNumber);
+
+    // Reset position
+    state->seek(originalPos, IBStream::kIBSeekSet, nullptr);
+
+    if (isValid) {
+        WS_LOG_INFO("Valid state signature detected: 0x" + std::to_string(signature));
+    } else {
+        WS_LOG_INFO("Invalid state signature detected: 0x" + std::to_string(signature) + " (expected 0x" + std::to_string(kStateMagicNumber) + ")");
+    }
+
+    return isValid;
+}
+
+//------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
 {
-    WS_LOG_INFO("Controller::setComponentState() called");
+    WS_LOG_INFO("Controller::setComponentState() called with enhanced freshness detection");
 
     if (!state) {
         WS_LOG_INFO("No state provided - using defaults");
@@ -323,102 +529,645 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
         return kResultOk;
     }
 
-    IBStreamer streamer(state, kLittleEndian);
+    // Check for valid state signature first
+    bool hasSignature = false;
+    bool validSignature = hasValidStateSignature(state, hasSignature);
 
-    float inputGain, outputGain, delayTime, dryWet, feedback;
-    bool tempoSyncMode;
-    int32 syncDivision, grid;
-
-    // Try to read state - if any read fails, fall back to defaults
-    if (streamer.readFloat(inputGain) == false ||
-        streamer.readFloat(outputGain) == false ||
-        streamer.readFloat(delayTime) == false ||
-        streamer.readFloat(dryWet) == false ||
-        streamer.readFloat(feedback) == false ||
-        streamer.readBool(tempoSyncMode) == false ||
-        streamer.readInt32(syncDivision) == false ||
-        streamer.readInt32(grid) == false) {
-        // State loading failed - use defaults
+    if (hasSignature && !validSignature) {
+        WS_LOG_INFO("Invalid state signature detected - treating as corrupted cache, using defaults");
         setDefaultParameters();
         return kResultOk;
     }
 
-    setParamNormalized(kInputGain, inputGain);
-    setParamNormalized(kOutputGain, outputGain);
-    setParamNormalized(kDelayTime, delayTime / 2.0); // Normalize 0-2s to 0-1
-    setParamNormalized(kDryWet, dryWet);
-    setParamNormalized(kFeedback, feedback);
-    setParamNormalized(kTempoSyncMode, tempoSyncMode ? 1.0 : 0.0);
-    setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(syncDivision) / (kNumSyncDivisions - 1));
-    setParamNormalized(kGrid, static_cast<Vst::ParamValue>(grid) / (kNumGridValues - 1));
+    if (!hasSignature) {
+        WS_LOG_INFO("No state signature found - checking if legacy or fresh state");
+    }
 
-    // Load all tap parameters
+    // Try to read state version first
+    Steinberg::int32 stateVersion;
+    tresult readResult;
+
+    if (tryReadStateVersion(state, stateVersion)) {
+        WS_LOG_INFO("State version detected: " + std::to_string(stateVersion));
+        readResult = readVersionedState(state, stateVersion);
+    } else {
+        WS_LOG_INFO("No version header found - treating as legacy state");
+        // Reset stream position for legacy reading
+        state->seek(0, IBStream::kIBSeekSet, nullptr);
+        readResult = readLegacyState(state);
+    }
+
+    // After loading state, perform semantic validation
+    if (readResult == kResultOk) {
+        if (isSemanticallySuspiciousState()) {
+            WS_LOG_INFO("Semantic validation failed - state appears corrupted/cached, using defaults");
+            setDefaultParameters();
+            return kResultOk;
+        } else {
+            WS_LOG_INFO("Semantic validation passed - state appears to be valid user data");
+        }
+    }
+
+    return readResult;
+}
+
+//------------------------------------------------------------------------
+bool WaterStickController::tryReadStateVersion(IBStream* state, Steinberg::int32& version)
+{
+    IBStreamer streamer(state, kLittleEndian);
+
+    // Try to read version header
+    if (!streamer.readInt32(version)) {
+        return false;
+    }
+
+    // Validate version is reasonable
+    if (version < kStateVersionLegacy || version > kStateVersionCurrent) {
+        return false;
+    }
+
+    return true;
+}
+
+//------------------------------------------------------------------------
+tresult WaterStickController::readLegacyState(IBStream* state)
+{
+    WS_LOG_INFO("Reading legacy (unversioned) state with enhanced validation");
+
+    IBStreamer streamer(state, kLittleEndian);
+    int invalidParameterCount = 0;
+    int validParameterCount = 0;
+
+    // Read and validate global parameters with individual fallback
+    float inputGain, outputGain, delayTime, dryWet, feedback;
+    bool tempoSyncMode;
+    int32 syncDivision, grid;
+
+    // Input Gain
+    if (streamer.readFloat(inputGain) && isValidParameterValue(kInputGain, inputGain)) {
+        setParamNormalized(kInputGain, inputGain);
+        validParameterCount++;
+        WS_LOG_INFO("Loaded valid InputGain: " + std::to_string(inputGain));
+    } else {
+        float defaultValue = getDefaultParameterValue(kInputGain);
+        setParamNormalized(kInputGain, defaultValue);
+        invalidParameterCount++;
+        WS_LOG_INFO("Invalid InputGain, using default: " + std::to_string(defaultValue));
+    }
+
+    // Output Gain
+    if (streamer.readFloat(outputGain) && isValidParameterValue(kOutputGain, outputGain)) {
+        setParamNormalized(kOutputGain, outputGain);
+        validParameterCount++;
+        WS_LOG_INFO("Loaded valid OutputGain: " + std::to_string(outputGain));
+    } else {
+        float defaultValue = getDefaultParameterValue(kOutputGain);
+        setParamNormalized(kOutputGain, defaultValue);
+        invalidParameterCount++;
+        WS_LOG_INFO("Invalid OutputGain, using default: " + std::to_string(defaultValue));
+    }
+
+    // Delay Time
+    if (streamer.readFloat(delayTime) && delayTime >= 0.0f && delayTime <= 2.0f) {
+        setParamNormalized(kDelayTime, delayTime / 2.0f); // Normalize 0-2s to 0-1
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDelayTime, getDefaultParameterValue(kDelayTime));
+        invalidParameterCount++;
+    }
+
+    // Dry/Wet
+    if (streamer.readFloat(dryWet) && isValidParameterValue(kDryWet, dryWet)) {
+        setParamNormalized(kDryWet, dryWet);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDryWet, getDefaultParameterValue(kDryWet));
+        invalidParameterCount++;
+    }
+
+    // Feedback
+    if (streamer.readFloat(feedback) && isValidParameterValue(kFeedback, feedback)) {
+        setParamNormalized(kFeedback, feedback);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kFeedback, getDefaultParameterValue(kFeedback));
+        invalidParameterCount++;
+    }
+
+    // Tempo Sync Mode
+    if (streamer.readBool(tempoSyncMode)) {
+        setParamNormalized(kTempoSyncMode, tempoSyncMode ? 1.0 : 0.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kTempoSyncMode, getDefaultParameterValue(kTempoSyncMode));
+        invalidParameterCount++;
+    }
+
+    // Sync Division
+    if (streamer.readInt32(syncDivision) && syncDivision >= 0 && syncDivision < kNumSyncDivisions) {
+        setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(syncDivision) / (kNumSyncDivisions - 1));
+        validParameterCount++;
+    } else {
+        setParamNormalized(kSyncDivision, getDefaultParameterValue(kSyncDivision));
+        invalidParameterCount++;
+    }
+
+    // Grid
+    if (streamer.readInt32(grid) && grid >= 0 && grid < kNumGridValues) {
+        setParamNormalized(kGrid, static_cast<Vst::ParamValue>(grid) / (kNumGridValues - 1));
+        validParameterCount++;
+    } else {
+        setParamNormalized(kGrid, getDefaultParameterValue(kGrid));
+        invalidParameterCount++;
+    }
+
+    // Load all tap parameters with individual validation
     for (int i = 0; i < 16; i++) {
         bool tapEnabled;
         float tapLevel, tapPan;
         float tapFilterCutoff, tapFilterResonance;
         int32 tapFilterType;
 
-        if (streamer.readBool(tapEnabled) == false ||
-            streamer.readFloat(tapLevel) == false ||
-            streamer.readFloat(tapPan) == false ||
-            streamer.readFloat(tapFilterCutoff) == false ||
-            streamer.readFloat(tapFilterResonance) == false ||
-            streamer.readInt32(tapFilterType) == false) {
-            // Tap parameter loading failed - use defaults
-            setDefaultParameters();
-            return kResultOk;
-        }
-
-        setParamNormalized(kTap1Enable + (i * 3), tapEnabled ? 1.0 : 0.0);
-        setParamNormalized(kTap1Level + (i * 3), tapLevel);
-        setParamNormalized(kTap1Pan + (i * 3), tapPan);
-
-        // Set per-tap filter parameters
-        // Inverse of logarithmic scaling: if freq = 20 * pow(1000, value), then value = log(freq/20) / log(1000)
-        setParamNormalized(kTap1FilterCutoff + (i * 3), std::log(tapFilterCutoff / 20.0f) / std::log(1000.0f));
-
-        // Inverse of resonance scaling
-        float normalizedResonance;
-        if (tapFilterResonance >= 0.0f) {
-            // Inverse of cubic curve: value = cbrt(resonance)
-            normalizedResonance = 0.5f + 0.5f * std::cbrt(tapFilterResonance);
+        // Tap Enable
+        if (streamer.readBool(tapEnabled)) {
+            setParamNormalized(kTap1Enable + (i * 3), tapEnabled ? 1.0 : 0.0);
+            validParameterCount++;
         } else {
-            // Linear mapping for negative values
-            normalizedResonance = 0.5f + tapFilterResonance / 2.0f;
+            setParamNormalized(kTap1Enable + (i * 3), getDefaultParameterValue(kTap1Enable + (i * 3)));
+            invalidParameterCount++;
         }
-        setParamNormalized(kTap1FilterResonance + (i * 3), normalizedResonance);
-        setParamNormalized(kTap1FilterType + (i * 3), static_cast<Vst::ParamValue>(tapFilterType) / (kNumFilterTypes - 1));
+
+        // Tap Level
+        if (streamer.readFloat(tapLevel) && isValidParameterValue(kTap1Level + (i * 3), tapLevel)) {
+            setParamNormalized(kTap1Level + (i * 3), tapLevel);
+            validParameterCount++;
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1Level + (i * 3));
+            setParamNormalized(kTap1Level + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Level, using default: " + std::to_string(defaultValue));
+        }
+
+        // Tap Pan
+        if (streamer.readFloat(tapPan) && isValidParameterValue(kTap1Pan + (i * 3), tapPan)) {
+            setParamNormalized(kTap1Pan + (i * 3), tapPan);
+            validParameterCount++;
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1Pan + (i * 3));
+            setParamNormalized(kTap1Pan + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Pan, using default: " + std::to_string(defaultValue));
+        }
+
+        // Tap Filter Cutoff
+        if (streamer.readFloat(tapFilterCutoff) && tapFilterCutoff >= 20.0f && tapFilterCutoff <= 20000.0f) {
+            // Convert frequency to normalized value
+            float normalizedCutoff = std::log(tapFilterCutoff / 20.0f) / std::log(1000.0f);
+            if (isValidParameterValue(kTap1FilterCutoff + (i * 3), normalizedCutoff)) {
+                setParamNormalized(kTap1FilterCutoff + (i * 3), normalizedCutoff);
+                validParameterCount++;
+            } else {
+                float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
+                setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
+                invalidParameterCount++;
+                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff, using default");
+            }
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
+            setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff frequency, using default");
+        }
+
+        // Tap Filter Resonance
+        if (streamer.readFloat(tapFilterResonance) && tapFilterResonance >= -1.0f && tapFilterResonance <= 1.0f) {
+            // Convert resonance to normalized value
+            float normalizedResonance;
+            if (tapFilterResonance >= 0.0f) {
+                normalizedResonance = 0.5f + 0.5f * std::cbrt(tapFilterResonance);
+            } else {
+                normalizedResonance = 0.5f + tapFilterResonance / 2.0f;
+            }
+
+            if (isValidParameterValue(kTap1FilterResonance + (i * 3), normalizedResonance)) {
+                setParamNormalized(kTap1FilterResonance + (i * 3), normalizedResonance);
+                validParameterCount++;
+            } else {
+                float defaultValue = getDefaultParameterValue(kTap1FilterResonance + (i * 3));
+                setParamNormalized(kTap1FilterResonance + (i * 3), defaultValue);
+                invalidParameterCount++;
+            }
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1FilterResonance + (i * 3));
+            setParamNormalized(kTap1FilterResonance + (i * 3), defaultValue);
+            invalidParameterCount++;
+        }
+
+        // Tap Filter Type
+        if (streamer.readInt32(tapFilterType) && tapFilterType >= 0 && tapFilterType < kNumFilterTypes) {
+            float normalizedType = static_cast<Vst::ParamValue>(tapFilterType) / (kNumFilterTypes - 1);
+            if (isValidParameterValue(kTap1FilterType + (i * 3), normalizedType)) {
+                setParamNormalized(kTap1FilterType + (i * 3), normalizedType);
+                validParameterCount++;
+            } else {
+                float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
+                setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
+                invalidParameterCount++;
+                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType, using default: " + std::to_string(defaultValue));
+            }
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
+            setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType value, using default: " + std::to_string(defaultValue));
+        }
     }
 
-    // Load routing and wet/dry parameters
+    // Load routing and wet/dry parameters with individual validation
     int32 routeMode;
     float globalDryWet, delayDryWet;
     bool delayBypass, combBypass;
 
-    if (streamer.readInt32(routeMode) == false ||
-        streamer.readFloat(globalDryWet) == false ||
-        streamer.readFloat(delayDryWet) == false ||
-        streamer.readBool(delayBypass) == false ||
-        streamer.readBool(combBypass) == false) {
-        // Routing parameter loading failed - use defaults
-        setDefaultParameters();
-        return kResultOk;
+    // Route Mode
+    if (streamer.readInt32(routeMode) && routeMode >= 0 && routeMode <= 2) {
+        setParamNormalized(kRouteMode, static_cast<Vst::ParamValue>(routeMode) / 2.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kRouteMode, getDefaultParameterValue(kRouteMode));
+        invalidParameterCount++;
     }
 
-    setParamNormalized(kRouteMode, static_cast<Vst::ParamValue>(routeMode) / 2.0); // 0-2 routing modes
-    setParamNormalized(kGlobalDryWet, globalDryWet);
-    setParamNormalized(kDelayDryWet, delayDryWet);
-    setParamNormalized(kDelayBypass, delayBypass ? 1.0 : 0.0);
-    setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
+    // Global Dry/Wet
+    if (streamer.readFloat(globalDryWet) && isValidParameterValue(kGlobalDryWet, globalDryWet)) {
+        setParamNormalized(kGlobalDryWet, globalDryWet);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kGlobalDryWet, getDefaultParameterValue(kGlobalDryWet));
+        invalidParameterCount++;
+    }
 
-    // DEBUG: Log parameter values after loading state
-    std::cout << "[WaterStick DEBUG] Controller::setComponentState() completed successfully" << std::endl;
-    std::cout << "[WaterStick DEBUG] Sample filter type parameter values after setComponentState:" << std::endl;
-    for (int i = 0; i < 4; i++) {  // Check first 4 filter type parameters
-        int paramId = kTap1FilterType + i * 3;
-        Vst::ParamValue value = getParamNormalized(paramId);
-        std::cout << "  Tap " << (i+1) << " FilterType (ID " << paramId << "): " << std::fixed << std::setprecision(3) << value << std::endl;
+    // Delay Dry/Wet
+    if (streamer.readFloat(delayDryWet) && isValidParameterValue(kDelayDryWet, delayDryWet)) {
+        setParamNormalized(kDelayDryWet, delayDryWet);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDelayDryWet, getDefaultParameterValue(kDelayDryWet));
+        invalidParameterCount++;
+    }
+
+    // Delay Bypass
+    if (streamer.readBool(delayBypass)) {
+        setParamNormalized(kDelayBypass, delayBypass ? 1.0 : 0.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDelayBypass, getDefaultParameterValue(kDelayBypass));
+        invalidParameterCount++;
+    }
+
+    // Comb Bypass
+    if (streamer.readBool(combBypass)) {
+        setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kCombBypass, getDefaultParameterValue(kCombBypass));
+        invalidParameterCount++;
+    }
+
+    // Log validation results
+    WS_LOG_INFO("Parameter validation complete: " + std::to_string(validParameterCount) + " valid, " + std::to_string(invalidParameterCount) + " invalid (using defaults)");
+
+    // Log key parameter values after enhanced validation
+    WS_LOG_INFO("=== POST-VALIDATION PARAMETER VALUES ===");
+
+    // Log input/output gains
+    WS_LOG_PARAM_CONTEXT("POST-VAL", kInputGain, "InputGain", getParamNormalized(kInputGain));
+    WS_LOG_PARAM_CONTEXT("POST-VAL", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
+
+    // Log first few tap levels and filter types as examples
+    for (int i = 0; i < 4; i++) {
+        int levelId = kTap1Level + (i * 3);
+        int typeId = kTap1FilterType + (i * 3);
+        int panId = kTap1Pan + (i * 3);
+
+        std::ostringstream levelName, typeName, panName;
+        levelName << "Tap" << (i+1) << "Level";
+        typeName << "Tap" << (i+1) << "FilterType";
+        panName << "Tap" << (i+1) << "Pan";
+
+        WS_LOG_PARAM_CONTEXT("POST-VAL", levelId, levelName.str(), getParamNormalized(levelId));
+        WS_LOG_PARAM_CONTEXT("POST-VAL", typeId, typeName.str(), getParamNormalized(typeId));
+        WS_LOG_PARAM_CONTEXT("POST-VAL", panId, panName.str(), getParamNormalized(panId));
+    }
+
+    WS_LOG_INFO("=== END POST-VALIDATION PARAMETER VALUES ===");
+
+    return kResultOk;
+}
+
+//------------------------------------------------------------------------
+tresult WaterStickController::readCurrentVersionState(IBStream* state)
+{
+    WS_LOG_INFO("Reading current version (v1) state with enhanced validation");
+
+    IBStreamer streamer(state, kLittleEndian);
+    int invalidParameterCount = 0;
+    int validParameterCount = 0;
+
+    // Read and validate signature (version was already read)
+    Steinberg::int32 signature;
+    if (streamer.readInt32(signature)) {
+        if (signature == kStateMagicNumber) {
+            WS_LOG_INFO("Valid signature found in versioned state: 0x" + std::to_string(signature));
+        } else {
+            WS_LOG_INFO("Invalid signature in versioned state: 0x" + std::to_string(signature) + " (expected 0x" + std::to_string(kStateMagicNumber) + ")");
+            // Continue reading but this is suspicious
+        }
+    } else {
+        WS_LOG_INFO("No signature found in versioned state - old format");
+        // Reset stream position and continue without signature
+        state->seek(-4, IBStream::kIBSeekCur, nullptr);
+    }
+
+    // Read and validate global parameters with individual fallback
+    float inputGain, outputGain, delayTime, dryWet, feedback;
+    bool tempoSyncMode;
+    int32 syncDivision, grid;
+
+    // Input Gain
+    if (streamer.readFloat(inputGain) && isValidParameterValue(kInputGain, inputGain)) {
+        setParamNormalized(kInputGain, inputGain);
+        validParameterCount++;
+        WS_LOG_INFO("Loaded valid InputGain: " + std::to_string(inputGain));
+    } else {
+        float defaultValue = getDefaultParameterValue(kInputGain);
+        setParamNormalized(kInputGain, defaultValue);
+        invalidParameterCount++;
+        WS_LOG_INFO("Invalid InputGain, using default: " + std::to_string(defaultValue));
+    }
+
+    // Output Gain
+    if (streamer.readFloat(outputGain) && isValidParameterValue(kOutputGain, outputGain)) {
+        setParamNormalized(kOutputGain, outputGain);
+        validParameterCount++;
+        WS_LOG_INFO("Loaded valid OutputGain: " + std::to_string(outputGain));
+    } else {
+        float defaultValue = getDefaultParameterValue(kOutputGain);
+        setParamNormalized(kOutputGain, defaultValue);
+        invalidParameterCount++;
+        WS_LOG_INFO("Invalid OutputGain, using default: " + std::to_string(defaultValue));
+    }
+
+    // Delay Time
+    if (streamer.readFloat(delayTime) && delayTime >= 0.0f && delayTime <= 2.0f) {
+        setParamNormalized(kDelayTime, delayTime / 2.0f); // Normalize 0-2s to 0-1
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDelayTime, getDefaultParameterValue(kDelayTime));
+        invalidParameterCount++;
+    }
+
+    // Dry/Wet
+    if (streamer.readFloat(dryWet) && isValidParameterValue(kDryWet, dryWet)) {
+        setParamNormalized(kDryWet, dryWet);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDryWet, getDefaultParameterValue(kDryWet));
+        invalidParameterCount++;
+    }
+
+    // Feedback
+    if (streamer.readFloat(feedback) && isValidParameterValue(kFeedback, feedback)) {
+        setParamNormalized(kFeedback, feedback);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kFeedback, getDefaultParameterValue(kFeedback));
+        invalidParameterCount++;
+    }
+
+    // Tempo Sync Mode
+    if (streamer.readBool(tempoSyncMode)) {
+        setParamNormalized(kTempoSyncMode, tempoSyncMode ? 1.0 : 0.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kTempoSyncMode, getDefaultParameterValue(kTempoSyncMode));
+        invalidParameterCount++;
+    }
+
+    // Sync Division
+    if (streamer.readInt32(syncDivision) && syncDivision >= 0 && syncDivision < kNumSyncDivisions) {
+        setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(syncDivision) / (kNumSyncDivisions - 1));
+        validParameterCount++;
+    } else {
+        setParamNormalized(kSyncDivision, getDefaultParameterValue(kSyncDivision));
+        invalidParameterCount++;
+    }
+
+    // Grid
+    if (streamer.readInt32(grid) && grid >= 0 && grid < kNumGridValues) {
+        setParamNormalized(kGrid, static_cast<Vst::ParamValue>(grid) / (kNumGridValues - 1));
+        validParameterCount++;
+    } else {
+        setParamNormalized(kGrid, getDefaultParameterValue(kGrid));
+        invalidParameterCount++;
+    }
+
+    // Load all tap parameters with individual validation
+    for (int i = 0; i < 16; i++) {
+        bool tapEnabled;
+        float tapLevel, tapPan;
+        float tapFilterCutoff, tapFilterResonance;
+        int32 tapFilterType;
+
+        // Tap Enable
+        if (streamer.readBool(tapEnabled)) {
+            setParamNormalized(kTap1Enable + (i * 3), tapEnabled ? 1.0 : 0.0);
+            validParameterCount++;
+        } else {
+            setParamNormalized(kTap1Enable + (i * 3), getDefaultParameterValue(kTap1Enable + (i * 3)));
+            invalidParameterCount++;
+        }
+
+        // Tap Level
+        if (streamer.readFloat(tapLevel) && isValidParameterValue(kTap1Level + (i * 3), tapLevel)) {
+            setParamNormalized(kTap1Level + (i * 3), tapLevel);
+            validParameterCount++;
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1Level + (i * 3));
+            setParamNormalized(kTap1Level + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Level, using default: " + std::to_string(defaultValue));
+        }
+
+        // Tap Pan
+        if (streamer.readFloat(tapPan) && isValidParameterValue(kTap1Pan + (i * 3), tapPan)) {
+            setParamNormalized(kTap1Pan + (i * 3), tapPan);
+            validParameterCount++;
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1Pan + (i * 3));
+            setParamNormalized(kTap1Pan + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "Pan, using default: " + std::to_string(defaultValue));
+        }
+
+        // Tap Filter Cutoff
+        if (streamer.readFloat(tapFilterCutoff) && tapFilterCutoff >= 20.0f && tapFilterCutoff <= 20000.0f) {
+            // Convert frequency to normalized value
+            float normalizedCutoff = std::log(tapFilterCutoff / 20.0f) / std::log(1000.0f);
+            if (isValidParameterValue(kTap1FilterCutoff + (i * 3), normalizedCutoff)) {
+                setParamNormalized(kTap1FilterCutoff + (i * 3), normalizedCutoff);
+                validParameterCount++;
+            } else {
+                float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
+                setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
+                invalidParameterCount++;
+                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff, using default");
+            }
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1FilterCutoff + (i * 3));
+            setParamNormalized(kTap1FilterCutoff + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterCutoff frequency, using default");
+        }
+
+        // Tap Filter Resonance
+        if (streamer.readFloat(tapFilterResonance) && tapFilterResonance >= -1.0f && tapFilterResonance <= 1.0f) {
+            // Convert resonance to normalized value
+            float normalizedResonance;
+            if (tapFilterResonance >= 0.0f) {
+                normalizedResonance = 0.5f + 0.5f * std::cbrt(tapFilterResonance);
+            } else {
+                normalizedResonance = 0.5f + tapFilterResonance / 2.0f;
+            }
+
+            if (isValidParameterValue(kTap1FilterResonance + (i * 3), normalizedResonance)) {
+                setParamNormalized(kTap1FilterResonance + (i * 3), normalizedResonance);
+                validParameterCount++;
+            } else {
+                float defaultValue = getDefaultParameterValue(kTap1FilterResonance + (i * 3));
+                setParamNormalized(kTap1FilterResonance + (i * 3), defaultValue);
+                invalidParameterCount++;
+            }
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1FilterResonance + (i * 3));
+            setParamNormalized(kTap1FilterResonance + (i * 3), defaultValue);
+            invalidParameterCount++;
+        }
+
+        // Tap Filter Type
+        if (streamer.readInt32(tapFilterType) && tapFilterType >= 0 && tapFilterType < kNumFilterTypes) {
+            float normalizedType = static_cast<Vst::ParamValue>(tapFilterType) / (kNumFilterTypes - 1);
+            if (isValidParameterValue(kTap1FilterType + (i * 3), normalizedType)) {
+                setParamNormalized(kTap1FilterType + (i * 3), normalizedType);
+                validParameterCount++;
+            } else {
+                float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
+                setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
+                invalidParameterCount++;
+                WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType, using default: " + std::to_string(defaultValue));
+            }
+        } else {
+            float defaultValue = getDefaultParameterValue(kTap1FilterType + (i * 3));
+            setParamNormalized(kTap1FilterType + (i * 3), defaultValue);
+            invalidParameterCount++;
+            WS_LOG_INFO("Invalid Tap" + std::to_string(i+1) + "FilterType value, using default: " + std::to_string(defaultValue));
+        }
+    }
+
+    // Load routing and wet/dry parameters with individual validation
+    int32 routeMode;
+    float globalDryWet, delayDryWet;
+    bool delayBypass, combBypass;
+
+    // Route Mode
+    if (streamer.readInt32(routeMode) && routeMode >= 0 && routeMode <= 2) {
+        setParamNormalized(kRouteMode, static_cast<Vst::ParamValue>(routeMode) / 2.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kRouteMode, getDefaultParameterValue(kRouteMode));
+        invalidParameterCount++;
+    }
+
+    // Global Dry/Wet
+    if (streamer.readFloat(globalDryWet) && isValidParameterValue(kGlobalDryWet, globalDryWet)) {
+        setParamNormalized(kGlobalDryWet, globalDryWet);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kGlobalDryWet, getDefaultParameterValue(kGlobalDryWet));
+        invalidParameterCount++;
+    }
+
+    // Delay Dry/Wet
+    if (streamer.readFloat(delayDryWet) && isValidParameterValue(kDelayDryWet, delayDryWet)) {
+        setParamNormalized(kDelayDryWet, delayDryWet);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDelayDryWet, getDefaultParameterValue(kDelayDryWet));
+        invalidParameterCount++;
+    }
+
+    // Delay Bypass
+    if (streamer.readBool(delayBypass)) {
+        setParamNormalized(kDelayBypass, delayBypass ? 1.0 : 0.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kDelayBypass, getDefaultParameterValue(kDelayBypass));
+        invalidParameterCount++;
+    }
+
+    // Comb Bypass
+    if (streamer.readBool(combBypass)) {
+        setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
+        validParameterCount++;
+    } else {
+        setParamNormalized(kCombBypass, getDefaultParameterValue(kCombBypass));
+        invalidParameterCount++;
+    }
+
+    // Log validation results
+    WS_LOG_INFO("Version 1 parameter validation complete: " + std::to_string(validParameterCount) + " valid, " + std::to_string(invalidParameterCount) + " invalid (using defaults)");
+
+    // Log key parameter values after enhanced validation
+    WS_LOG_INFO("=== POST-V1-VALIDATION PARAMETER VALUES ===");
+
+    // Log input/output gains
+    WS_LOG_PARAM_CONTEXT("POST-V1-VAL", kInputGain, "InputGain", getParamNormalized(kInputGain));
+    WS_LOG_PARAM_CONTEXT("POST-V1-VAL", kOutputGain, "OutputGain", getParamNormalized(kOutputGain));
+
+    // Log first few tap levels and filter types as examples
+    for (int i = 0; i < 4; i++) {
+        int levelId = kTap1Level + (i * 3);
+        int typeId = kTap1FilterType + (i * 3);
+        int panId = kTap1Pan + (i * 3);
+
+        std::ostringstream levelName, typeName, panName;
+        levelName << "Tap" << (i+1) << "Level";
+        typeName << "Tap" << (i+1) << "FilterType";
+        panName << "Tap" << (i+1) << "Pan";
+
+        WS_LOG_PARAM_CONTEXT("POST-V1-VAL", levelId, levelName.str(), getParamNormalized(levelId));
+        WS_LOG_PARAM_CONTEXT("POST-V1-VAL", typeId, typeName.str(), getParamNormalized(typeId));
+        WS_LOG_PARAM_CONTEXT("POST-V1-VAL", panId, panName.str(), getParamNormalized(panId));
+    }
+
+    WS_LOG_INFO("=== END POST-V1-VALIDATION PARAMETER VALUES ===");
+
+    return kResultOk;
+}
+
+//------------------------------------------------------------------------
+tresult WaterStickController::readVersionedState(IBStream* state, Steinberg::int32 version)
+{
+    WS_LOG_INFO("Reading versioned state (version " + std::to_string(version) + ")");
+
+    switch (version) {
+        case kStateVersionCurrent:
+            // Version 1 state format - use proper version 1 reading with enhanced validation
+            return readCurrentVersionState(state);
+
+        default:
+            WS_LOG_INFO("Unknown state version: " + std::to_string(version) + " - falling back to defaults");
+            setDefaultParameters();
+            return kResultOk;
     }
 
     return kResultOk;

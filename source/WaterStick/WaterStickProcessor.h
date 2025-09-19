@@ -289,11 +289,23 @@ public:
     Steinberg::tresult PLUGIN_API setState(Steinberg::IBStream* state) SMTG_OVERRIDE;
 
 private:
+    // State version constants
+    static constexpr Steinberg::int32 kStateVersionLegacy = 0;  // Legacy unversioned state
+    static constexpr Steinberg::int32 kStateVersionCurrent = 1; // First versioned release
+
+    // State signature for freshness detection (magic number)
+    static constexpr Steinberg::int32 kStateMagicNumber = 0x57415453; // "WATS" in hex
+
     // Helper methods
     void checkTapStateChangesAndClearBuffers();
     void checkBypassStateChanges();
     void processDelaySection(float inputL, float inputR, float& outputL, float& outputR);
     void processCombSection(float inputL, float inputR, float& outputL, float& outputR);
+
+    // State versioning methods
+    Steinberg::tresult readLegacyProcessorState(Steinberg::IBStream* state);
+    Steinberg::tresult readVersionedProcessorState(Steinberg::IBStream* state, Steinberg::int32 version);
+    Steinberg::tresult readCurrentVersionProcessorState(Steinberg::IBStream* state);
 
     // Parameters
     float mInputGain;
