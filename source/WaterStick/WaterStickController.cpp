@@ -69,139 +69,159 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            STR16("Tap"));
 
     // Tap parameters (16 taps) - need to use individual strings for STR16 macro
-    parameters.addParameter(STR16("Tap 1 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap1Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 1 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap1Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 1 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap1Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 1 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap1Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 1 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 2 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap2Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 2 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap2Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 2 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap2Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 2 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap2Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 2 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 3 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap3Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 3 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap3Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 3 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap3Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 3 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap3Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 3 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 4 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap4Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 4 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap4Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 4 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap4Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 4 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap4Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 4 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 5 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap5Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 5 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap5Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 5 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap5Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 5 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap5Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 5 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 6 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap6Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 6 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap6Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 6 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap6Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 6 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap6Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 6 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 7 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap7Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 7 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap7Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 7 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap7Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 7 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap7Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 7 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 8 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap8Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 8 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap8Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 8 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap8Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 8 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap8Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 8 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 9 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap9Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 9 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap9Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 9 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap9Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 9 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap9Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 9 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 10 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap10Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 10 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap10Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 10 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap10Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 10 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap10Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 10 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 11 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap11Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 11 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap11Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 11 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap11Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 11 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap11Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 11 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 12 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap12Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 12 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap12Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 12 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap12Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 12 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap12Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 12 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 13 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap13Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 13 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap13Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 13 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap13Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 13 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap13Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 13 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 14 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap14Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 14 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap14Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 14 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap14Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 14 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap14Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 14 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 15 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap15Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 15 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap15Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 15 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap15Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 15 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap15Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 15 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15Pan, 0, STR16("Tap"));
 
-    parameters.addParameter(STR16("Tap 16 Enable"), nullptr, 1, 1.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16Enable, 0, STR16("Tap"));
-    parameters.addParameter(STR16("Tap 16 Level"), STR16("%"), 0, 1.0, Vst::ParameterInfo::kCanAutomate, kTap16Level, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 16 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16Enable, 0, STR16("Tap"));
+    parameters.addParameter(STR16("Tap 16 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap16Level, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 16 Pan"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16Pan, 0, STR16("Tap"));
 
     // Per-tap filter parameters (16 taps × 3 parameters each)
-    parameters.addParameter(STR16("Tap 1 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 1 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap1FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 1 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 1 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap1FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 2 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 2 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap2FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 2 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 2 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap2FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 3 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 3 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap3FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 3 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 3 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap3FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 4 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 4 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap4FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 4 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 4 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap4FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 5 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 5 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap5FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 5 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 5 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap5FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 6 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 6 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap6FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 6 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 6 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap6FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 7 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 7 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap7FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 7 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 7 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap7FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 8 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 8 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap8FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 8 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 8 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap8FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 9 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 9 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap9FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 9 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 9 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap9FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 10 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 10 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap10FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 10 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 10 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap10FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 11 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 11 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap11FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 11 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 11 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap11FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 12 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 12 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap12FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 12 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 12 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap12FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 13 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 13 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap13FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 13 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 13 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap13FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 14 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 14 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap14FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 14 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 14 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap14FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 15 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 15 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap15FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 15 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 15 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap15FilterType, 0, STR16("Filter"));
 
-    parameters.addParameter(STR16("Tap 16 Filter Cutoff"), STR16("Hz"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterCutoff, 0, STR16("Filter"));
+    parameters.addParameter(STR16("Tap 16 Filter Cutoff"), STR16("Hz"), 0, 0.566323334778673, Vst::ParameterInfo::kCanAutomate, kTap16FilterCutoff, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16FilterType, 0, STR16("Filter"));
 
-    // Initialize parameters to their default values to ensure proper display
-    // This is crucial for parameters that don't get set via setComponentState on first load
-    setParamNormalized(kInputGain, 40.0/52.0);   // 0dB
-    setParamNormalized(kOutputGain, 40.0/52.0);  // 0dB
+    // Routing and Wet/Dry controls
+    parameters.addParameter(STR16("Routing Mode"), nullptr, 2, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kRouteMode, 0,
+                           STR16("Routing"));
+
+    parameters.addParameter(STR16("Global Dry/Wet"), STR16("%"), 0, 0.5,
+                           Vst::ParameterInfo::kCanAutomate, kGlobalDryWet, 0,
+                           STR16("Mix"));
+
+    parameters.addParameter(STR16("Delay Dry/Wet"), STR16("%"), 0, 1.0,
+                           Vst::ParameterInfo::kCanAutomate, kDelayDryWet, 0,
+                           STR16("Mix"));
+
+    parameters.addParameter(STR16("Delay Bypass"), nullptr, 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kDelayBypass, 0,
+                           STR16("Control"));
+
+    parameters.addParameter(STR16("Comb Bypass"), nullptr, 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombBypass, 0,
+                           STR16("Control"));
+
+    // Initialize all parameters to their default values
+    // This ensures proper display even if setComponentState is never called
+    setDefaultParameters();
 
     return result;
 }
@@ -213,29 +233,70 @@ tresult PLUGIN_API WaterStickController::terminate()
 }
 
 //------------------------------------------------------------------------
+void WaterStickController::setDefaultParameters()
+{
+    // Set global parameters to their design defaults
+    setParamNormalized(kInputGain, 40.0/52.0);   // 0dB
+    setParamNormalized(kOutputGain, 40.0/52.0);  // 0dB
+    setParamNormalized(kDelayTime, 0.05);        // 50ms
+    setParamNormalized(kDryWet, 0.5);            // 50%
+    setParamNormalized(kFeedback, 0.0);          // 0%
+    setParamNormalized(kTempoSyncMode, 0.0);     // Free mode
+    setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1)); // 1/4 note
+    setParamNormalized(kGrid, static_cast<Vst::ParamValue>(kGrid_4) / (kNumGridValues - 1)); // 4 grid
+
+    // Initialize all tap parameters to their defaults
+    for (int i = 0; i < 16; i++) {
+        setParamNormalized(kTap1Enable + (i * 3), 0.0);   // Disabled
+        setParamNormalized(kTap1Level + (i * 3), 0.8);    // 80% level
+        setParamNormalized(kTap1Pan + (i * 3), 0.5);      // Center pan
+        setParamNormalized(kTap1FilterCutoff + (i * 3), 0.566323334778673);  // 1kHz
+        setParamNormalized(kTap1FilterResonance + (i * 3), 0.5);  // Moderate resonance
+        setParamNormalized(kTap1FilterType + (i * 3), 0.0);       // Bypass filter
+    }
+
+    // Set routing and mix parameters to defaults
+    setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
+    setParamNormalized(kGlobalDryWet, 0.5);      // 50%
+    setParamNormalized(kDelayDryWet, 1.0);       // 100% wet
+    setParamNormalized(kDelayBypass, 0.0);       // Active
+    setParamNormalized(kCombBypass, 0.0);        // Active
+}
+
+//------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
 {
-    if (!state)
-        return kResultFalse;
+    if (!state) {
+        // No state provided - use defaults
+        setDefaultParameters();
+        return kResultOk;
+    }
 
     IBStreamer streamer(state, kLittleEndian);
 
-    float inputGain, outputGain, delayTime, dryWet;
+    float inputGain, outputGain, delayTime, dryWet, feedback;
     bool tempoSyncMode;
     int32 syncDivision, grid;
 
-    if (streamer.readFloat(inputGain) == false) return kResultFalse;
-    if (streamer.readFloat(outputGain) == false) return kResultFalse;
-    if (streamer.readFloat(delayTime) == false) return kResultFalse;
-    if (streamer.readFloat(dryWet) == false) return kResultFalse;
-    if (streamer.readBool(tempoSyncMode) == false) return kResultFalse;
-    if (streamer.readInt32(syncDivision) == false) return kResultFalse;
-    if (streamer.readInt32(grid) == false) return kResultFalse;
+    // Try to read state - if any read fails, fall back to defaults
+    if (streamer.readFloat(inputGain) == false ||
+        streamer.readFloat(outputGain) == false ||
+        streamer.readFloat(delayTime) == false ||
+        streamer.readFloat(dryWet) == false ||
+        streamer.readFloat(feedback) == false ||
+        streamer.readBool(tempoSyncMode) == false ||
+        streamer.readInt32(syncDivision) == false ||
+        streamer.readInt32(grid) == false) {
+        // State loading failed - use defaults
+        setDefaultParameters();
+        return kResultOk;
+    }
 
     setParamNormalized(kInputGain, inputGain);
     setParamNormalized(kOutputGain, outputGain);
     setParamNormalized(kDelayTime, delayTime / 2.0); // Normalize 0-2s to 0-1
     setParamNormalized(kDryWet, dryWet);
+    setParamNormalized(kFeedback, feedback);
     setParamNormalized(kTempoSyncMode, tempoSyncMode ? 1.0 : 0.0);
     setParamNormalized(kSyncDivision, static_cast<Vst::ParamValue>(syncDivision) / (kNumSyncDivisions - 1));
     setParamNormalized(kGrid, static_cast<Vst::ParamValue>(grid) / (kNumGridValues - 1));
@@ -247,12 +308,16 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
         float tapFilterCutoff, tapFilterResonance;
         int32 tapFilterType;
 
-        if (streamer.readBool(tapEnabled) == false) return kResultFalse;
-        if (streamer.readFloat(tapLevel) == false) return kResultFalse;
-        if (streamer.readFloat(tapPan) == false) return kResultFalse;
-        if (streamer.readFloat(tapFilterCutoff) == false) return kResultFalse;
-        if (streamer.readFloat(tapFilterResonance) == false) return kResultFalse;
-        if (streamer.readInt32(tapFilterType) == false) return kResultFalse;
+        if (streamer.readBool(tapEnabled) == false ||
+            streamer.readFloat(tapLevel) == false ||
+            streamer.readFloat(tapPan) == false ||
+            streamer.readFloat(tapFilterCutoff) == false ||
+            streamer.readFloat(tapFilterResonance) == false ||
+            streamer.readInt32(tapFilterType) == false) {
+            // Tap parameter loading failed - use defaults
+            setDefaultParameters();
+            return kResultOk;
+        }
 
         setParamNormalized(kTap1Enable + (i * 3), tapEnabled ? 1.0 : 0.0);
         setParamNormalized(kTap1Level + (i * 3), tapLevel);
@@ -274,6 +339,27 @@ tresult PLUGIN_API WaterStickController::setComponentState(IBStream* state)
         setParamNormalized(kTap1FilterResonance + (i * 3), normalizedResonance);
         setParamNormalized(kTap1FilterType + (i * 3), static_cast<Vst::ParamValue>(tapFilterType) / (kNumFilterTypes - 1));
     }
+
+    // Load routing and wet/dry parameters
+    int32 routeMode;
+    float globalDryWet, delayDryWet;
+    bool delayBypass, combBypass;
+
+    if (streamer.readInt32(routeMode) == false ||
+        streamer.readFloat(globalDryWet) == false ||
+        streamer.readFloat(delayDryWet) == false ||
+        streamer.readBool(delayBypass) == false ||
+        streamer.readBool(combBypass) == false) {
+        // Routing parameter loading failed - use defaults
+        setDefaultParameters();
+        return kResultOk;
+    }
+
+    setParamNormalized(kRouteMode, static_cast<Vst::ParamValue>(routeMode) / 2.0); // 0-2 routing modes
+    setParamNormalized(kGlobalDryWet, globalDryWet);
+    setParamNormalized(kDelayDryWet, delayDryWet);
+    setParamNormalized(kDelayBypass, delayBypass ? 1.0 : 0.0);
+    setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
 
     return kResultOk;
 }
@@ -338,6 +424,35 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             char percentText[128];
             snprintf(percentText, sizeof(percentText), "%.1f%%", percentage);
             Steinberg::UString(string, 128).fromAscii(percentText);
+            return kResultTrue;
+        }
+        case kRouteMode:
+        {
+            int routeMode = static_cast<int>(valueNormalized * 2.0 + 0.5);
+            if (routeMode >= 0 && routeMode <= 2) {
+                static const char* routeModeTexts[3] = {
+                    "Delay>Comb", "Comb>Delay", "Delay+Comb"
+                };
+                Steinberg::UString(string, 128).fromAscii(routeModeTexts[routeMode]);
+                return kResultTrue;
+            }
+            break;
+        }
+        case kGlobalDryWet:
+        case kDelayDryWet:
+        {
+            // Convert normalized value to percentage for display
+            float percentage = valueNormalized * 100.0f;
+            char percentText[128];
+            snprintf(percentText, sizeof(percentText), "%.1f%%", percentage);
+            Steinberg::UString(string, 128).fromAscii(percentText);
+            return kResultTrue;
+        }
+        case kDelayBypass:
+        case kCombBypass:
+        {
+            const char* text = (valueNormalized > 0.5) ? "Bypassed" : "Active";
+            Steinberg::UString(string, 128).fromAscii(text);
             return kResultTrue;
         }
         default:

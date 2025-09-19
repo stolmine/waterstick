@@ -141,10 +141,10 @@ TapDistribution::TapDistribution()
 , mBeatTime(0.5f)  // Default to 120 BPM (0.5s per beat)
 , mGrid(kGrid_4)   // Default to 4 taps per beat
 {
-    // Initialize all taps as enabled with unity gain and center pan
+    // Initialize all taps as disabled with 80% gain and center pan
     for (int i = 0; i < NUM_TAPS; i++) {
-        mTapEnabled[i] = true;
-        mTapLevel[i] = 1.0f;
+        mTapEnabled[i] = false;
+        mTapLevel[i] = 0.8f;
         mTapPan[i] = 0.5f;      // Center pan
         mTapDelayTimes[i] = 0.0f;
     }
@@ -743,9 +743,9 @@ WaterStickProcessor::WaterStickProcessor()
 {
     // Initialize tap parameters
     for (int i = 0; i < 16; i++) {
-        mTapEnabled[i] = true;             // All taps enabled by default
-        mTapEnabledPrevious[i] = true;     // Initialize previous state
-        mTapLevel[i] = 1.0f;               // Unity gain
+        mTapEnabled[i] = false;            // All taps disabled by default
+        mTapEnabledPrevious[i] = false;    // Initialize previous state
+        mTapLevel[i] = 0.8f;               // 80% gain
         mTapPan[i] = 0.5f;                 // Center pan
 
         // Initialize per-tap filter parameters

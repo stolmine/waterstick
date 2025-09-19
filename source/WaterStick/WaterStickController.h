@@ -33,6 +33,10 @@ public:
 
     // IPlugView creation
     Steinberg::IPlugView* PLUGIN_API createView(Steinberg::FIDString name) SMTG_OVERRIDE;
+
+private:
+    // Helper method to set all parameters to their default values
+    void setDefaultParameters();
 };
 
 } // namespace WaterStick

@@ -85,6 +85,9 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
     frame->addView(container);
 
+    // Force parameter synchronization for VST3 lifecycle compliance
+    forceParameterSynchronization();
+
     // Update value readouts with initial parameter values
     updateValueReadouts();
 
@@ -1609,6 +1612,64 @@ void WaterStickEditor::updateMinimapState()
             minimapButtons[i]->invalid(); // Trigger redraw
         }
     }
+}
+
+void WaterStickEditor::forceParameterSynchronization()
+{
+    auto controller = getController();
+    if (!controller) return;
+
+    // VST3 Lifecycle Compliance: Ensure GUI displays correct parameter values regardless of
+    // timing between setComponentState, createView, and host parameter cache behavior
+
+    // Sync all tap button contexts with current parameter values
+    for (int i = 0; i < 16; i++) {
+        if (tapButtons[i]) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[i]);
+
+            // Load current parameter values for ALL contexts (not just current)
+            for (int contextIndex = 0; contextIndex < static_cast<int>(TapContext::COUNT); contextIndex++) {
+                TapContext context = static_cast<TapContext>(contextIndex);
+                int paramId = getTapParameterIdForContext(i, context);
+                float paramValue = controller->getParamNormalized(paramId);
+                tapButton->setContextValue(context, paramValue);
+            }
+
+            // Set the button's displayed value to match its current context
+            TapContext buttonContext = tapButton->getContext();
+            float currentContextValue = tapButton->getContextValue(buttonContext);
+            tapButton->setValue(currentContextValue);
+            tapButton->invalid();
+        }
+    }
+
+    // Sync all global knobs with current parameter values
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kDryWet};
+    KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, dryWetKnob};
+
+    for (int i = 0; i < 7; i++) {
+        if (knobs[i]) {
+            int paramId = knobTags[i];
+
+            // Special handling for time/division knob
+            if (i == 1 && knobs[i]->getIsTimeDivisionKnob()) {
+                float syncMode = controller->getParamNormalized(kTempoSyncMode);
+                if (syncMode > 0.5f) {
+                    paramId = kSyncDivision;
+                } else {
+                    paramId = kDelayTime;
+                }
+            }
+
+            float paramValue = controller->getParamNormalized(paramId);
+            knobs[i]->setValue(paramValue);
+            knobs[i]->invalid();
+        }
+    }
+
+    // Force visual updates
+    updateValueReadouts();
+    updateMinimapState();
 }
 
 } // namespace WaterStick

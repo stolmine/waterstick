@@ -148,6 +148,9 @@ public:
     std::string formatParameterValue(int parameterId, float normalizedValue) const;
     void updateValueReadouts();
 
+    // VST3 lifecycle compliance
+    void forceParameterSynchronization();
+
 private:
     static constexpr int kEditorWidth = 700;   // 400 * 1.75
     static constexpr int kEditorHeight = 525;  // 300 * 1.75
