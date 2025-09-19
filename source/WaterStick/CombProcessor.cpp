@@ -17,6 +17,7 @@ CombProcessor::CombProcessor()
     , mIsSynced(false)
     , mClockDivision(0)
     , mHostTempo(120.0f)
+    , mHostTempoValid(false)
     , mPattern(0)
     , mSlope(0)
 {
@@ -88,8 +89,61 @@ void CombProcessor::setSlope(int slope)
     mSlope = std::max(0, std::min(kNumCombSlopes - 1, slope));
 }
 
+void CombProcessor::updateTempo(double hostTempo, bool isValid)
+{
+    mHostTempo = static_cast<float>(hostTempo);
+    mHostTempoValid = isValid;
+}
+
+float CombProcessor::getSyncedCombSize() const
+{
+    if (mIsSynced && mHostTempoValid) {
+        // Calculate sync time using same approach as TempoSync class
+        double quarterNoteTime = 60.0 / mHostTempo;
+
+        // Use division values from TempoSync (need to access those constants)
+        // For now, implement basic divisions
+        float divisionValue;
+        switch (mClockDivision) {
+            case 0: divisionValue = 0.0625f; break;   // 1/64
+            case 1: divisionValue = 0.08333f; break;  // 1/32T
+            case 2: divisionValue = 0.09375f; break;  // 1/64.
+            case 3: divisionValue = 0.125f; break;    // 1/32
+            case 4: divisionValue = 0.16667f; break;  // 1/16T
+            case 5: divisionValue = 0.1875f; break;   // 1/32.
+            case 6: divisionValue = 0.25f; break;     // 1/16
+            case 7: divisionValue = 0.33333f; break;  // 1/8T
+            case 8: divisionValue = 0.375f; break;    // 1/16.
+            case 9: divisionValue = 0.5f; break;      // 1/8
+            case 10: divisionValue = 0.66667f; break; // 1/4T
+            case 11: divisionValue = 0.75f; break;    // 1/8.
+            case 12: divisionValue = 1.0f; break;     // 1/4
+            case 13: divisionValue = 1.33333f; break; // 1/2T
+            case 14: divisionValue = 1.5f; break;     // 1/4.
+            case 15: divisionValue = 2.0f; break;     // 1/2
+            case 16: divisionValue = 2.66667f; break; // 1T
+            case 17: divisionValue = 3.0f; break;     // 1/2.
+            case 18: divisionValue = 4.0f; break;     // 1
+            case 19: divisionValue = 8.0f; break;     // 2
+            case 20: divisionValue = 16.0f; break;    // 4
+            case 21: divisionValue = 32.0f; break;    // 8
+            default: divisionValue = 1.0f; break;     // Default to 1/4 note
+        }
+
+        float syncTime = static_cast<float>(quarterNoteTime * divisionValue);
+        return std::max(0.0001f, std::min(2.0f, syncTime));
+    } else {
+        return mCombSize;
+    }
+}
+
 float CombProcessor::getTapDelay(int tapIndex) const
 {
+    // Parameter hierarchy: Size → Pattern → Pitch CV
+    // 1. Size (primary timing): Sets base delay time (either manual size or tempo-synced)
+    // 2. Pattern: Distributes taps within the size envelope using various spacing algorithms
+    // 3. Pitch CV: Applies musical transposition (1V/oct) to the pattern-distributed delay
+
     // Apply tap spacing pattern
     float tapRatio;
 
@@ -124,13 +178,17 @@ float CombProcessor::getTapDelay(int tapIndex) const
     // Ensure tapRatio is in valid range
     tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
 
-    return applyCVScaling(mCombSize * tapRatio);
+    // Use synced size when in sync mode, otherwise use base size
+    float effectiveSize = getSyncedCombSize();
+    return applyCVScaling(effectiveSize * tapRatio);
 }
 
 float CombProcessor::applyCVScaling(float baseDelay) const
 {
-    // 1V/oct scaling: each volt doubles frequency (halves period)
-    // delay_scaled = delay_base * 2^(-cv)
+    // Musical pitch control: 1V/oct scaling applied as final step
+    // Each volt doubles frequency (halves delay period): delay_scaled = delay_base * 2^(-cv)
+    // This preserves musical intervals while allowing the Size parameter to control the fundamental timing
+    // Range: -5V to +5V allows 10 octaves of pitch variation (32x slower to 32x faster)
     float scaleFactor = std::pow(2.0f, -mPitchCV);
     return baseDelay * scaleFactor;
 }
@@ -224,7 +282,7 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
     }
 
     // Read tap 64 for feedback (longest delay)
-    float maxDelay = applyCVScaling(mCombSize);
+    float maxDelay = applyCVScaling(getSyncedCombSize());
     float maxDelaySamples = maxDelay * mSampleRate;
     int maxDelayInt = static_cast<int>(maxDelaySamples);
     float maxDelayFrac = maxDelaySamples - maxDelayInt;

@@ -518,9 +518,21 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
         }
 
         case kCombSize:
-            // Format as seconds (0.0001f to 2.0f range)
-            oss << std::fixed << std::setprecision(3) << (normalizedValue * 2.0f) << "s";
+        {
+            // Format as seconds using same logarithmic scaling as processor (0.0001f to 2.0f range)
+            float actualValue = 0.0001f * std::pow(20000.0f, normalizedValue);
+            if (actualValue < 0.001f) {
+                // Display in microseconds for very small values
+                oss << std::fixed << std::setprecision(0) << (actualValue * 1000000.0f) << "μs";
+            } else if (actualValue < 1.0f) {
+                // Display in milliseconds for small values
+                oss << std::fixed << std::setprecision(1) << (actualValue * 1000.0f) << "ms";
+            } else {
+                // Display in seconds for large values
+                oss << std::fixed << std::setprecision(3) << actualValue << "s";
+            }
             return oss.str();
+        }
 
         case kCombFeedback:
             // Format as percentage (0-99%)

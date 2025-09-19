@@ -1162,8 +1162,8 @@ void WaterStickProcessor::updateParameters()
     mRoutingManager.setRouteMode(mRouteMode);
 
     // Update comb processor with available parameters
-    mCombProcessor.setFeedback(mFeedback);  // Use global feedback for comb
-    mCombProcessor.setSize(0.1f);           // Default 100ms comb size for now
+    mCombProcessor.setFeedback(mCombFeedback);  // Use comb-specific feedback
+    mCombProcessor.setSize(mCombSize);          // Use actual comb size parameter
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -1173,10 +1173,12 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
     {
         double hostTempo = data.processContext->tempo;
         mTempoSync.updateTempo(hostTempo, true);
+        mCombProcessor.updateTempo(hostTempo, true); // Update comb processor tempo
     }
     else
     {
         mTempoSync.updateTempo(120.0, false); // Fallback tempo
+        mCombProcessor.updateTempo(120.0, false); // Update comb processor tempo
     }
 
     // Process parameter changes

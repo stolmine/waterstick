@@ -186,12 +186,16 @@ public:
     void setSyncMode(bool synced);
     void setClockDivision(int division);
     void setPitchCV(float cv);        // 1V/oct control
+    void setPattern(int pattern);     // 0-15 tap spacing patterns
+    void setSlope(int slope);         // 0-3 envelope slopes
+    void updateTempo(double hostTempo, bool isValid); // Update tempo for sync calculations
 
     void processStereo(float inputL, float inputR, float& outputL, float& outputR);
     void reset();
 
     // Get current size for display
     float getCurrentSize() const { return mCombSize; }
+    float getSyncedCombSize() const;  // Get sync-adjusted comb size
 
 private:
     static const int MAX_TAPS = 64;
@@ -217,9 +221,15 @@ private:
     bool mIsSynced;
     int mClockDivision;
     float mHostTempo;
+    bool mHostTempoValid;
+
+    // Pattern and slope parameters
+    int mPattern;           // 0-15 tap spacing pattern
+    int mSlope;             // 0-3 envelope slope
 
     // Calculate tap delays based on comb size
     float getTapDelay(int tapIndex) const;
+    float getTapGain(int tapIndex) const;
     float applyCVScaling(float baseDelay) const;
     float tanhLimiter(float input) const;
 };
@@ -331,6 +341,8 @@ private:
     int mCombTaps;            // Number of active comb taps
     bool mCombSync;           // Comb sync mode
     int mCombDivision;        // Comb sync division
+    int mCombPattern;         // Comb tap spacing pattern (0-15)
+    int mCombSlope;           // Comb envelope slope (0-3)
 
     // Bypass fade system state
     bool mDelayBypassPrevious;     // Track previous state for fade triggering
