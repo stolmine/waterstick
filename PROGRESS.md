@@ -401,11 +401,11 @@ The foundation provides:
 
 ## Next Development Priorities
 
-1. **Audio Processing Verification**: Resolve remaining parameter scaling and routing discrepancies
-2. **GUI Positioning Refinement**: Correct bypass control placement and scaling accuracy
-3. **Performance Optimization**: Fix deprecated graphics drawing methods
-4. **Tap Pattern System**: Implement 16 preset tap distribution patterns (uniform, fibonacci, etc.)
-5. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
+1. **Performance Optimization**: Optimize comb processing and graphics rendering
+2. **Tap Pattern System**: Implement 16 preset tap distribution patterns (uniform, fibonacci, etc.)
+3. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
+4. **GUI Interaction Refinement**: Improve comb parameter interaction and layout
+5. **Advanced Parameter Mapping**: Develop more sophisticated parameter scaling and automation curves
 
 ---
 
@@ -554,9 +554,9 @@ Multi-layered approach implemented to prevent cached state from overriding corre
    - Total parameter count: 117 parameters
    - VST3 validation: 47/47 tests passed
 
-### ✅ Phase 3.7: Comprehensive Comb Parameter Fixes
+### ✅ Phase 3.7: Comprehensive Comb Parameter Fixes ✅ MERGED (2025-09-19)
 
-**Work Completed:**
+**Merged and Verified:**
 1. **Sync System Implementation**
    - Fixed getSyncedCombSize() method to properly integrate tempo synchronization
    - Comb sync parameter now has a clear, audible effect
