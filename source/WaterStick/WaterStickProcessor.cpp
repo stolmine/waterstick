@@ -1439,27 +1439,13 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
             }
             case DelayPlusComb:
             {
-                // Parallel mode: both sections process input independently
+                // Parallel mode: both sections process input independently with equal-power mixing
                 processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
                 processCombSection(gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
 
-                // Apply equal-power parallel mixing with proper balance control
-                // Use the individual section dry/wet controls as balance parameters in parallel mode
-                float delayBalance = mDelayDryWet;  // DelayDryWet acts as delay section level in parallel
-                float combBalance = mCombDryWet;    // CombDryWet acts as comb section level in parallel
-
-                // Normalize balance controls for equal-power mixing
-                float totalBalance = delayBalance + combBalance;
-                if (totalBalance > 0.0f) {
-                    float delayGain = std::sqrt(delayBalance / totalBalance);
-                    float combGain = std::sqrt(combBalance / totalBalance);
-                    finalOutputL = (delayOutputL * delayGain) + (combOutputL * combGain);
-                    finalOutputR = (delayOutputR * delayGain) + (combOutputR * combGain);
-                } else {
-                    // Both sections muted - pass silence
-                    finalOutputL = 0.0f;
-                    finalOutputR = 0.0f;
-                }
+                // Apply equal-power parallel mixing for DelayPlusComb mode only
+                finalOutputL = (delayOutputL + combOutputL) * 0.7071f;  // sqrt(0.5) for equal-power
+                finalOutputR = (delayOutputR + combOutputR) * 0.7071f;  // sqrt(0.5) for equal-power
                 break;
             }
         }
