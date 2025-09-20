@@ -631,6 +631,31 @@ Parameter changes now propagate through delay taps as audio moves through the de
 **Comprehensive Signal Flow Enhancement:**
 Major overhaul of signal routing architecture with hierarchical dry/wet controls, section-specific gain controls, and professional audio standards implementation.
 
+### Phase 3.11: Advanced Routing Research ✅ COMPLETED (2025-09-20)
+
+**Routing Research Branch Integration:**
+Merged routing research findings from V3.5.0_routingResearch, providing comprehensive insights into signal path strategies:
+
+1. **Routing Mode Analysis**
+   - Validated DelayToComb, CombToDelay, DelayPlusComb mode implementations
+   - Confirmed 10ms smooth transition time between modes
+   - Verified click-free bypass controls for each section
+
+2. **Dry/Wet Hierarchy**
+   - Confirmed Global/Delay/Comb mix hierarchy works correctly
+   - Verified equal-power crossfading in parallel modes
+   - Ensured proper signal leakage prevention in serial modes
+
+3. **Feedback Path Routing**
+   - Identified need for section-specific feedback controls
+   - Mapped independent delay and comb feedback routing strategies
+
+4. **Transition Optimization**
+   - Noted potential improvements for routing transition timing
+   - Recommended buffer clearing during routing mode changes
+
+**Outcome:** Comprehensive routing research successfully integrated, providing a robust foundation for future signal path enhancements.
+
 **Technical Achievements:**
 
 1. **✅ C-GAIN Parameter Implementation (Phase 1)**
