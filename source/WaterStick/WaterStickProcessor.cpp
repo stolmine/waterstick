@@ -942,6 +942,7 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
         bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
         if (processTap) {
+
             // Process through both L and R delay lines for this tap
             float tapOutputL, tapOutputR;
             mTapDelayLinesL[tap].processSample(inputL, tapOutputL);
@@ -1008,14 +1009,30 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     mFeedbackBufferL = sumL;
     mFeedbackBufferR = sumR;
 
-    // Apply consistent delay section dry/wet mix with delay gain
-    // D-MIX control always applies - 0% = dry passthrough, 100% = full delay processing
-    float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
-    float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
-    float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
+    // Apply serial-aware dry/wet mixing based on routing mode
+    ProcessingMode mode = getProcessingMode(routeMode);
+    bool hasActiveTaps = hasAnyTapsEnabled();
 
-    outputL = (inputL * dryGain) + (sumL * delayWetGain);
-    outputR = (inputR * dryGain) + (sumR * delayWetGain);
+    if (mode == SERIAL_MODE && !hasActiveTaps) {
+        // Serial mode with no processing: Mix control determines dry passthrough vs silence
+        if (mDelayDryWet == 0.0f) {
+            // 0% wet = pass dry signal through
+            outputL = inputL;
+            outputR = inputR;
+        } else {
+            // Any wet amount with no processing = silence
+            outputL = 0.0f;
+            outputR = 0.0f;
+        }
+    } else {
+        // Parallel mode OR serial mode with active processing: Standard dry/wet mixing
+        float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
+        float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
+        float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
+
+        outputL = (inputL * dryGain) + (sumL * delayWetGain);
+        outputR = (inputR * dryGain) + (sumR * delayWetGain);
+    }
 
     // Apply delay section bypass fade
     if (mDelayFadingOut) {
@@ -1060,13 +1077,25 @@ void WaterStickProcessor::processCombSection(float inputL, float inputR, float& 
     float combWetL, combWetR;
     mCombProcessor.processStereo(inputL, inputR, combWetL, combWetR);
 
-    // Apply consistent comb section dry/wet mix
-    // C-MIX control always applies - 0% = dry passthrough, 100% = full comb processing
-    float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
-    float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
+    // Apply serial-aware dry/wet mixing based on routing mode
+    ProcessingMode mode = getProcessingMode(routeMode);
 
-    outputL = (inputL * dryGain) + (combWetL * wetGain);
-    outputR = (inputR * dryGain) + (combWetR * wetGain);
+    if (mode == SERIAL_MODE) {
+        // Serial mode: Mix control determines dry/processed balance
+        // Comb always produces output (resonator always active), so always apply mixing
+        float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
+        float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
+
+        outputL = (inputL * dryGain) + (combWetL * wetGain);
+        outputR = (inputR * dryGain) + (combWetR * wetGain);
+    } else {
+        // Parallel mode: Always mix dry + processed (same as serial in this case)
+        float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
+        float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
+
+        outputL = (inputL * dryGain) + (combWetL * wetGain);
+        outputR = (inputR * dryGain) + (combWetR * wetGain);
+    }
 
     // Apply comb section bypass fade
     if (mCombFadingOut) {
@@ -1103,6 +1132,22 @@ void WaterStickProcessor::processCombSection(float inputL, float inputR, float& 
         outputL = inputL;
         outputR = inputR;
     }
+}
+
+// Serial-aware processing helper methods
+WaterStickProcessor::ProcessingMode WaterStickProcessor::getProcessingMode(RouteMode routeMode) const
+{
+    return (routeMode == DelayPlusComb) ? PARALLEL_MODE : SERIAL_MODE;
+}
+
+bool WaterStickProcessor::hasAnyTapsEnabled() const
+{
+    for (int i = 0; i < 16; i++) {
+        if (mTapEnabled[i]) {
+            return true;
+        }
+    }
+    return false;
 }
 
 tresult PLUGIN_API WaterStickProcessor::initialize(FUnknown* context)

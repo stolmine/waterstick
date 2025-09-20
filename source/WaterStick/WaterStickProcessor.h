@@ -317,6 +317,11 @@ private:
     void processDelaySection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode);
     void processCombSection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode);
 
+    // Serial-aware processing helpers
+    enum ProcessingMode { SERIAL_MODE, PARALLEL_MODE };
+    ProcessingMode getProcessingMode(RouteMode routeMode) const;
+    bool hasAnyTapsEnabled() const;
+
     // State versioning methods
     Steinberg::tresult readLegacyProcessorState(Steinberg::IBStream* state);
     Steinberg::tresult readVersionedProcessorState(Steinberg::IBStream* state, Steinberg::int32 version);
