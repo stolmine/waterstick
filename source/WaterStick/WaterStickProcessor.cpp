@@ -783,6 +783,9 @@ WaterStickProcessor::WaterStickProcessor()
 , mDelayFadeGain(1.0f)
 , mCombFadeGain(1.0f)
 , mSampleRate(44100.0)
+, mLastTempoSyncDelayTime(-1.0f)  // Initialize to invalid value to force first update
+, mTempoSyncParametersChanged(false)
+, mParameterHistoryWriteIndex(0)
 {
     for (int i = 0; i < 16; i++) {
         mTapEnabled[i] = false;
@@ -807,6 +810,18 @@ WaterStickProcessor::WaterStickProcessor()
 
     mFeedbackBufferL = 0.0f;
     mFeedbackBufferR = 0.0f;
+
+    // Initialize parameter history with current values
+    for (int i = 0; i < 16; i++) {
+        for (int j = 0; j < PARAM_HISTORY_SIZE; j++) {
+            mTapParameterHistory[i][j].level = mTapLevel[i];
+            mTapParameterHistory[i][j].pan = mTapPan[i];
+            mTapParameterHistory[i][j].filterCutoff = mTapFilterCutoff[i];
+            mTapParameterHistory[i][j].filterResonance = mTapFilterResonance[i];
+            mTapParameterHistory[i][j].filterType = mTapFilterType[i];
+            mTapParameterHistory[i][j].enabled = mTapEnabled[i];
+        }
+    }
 
     setControllerClass(kWaterStickControllerUID);
 }
@@ -948,14 +963,21 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float 
             mTapDelayLinesL[tap].processSample(inputL, tapOutputL);
             mTapDelayLinesR[tap].processSample(inputR, tapOutputR);
 
-            // Apply tap level
-            float tapLevel = mTapDistribution.getTapLevel(tap);
-            tapOutputL *= tapLevel;
-            tapOutputR *= tapLevel;
+            // Get historic parameters that were active when this audio entered the delay
+            float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
+            ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
 
-            // Apply per-tap filter
+            // Apply historic tap level (parameters that were active when audio entered delay)
+            tapOutputL *= historicParams.level;
+            tapOutputR *= historicParams.level;
+
+            // Apply per-tap filter with historic parameters
+            // Temporarily set filter parameters to historic values
+            mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
+            mTapFiltersR[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
             tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
             tapOutputR = static_cast<float>(mTapFiltersR[tap].process(tapOutputR));
+            // Note: Filter states will be overwritten by current parameters after all taps are processed
 
             // Apply fade-out if in progress
             if (mTapFadingOut[tap]) {
@@ -994,8 +1016,8 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float 
                 }
             }
 
-            // Apply stereo panning (0.0 = full left, 0.5 = center, 1.0 = full right)
-            float pan = mTapDistribution.getTapPan(tap);
+            // Apply stereo panning using historic parameters (0.0 = full left, 0.5 = center, 1.0 = full right)
+            float pan = historicParams.pan;
             float leftGain = 1.0f - pan;   // Left channel gain
             float rightGain = pan;         // Right channel gain
 
@@ -1210,12 +1232,76 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
 }
 
 
+void WaterStickProcessor::captureCurrentParameters()
+{
+    // Store current parameter values for all taps
+    for (int i = 0; i < 16; i++) {
+        ParameterSnapshot& snapshot = mTapParameterHistory[i][mParameterHistoryWriteIndex];
+        snapshot.level = mTapLevel[i];
+        snapshot.pan = mTapPan[i];
+        snapshot.filterCutoff = mTapFilterCutoff[i];
+        snapshot.filterResonance = mTapFilterResonance[i];
+        snapshot.filterType = mTapFilterType[i];
+        snapshot.enabled = mTapEnabled[i];
+    }
+
+    // Advance write index (circular buffer)
+    mParameterHistoryWriteIndex = (mParameterHistoryWriteIndex + 1) % PARAM_HISTORY_SIZE;
+}
+
+WaterStickProcessor::ParameterSnapshot WaterStickProcessor::getHistoricParameters(int tapIndex, float delayTimeSeconds) const
+{
+    if (tapIndex < 0 || tapIndex >= 16) {
+        // Return current parameters as fallback
+        ParameterSnapshot current;
+        current.level = mTapLevel[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.pan = mTapPan[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.filterCutoff = mTapFilterCutoff[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.filterResonance = mTapFilterResonance[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.filterType = mTapFilterType[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.enabled = mTapEnabled[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        return current;
+    }
+
+    // Calculate how many samples back to look
+    int samplesBack = static_cast<int>(delayTimeSeconds * mSampleRate);
+    samplesBack = std::min(samplesBack, PARAM_HISTORY_SIZE - 1);
+
+    // Calculate history index
+    int historyIndex = mParameterHistoryWriteIndex - samplesBack;
+    if (historyIndex < 0) {
+        historyIndex += PARAM_HISTORY_SIZE;
+    }
+
+    return mTapParameterHistory[tapIndex][historyIndex];
+}
+
+void WaterStickProcessor::checkTempoSyncParameterChanges()
+{
+    // Check if tempo sync parameters actually changed
+    if (mTempoSyncMode) {
+        float currentDelayTime = mTempoSync.getDelayTime();
+        if (std::abs(currentDelayTime - mLastTempoSyncDelayTime) > 0.001f) {
+            mTempoSyncParametersChanged = true;
+            mLastTempoSyncDelayTime = currentDelayTime;
+        } else {
+            mTempoSyncParametersChanged = false;
+        }
+    } else {
+        // In free mode, always update if parameters changed
+        mTempoSyncParametersChanged = true;
+    }
+}
+
 void WaterStickProcessor::updateParameters()
 {
     // Update tempo sync settings
     mTempoSync.setMode(mTempoSyncMode);
     mTempoSync.setSyncDivision(mSyncDivision);
     mTempoSync.setFreeTime(mDelayTime);
+
+    // Check for parameter changes to optimize tempo sync updates
+    checkTempoSyncParameterChanges();
 
     // Update tap distribution
     mTapDistribution.setGrid(mGrid);
@@ -1388,12 +1474,12 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
     // Check for bypass state changes and handle fades
     checkBypassStateChanges();
 
-    // Update tempo sync delay time every process cycle (tempo can change without parameter changes)
-    if (mTempoSyncMode) {
+    // Only update tempo sync delay times when parameters actually changed
+    if (mTempoSyncMode && mTempoSyncParametersChanged) {
         // Update tap distribution with current tempo
         mTapDistribution.updateTempo(mTempoSync);
 
-        // Update all tap delay times
+        // Update all tap delay times only when parameters changed
         for (int i = 0; i < NUM_TAPS; i++) {
             float tapDelayTime = mTapDistribution.getTapDelayTime(i);
             mTapDelayLinesL[i].setDelayTime(tapDelayTime);
@@ -1404,6 +1490,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float finalDelayTime = mTempoSync.getDelayTime();
         mDelayLineL.setDelayTime(finalDelayTime);
         mDelayLineR.setDelayTime(finalDelayTime);
+
+        // Reset the change flag
+        mTempoSyncParametersChanged = false;
     }
 
     // Check for valid input/output
@@ -1432,6 +1521,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
     // Process samples
     for (int32 sample = 0; sample < data.numSamples; sample++)
     {
+        // Capture current parameters before processing each sample
+        captureCurrentParameters();
+
         // Get input samples
         float inL = inputL[sample];
         float inR = inputR[sample];

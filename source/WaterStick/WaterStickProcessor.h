@@ -420,7 +420,30 @@ private:
     // Routing manager
     RoutingManager mRoutingManager;
 
+    // Parameter change tracking for tempo sync optimization
+    float mLastTempoSyncDelayTime;
+    bool mTempoSyncParametersChanged;
+
+    // Parameter capture for delay propagation
+    struct ParameterSnapshot {
+        float level;
+        float pan;
+        float filterCutoff;
+        float filterResonance;
+        int filterType;
+        bool enabled;
+    };
+
+    // Store parameter snapshots for each tap (circular buffer approach)
+    static const int PARAM_HISTORY_SIZE = 8192;  // Enough for ~185ms at 44.1kHz
+    ParameterSnapshot mTapParameterHistory[16][PARAM_HISTORY_SIZE];
+    int mParameterHistoryWriteIndex;
+
+    void captureCurrentParameters();
+    ParameterSnapshot getHistoricParameters(int tapIndex, float delayTimeSeconds) const;
+
     void updateParameters();
+    void checkTempoSyncParameterChanges();
 };
 
 } // namespace WaterStick
