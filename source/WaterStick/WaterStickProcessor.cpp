@@ -932,7 +932,7 @@ void WaterStickProcessor::checkBypassStateChanges()
     }
 }
 
-void WaterStickProcessor::processDelaySection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode)
+void WaterStickProcessor::processDelaySection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode)
 {
     // Process through all 16 tap delay lines (existing delay processing logic)
     float sumL = 0.0f;
@@ -1016,9 +1016,9 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     if (mode == SERIAL_MODE && !hasActiveTaps) {
         // Serial mode with no processing: Mix control determines dry passthrough vs silence
         if (mDelayDryWet == 0.0f) {
-            // 0% wet = pass dry signal through
-            outputL = inputL;
-            outputR = inputR;
+            // 0% wet = pass dry reference signal through
+            outputL = dryRefL;
+            outputR = dryRefR;
         } else {
             // Any wet amount with no processing = silence
             outputL = 0.0f;
@@ -1026,12 +1026,13 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
         }
     } else {
         // Parallel mode OR serial mode with active processing: Standard dry/wet mixing
+        // Use dry reference signal for mixing (in C>D mode, this is comb output; in other modes, original input)
         float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
         float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
         float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
 
-        outputL = (inputL * dryGain) + (sumL * delayWetGain);
-        outputR = (inputR * dryGain) + (sumR * delayWetGain);
+        outputL = (dryRefL * dryGain) + (sumL * delayWetGain);
+        outputR = (dryRefR * dryGain) + (sumR * delayWetGain);
     }
 
     // Apply delay section bypass fade
@@ -1064,14 +1065,14 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
         }
     }
 
-    // If delay is bypassed and not fading, pass through input
+    // If delay is bypassed and not fading, pass through the processing input (not dry reference)
     if (mDelayBypass && !mDelayFadingOut && !mDelayFadingIn) {
         outputL = inputL;
         outputR = inputR;
     }
 }
 
-void WaterStickProcessor::processCombSection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode)
+void WaterStickProcessor::processCombSection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode)
 {
     // Process through comb processor
     float combWetL, combWetR;
@@ -1082,19 +1083,20 @@ void WaterStickProcessor::processCombSection(float inputL, float inputR, float& 
 
     if (mode == SERIAL_MODE) {
         // Serial mode: Mix control determines dry/processed balance
+        // Use dry reference signal for mixing (in D>C mode, this is delay output; in other modes, original input)
         // Comb always produces output (resonator always active), so always apply mixing
         float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
         float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
 
-        outputL = (inputL * dryGain) + (combWetL * wetGain);
-        outputR = (inputR * dryGain) + (combWetR * wetGain);
+        outputL = (dryRefL * dryGain) + (combWetL * wetGain);
+        outputR = (dryRefR * dryGain) + (combWetR * wetGain);
     } else {
-        // Parallel mode: Always mix dry + processed (same as serial in this case)
+        // Parallel mode: Always mix dry + processed (use dry reference signal)
         float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
         float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
 
-        outputL = (inputL * dryGain) + (combWetL * wetGain);
-        outputR = (inputR * dryGain) + (combWetR * wetGain);
+        outputL = (dryRefL * dryGain) + (combWetL * wetGain);
+        outputR = (dryRefR * dryGain) + (combWetR * wetGain);
     }
 
     // Apply comb section bypass fade
@@ -1127,7 +1129,7 @@ void WaterStickProcessor::processCombSection(float inputL, float inputR, float& 
         }
     }
 
-    // If comb is bypassed and not fading, pass through input
+    // If comb is bypassed and not fading, pass through the processing input (not dry reference)
     if (mCombBypass && !mCombFadingOut && !mCombFadingIn) {
         outputL = inputL;
         outputR = inputR;
@@ -1455,8 +1457,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
             case DelayToComb:
             {
                 // Serial mode: Delay feeds into Comb
-                processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
-                processCombSection(delayOutputL, delayOutputR, combOutputL, combOutputR, currentRouteMode);
+                // Delay section processes input, uses original input as dry reference
+                processDelaySection(gainedL, gainedR, gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
+                // Comb section processes delay output, uses delay output as dry reference for mixing
+                processCombSection(delayOutputL, delayOutputR, delayOutputL, delayOutputR, combOutputL, combOutputR, currentRouteMode);
                 finalOutputL = combOutputL;
                 finalOutputR = combOutputR;
                 break;
@@ -1464,8 +1468,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
             case CombToDelay:
             {
                 // Serial mode: Comb feeds into Delay
-                processCombSection(gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
-                processDelaySection(combOutputL, combOutputR, delayOutputL, delayOutputR, currentRouteMode);
+                // Comb section processes input, uses original input as dry reference
+                processCombSection(gainedL, gainedR, gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
+                // Delay section processes comb output, uses comb output as dry reference for mixing
+                processDelaySection(combOutputL, combOutputR, combOutputL, combOutputR, delayOutputL, delayOutputR, currentRouteMode);
                 finalOutputL = delayOutputL;
                 finalOutputR = delayOutputR;
                 break;
@@ -1473,8 +1479,9 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
             case DelayPlusComb:
             {
                 // Parallel mode: both sections process input independently with equal-power mixing
-                processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
-                processCombSection(gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
+                // Both sections use original input as dry reference
+                processDelaySection(gainedL, gainedR, gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
+                processCombSection(gainedL, gainedR, gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
 
                 // Apply equal-power parallel mixing for DelayPlusComb mode only
                 finalOutputL = (delayOutputL + combOutputL) * 0.7071f;  // sqrt(0.5) for equal-power

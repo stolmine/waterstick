@@ -314,8 +314,8 @@ private:
     // Helper methods
     void checkTapStateChangesAndClearBuffers();
     void checkBypassStateChanges();
-    void processDelaySection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode);
-    void processCombSection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode);
+    void processDelaySection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode);
+    void processCombSection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode);
 
     // Serial-aware processing helpers
     enum ProcessingMode { SERIAL_MODE, PARALLEL_MODE };
