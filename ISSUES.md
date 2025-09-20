@@ -33,53 +33,27 @@
 3. **Transition Timing**: 10ms may be insufficient for very long delays
 4. **Buffer Management**: Routing mode changes should clear all buffers to prevent artifacts
 
-**User Experience Issues Identified**:
-5. **Missing Gain Controls**: ✅ **COMPLETED** - Both Delay and Comb gain controls implemented
-6. **Dry/Wet UI Confusion**: ✅ **COMPLETED** - Clear G-MIX, D-MIX, C-MIX hierarchy implemented
-7. **UI Parameter Mismatch**: ✅ **COMPLETED** - All three dry/wet parameters properly exposed
-8. **Mix Control Non-Responsiveness**: ✅ **COMPLETED** - Fixed across all routing modes
-9. **Serial Routing Signal Leakage**: ✅ **COMPLETED** - Eliminated unexpected signal paths
-10. **Buffer State Issues**: Routing mode changes don't clear processor buffers, causing audio artifacts
+**Active Issues Requiring Implementation**:
+1. **Buffer State Issues**: Routing mode changes don't clear processor buffers, causing audio artifacts
+2. **Comb Parameter Smoothing**: Parameters cause clicks/pops in comb section
 
 **Implementation Recommendations**:
 1. Implement section-specific feedback routing
-2. ✅ **COMPLETED** - Individual Delay and Comb gain controls now available in DSP and GUI
-3. ✅ **COMPLETED** - Hierarchical G-MIX, D-MIX, C-MIX controls implemented
-4. ✅ **COMPLETED** - Mix control responsiveness fixed across all routing modes
-5. ✅ **COMPLETED** - Serial routing signal leakage eliminated
-6. Add buffer clearing to routing mode transitions
-7. Introduce dynamic scaling for parallel processing
-8. Add user-controllable parallel mix balance
-9. Fine-tune routing transition timing (current 10ms)
+2. Add buffer clearing to routing mode transitions
+3. Introduce dynamic scaling for parallel processing
+4. Add user-controllable parallel mix balance
+5. Fine-tune routing transition timing (current 10ms)
+6. Implement comb parameter smoothing with 5-10ms time constants
 
 **Status**: Investigation Complete ✓
 
-## Implementation Plan - Signal Routing Improvements
+## Active Implementation Plan
 
-### ✅ Phase 1: C-GAIN Parameter (COMPLETE)
-**Status**: Complete ✓
-**Time**: 4 hours
-**Branch**: V3.1_combGUI
-
-**Completed:**
-- Added kCombGain parameter with professional -40dB to +12dB range
-- DSP integration with proper dB scaling in CombProcessor
-- GUI layout updated to accommodate 10 comb parameters
-- VST3 validation: 47/47 tests passed
-
-### ✅ Phase 1.5: D-GAIN Parameter (COMPLETE)
-**Status**: Complete ✅
-**Time**: 2 hours
-**Branch**: V3.5.0_routingResearch
-**Commit**: dfbdcd1
-
-**Completed:**
-- Added kDelayGain parameter with professional -40dB to +12dB range (0dB default)
-- DSP integration: applies gain to wet signal only in processDelaySection()
-- GUI expanded from 7 to 8-knob layout with optimal spacing (26.5px)
-- D-GAIN knob positioned between GRID and INPUT for logical grouping
-- Full VST3 automation support with dB value display formatting
-- Build successful, ready for DAW testing
+### ✅ Completed Phases (Moved to PROGRESS.md)
+- Phase 1: C-GAIN Parameter ✅
+- Phase 1.5: D-GAIN Parameter ✅
+- Phase 4: Hierarchical Dry/Wet Controls ✅
+- Phase 4.5: Delay Parameter Propagation ✅
 
 ### 🔄 Phase 2: Intelligent Comb SIZE/DIV Knob
 **Priority**: High
@@ -113,34 +87,6 @@
 
 **Expected Outcome**: Independent feedback control for delay and comb sections with proper routing
 
-### ✅ Phase 4: Hierarchical Dry/Wet Controls (COMPLETE)
-**Status**: Complete ✅
-**Priority**: Medium
-**Component**: GUI/User Experience
-**Time**: 8 hours
-**Branch**: V3.5.0_routingResearch
-**Commits**: afb3c8b, e087314, d4dc125
-
-**Completed:**
-1. ✅ Implemented complete hierarchical dry/wet system (G-MIX, D-MIX, C-MIX)
-2. ✅ Added kCombDryWet parameter for comb section control
-3. ✅ GUI redesign with clear visual hierarchy:
-   - G-MIX: 63px global control, visually elevated
-   - D-MIX: 53px delay section control in global row
-   - C-MIX: 53px comb section control in comb grid
-4. ✅ Professional equal-power crossfading throughout signal chain
-5. ✅ Fixed mix control non-responsiveness across routing modes
-6. ✅ Serial-aware processing: 100% wet + no processing = silence
-7. ✅ Eliminated signal leakage in C-to-D and D-to-C modes
-
-**Technical Achievements:**
-- Professional plugin signal flow standards implemented
-- Sample-accurate parameter automation maintained
-- Equal-power mixing applied appropriately (parallel mode only)
-- Serial routing modes use unity gain to prevent volume loss
-- No-processing detection for proper silence behavior
-
-**VST3 Validation**: 47/47 tests passed ✅
 
 ### 🔄 Phase 5: Dynamic Parallel Processing
 **Priority**: Medium
@@ -170,19 +116,34 @@
 
 **Expected Outcome**: Artifact-free routing transitions with optimized timing
 
-### 📊 Implementation Summary
-**Total Estimated Time**: 28-38 hours (Phases 1, 1.5, 4 complete: 14 hours completed, 14-24 hours remaining)
-**Current Progress**: Phase 1 ✅, Phase 1.5 ✅, Phase 4 ✅, Phase 2 ready to start
+
+### 🔄 Phase 4.6: Comb Parameter Smoothing (HIGH PRIORITY)
+**Priority**: High
+**Component**: DSP/Audio Processing
+**Estimated Time**: 4-6 hours
+
+**Issues Identified:**
+1. **Abrupt Parameter Updates**: Comb parameters change instantly without smoothing, causing clicks/pops
+2. **Control Rate Updates**: Parameters only updated when VST changes occur, not at audio rate
+3. **Missing Professional Standards**: No 5-10ms parameter smoothing for real-time automation
+4. **Separate from Delay Issue**: Comb section needs its own parameter smoothing implementation
+
+**Tasks:**
+1. Implement sample-rate parameter smoothing for all comb controls (SIZE, PITCH, FEEDBACK, TAPS)
+2. Add exponential interpolation with 5-10ms time constants
+3. Update parameters at audio rate in processStereo() method
+4. Add crossfading for large parameter changes to prevent buffer index jumps
+5. Enhanced tanh limiting for parameter change transients
+
+**Expected Outcome**: Smooth, click-free comb parameter automation with professional audio standards
+
+### 📊 Active Implementation Summary
+**Remaining Estimated Time**: 16-26 hours
+**Current Progress**: 4 major phases completed, moved to PROGRESS.md
 **Risk Level**: Medium (DSP architecture changes require careful testing)
 **Testing Strategy**: VST3 validation + professional audio testing after each phase
 
-**Major Achievements This Session**:
-- ✅ **Hierarchical Dry/Wet System**: Complete G-MIX, D-MIX, C-MIX implementation
-- ✅ **Mix Control Responsiveness**: Fixed non-responsive controls across routing modes
-- ✅ **Serial Routing Signal Leakage**: Eliminated unexpected signal paths
-- ✅ **Professional Audio Standards**: Industry-standard signal flow behavior
-- ✅ **Code Signing Integrity**: Maintained throughout development process
-
+**Current Priority**: Phase 4.6 - Comb Parameter Smoothing (4-6 hours estimated)
 **Next Priority**: Phase 2 - Intelligent Comb SIZE/DIV Knob (6-8 hours estimated)
 
 ### 🎛️ GUI & User Experience Issues
@@ -215,8 +176,16 @@ When adding new issues, use this format:
 
 ---
 
-## Resolved Issues (Moved to PROGRESS.md)
-*All resolved issues have been documented in PROGRESS.md. This section is kept for reference to the proper documentation location.*
+## Resolved Issues ✅
+**Location**: All completed issues and phases have been moved to PROGRESS.md for historical tracking.
+
+**Recent Completions**:
+- Phase 1: C-GAIN Parameter Implementation
+- Phase 1.5: D-GAIN Parameter Implementation
+- Phase 4: Hierarchical Dry/Wet Controls
+- Phase 4.5: Delay Parameter Propagation
+
+See PROGRESS.md Phase 3.10 for complete technical details.
 
 ---
 
