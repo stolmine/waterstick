@@ -1008,20 +1008,14 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     mFeedbackBufferL = sumL;
     mFeedbackBufferR = sumR;
 
-    // Apply routing-aware delay section dry/wet mix with delay gain
-    if (routeMode == DelayToComb) {
-        // Serial mode: DelayToComb - output 100% wet signal to feed comb section
-        // Apply delay gain to wet signal for unity gain processing
-        outputL = sumL * mDelayGain;
-        outputR = sumR * mDelayGain;
-    } else {
-        // ParallelMode (DelayPlusComb) or CombToDelay - apply normal internal dry/wet mixing
-        float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
-        float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
-        float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
-        outputL = (inputL * dryGain) + (sumL * delayWetGain);
-        outputR = (inputR * dryGain) + (sumR * delayWetGain);
-    }
+    // Apply consistent delay section dry/wet mix with delay gain
+    // D-MIX control always applies - 0% = dry passthrough, 100% = full delay processing
+    float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
+    float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
+    float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
+
+    outputL = (inputL * dryGain) + (sumL * delayWetGain);
+    outputR = (inputR * dryGain) + (sumR * delayWetGain);
 
     // Apply delay section bypass fade
     if (mDelayFadingOut) {
@@ -1066,19 +1060,13 @@ void WaterStickProcessor::processCombSection(float inputL, float inputR, float& 
     float combWetL, combWetR;
     mCombProcessor.processStereo(inputL, inputR, combWetL, combWetR);
 
-    // Apply routing-aware comb section dry/wet mix
-    if (routeMode == CombToDelay) {
-        // Serial mode: CombToDelay - output 100% wet signal to feed delay section
-        // Use unity gain processing to maintain signal level
-        outputL = combWetL;
-        outputR = combWetR;
-    } else {
-        // ParallelMode (DelayPlusComb) or DelayToComb - apply normal internal dry/wet mixing
-        float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
-        float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
-        outputL = (inputL * dryGain) + (combWetL * wetGain);
-        outputR = (inputR * dryGain) + (combWetR * wetGain);
-    }
+    // Apply consistent comb section dry/wet mix
+    // C-MIX control always applies - 0% = dry passthrough, 100% = full comb processing
+    float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
+    float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
+
+    outputL = (inputL * dryGain) + (combWetL * wetGain);
+    outputR = (inputR * dryGain) + (combWetR * wetGain);
 
     // Apply comb section bypass fade
     if (mCombFadingOut) {
