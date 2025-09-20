@@ -176,6 +176,49 @@ private:
 
 class CombProcessor {
 public:
+    // Tap position structure for interpolated mapping
+    struct TapPosition {
+        float currentPos;     // Current interpolated position
+        float targetPos;      // Target position for new tap count
+        float previousPos;    // Position from old tap count
+
+        TapPosition()
+            : currentPos(0.0f)
+            , targetPos(0.0f)
+            , previousPos(0.0f)
+        {
+        }
+    };
+
+    // Tap fade state structure
+    struct TapFadeState {
+        enum FadeType {
+            FADE_NONE = 0,
+            FADE_IN,
+            FADE_OUT,
+            CROSSFADE
+        };
+
+        FadeType fadeType;
+        float fadePosition;         // 0.0 to 1.0 fade progress
+        float fadeDuration;         // Duration in samples
+        float fadeStartTime;        // Sample when fade started
+        int targetTapCount;         // Target number of taps
+        int previousTapCount;       // Previous number of taps
+        bool isActive;              // Whether fade is currently active
+
+        TapFadeState()
+            : fadeType(FADE_NONE)
+            , fadePosition(0.0f)
+            , fadeDuration(0.0f)
+            , fadeStartTime(0.0f)
+            , targetTapCount(0)
+            , previousTapCount(0)
+            , isActive(false)
+        {
+        }
+    };
+
     CombProcessor();
     ~CombProcessor();
 
@@ -197,6 +240,13 @@ public:
     // Get current size for display
     float getCurrentSize() const { return mCombSize; }
     float getSyncedCombSize() const;  // Get sync-adjusted comb size
+
+    // Tap fade management for smooth transitions
+    void startTapCountFade(int newTapCount);
+    void updateFadeState();
+    float calculateFadeGain(float fadePosition, TapFadeState::FadeType fadeType) const;
+    void processFadedOutput(float& outputL, float& outputR);
+    float calculateFadeDurationSamples() const;
 
 private:
     static const int MAX_TAPS = 64;
@@ -229,11 +279,25 @@ private:
     int mSlope;             // 0-3 envelope slope
     float mGain;            // Linear gain multiplier
 
+    // Tap fade state management
+    TapFadeState mFadeState;                    // Current fade state
+    float mSampleCounter;                       // Sample counter for fade timing
+    std::vector<float> mPreviousOutputL;        // Previous output buffer for crossfade (left)
+    std::vector<float> mPreviousOutputR;        // Previous output buffer for crossfade (right)
+
+    // Tap position interpolation
+    std::vector<TapPosition> mTapPositions;     // Interpolated tap positions for smooth mapping
+
     // Calculate tap delays based on comb size
     float getTapDelay(int tapIndex) const;
     float getTapGain(int tapIndex) const;
     float applyCVScaling(float baseDelay) const;
     float tanhLimiter(float input) const;
+
+    // Tap position interpolation methods
+    void updateTapPositions();
+    float getInterpolatedTapPosition(int tap) const;
+    float getTapDelayFromFloat(float tapPosition) const;
 };
 
 class TapDistribution {
