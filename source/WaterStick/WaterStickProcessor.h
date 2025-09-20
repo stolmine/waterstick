@@ -314,8 +314,8 @@ private:
     // Helper methods
     void checkTapStateChangesAndClearBuffers();
     void checkBypassStateChanges();
-    void processDelaySection(float inputL, float inputR, float& outputL, float& outputR);
-    void processCombSection(float inputL, float inputR, float& outputL, float& outputR);
+    void processDelaySection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode);
+    void processCombSection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode);
 
     // State versioning methods
     Steinberg::tresult readLegacyProcessorState(Steinberg::IBStream* state);

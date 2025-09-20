@@ -932,7 +932,7 @@ void WaterStickProcessor::checkBypassStateChanges()
     }
 }
 
-void WaterStickProcessor::processDelaySection(float inputL, float inputR, float& outputL, float& outputR)
+void WaterStickProcessor::processDelaySection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode)
 {
     // Process through all 16 tap delay lines (existing delay processing logic)
     float sumL = 0.0f;
@@ -1008,12 +1008,20 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     mFeedbackBufferL = sumL;
     mFeedbackBufferR = sumR;
 
-    // Apply professional equal-power delay section dry/wet mix with delay gain
-    float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
-    float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
-    float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
-    outputL = (inputL * dryGain) + (sumL * delayWetGain);
-    outputR = (inputR * dryGain) + (sumR * delayWetGain);
+    // Apply routing-aware delay section dry/wet mix with delay gain
+    if (routeMode == DelayToComb) {
+        // Serial mode: DelayToComb - output 100% wet signal to feed comb section
+        // Apply delay gain to wet signal for unity gain processing
+        outputL = sumL * mDelayGain;
+        outputR = sumR * mDelayGain;
+    } else {
+        // ParallelMode (DelayPlusComb) or CombToDelay - apply normal internal dry/wet mixing
+        float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
+        float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
+        float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
+        outputL = (inputL * dryGain) + (sumL * delayWetGain);
+        outputR = (inputR * dryGain) + (sumR * delayWetGain);
+    }
 
     // Apply delay section bypass fade
     if (mDelayFadingOut) {
@@ -1052,17 +1060,25 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     }
 }
 
-void WaterStickProcessor::processCombSection(float inputL, float inputR, float& outputL, float& outputR)
+void WaterStickProcessor::processCombSection(float inputL, float inputR, float& outputL, float& outputR, RouteMode routeMode)
 {
     // Process through comb processor
     float combWetL, combWetR;
     mCombProcessor.processStereo(inputL, inputR, combWetL, combWetR);
 
-    // Apply professional equal-power comb section dry/wet mix
-    float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
-    float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
-    outputL = (inputL * dryGain) + (combWetL * wetGain);
-    outputR = (inputR * dryGain) + (combWetR * wetGain);
+    // Apply routing-aware comb section dry/wet mix
+    if (routeMode == CombToDelay) {
+        // Serial mode: CombToDelay - output 100% wet signal to feed delay section
+        // Use unity gain processing to maintain signal level
+        outputL = combWetL;
+        outputR = combWetR;
+    } else {
+        // ParallelMode (DelayPlusComb) or DelayToComb - apply normal internal dry/wet mixing
+        float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
+        float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
+        outputL = (inputL * dryGain) + (combWetL * wetGain);
+        outputR = (inputR * dryGain) + (combWetR * wetGain);
+    }
 
     // Apply comb section bypass fade
     if (mCombFadingOut) {
@@ -1401,34 +1417,49 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float combOutputL = 0.0f, combOutputR = 0.0f;
         float finalOutputL = 0.0f, finalOutputR = 0.0f;
 
-        switch (mRoutingManager.getRouteMode()) {
+        RouteMode currentRouteMode = mRoutingManager.getRouteMode();
+        switch (currentRouteMode) {
             case DelayToComb:
             {
-                // Delay feeds into Comb
-                processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR);
-                processCombSection(delayOutputL, delayOutputR, combOutputL, combOutputR);
+                // Serial mode: Delay feeds into Comb
+                processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
+                processCombSection(delayOutputL, delayOutputR, combOutputL, combOutputR, currentRouteMode);
                 finalOutputL = combOutputL;
                 finalOutputR = combOutputR;
                 break;
             }
             case CombToDelay:
             {
-                // Comb feeds into Delay
-                processCombSection(gainedL, gainedR, combOutputL, combOutputR);
-                processDelaySection(combOutputL, combOutputR, delayOutputL, delayOutputR);
+                // Serial mode: Comb feeds into Delay
+                processCombSection(gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
+                processDelaySection(combOutputL, combOutputR, delayOutputL, delayOutputR, currentRouteMode);
                 finalOutputL = delayOutputL;
                 finalOutputR = delayOutputR;
                 break;
             }
             case DelayPlusComb:
             {
-                // Parallel processing: both sections process input independently
-                processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR);
-                processCombSection(gainedL, gainedR, combOutputL, combOutputR);
+                // Parallel mode: both sections process input independently
+                processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
+                processCombSection(gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
 
-                // Mix parallel outputs equally
-                finalOutputL = (delayOutputL + combOutputL) * 0.5f;
-                finalOutputR = (delayOutputR + combOutputR) * 0.5f;
+                // Apply equal-power parallel mixing with proper balance control
+                // Use the individual section dry/wet controls as balance parameters in parallel mode
+                float delayBalance = mDelayDryWet;  // DelayDryWet acts as delay section level in parallel
+                float combBalance = mCombDryWet;    // CombDryWet acts as comb section level in parallel
+
+                // Normalize balance controls for equal-power mixing
+                float totalBalance = delayBalance + combBalance;
+                if (totalBalance > 0.0f) {
+                    float delayGain = std::sqrt(delayBalance / totalBalance);
+                    float combGain = std::sqrt(combBalance / totalBalance);
+                    finalOutputL = (delayOutputL * delayGain) + (combOutputL * combGain);
+                    finalOutputR = (delayOutputR * delayGain) + (combOutputR * combGain);
+                } else {
+                    // Both sections muted - pass silence
+                    finalOutputL = 0.0f;
+                    finalOutputR = 0.0f;
+                }
                 break;
             }
         }
