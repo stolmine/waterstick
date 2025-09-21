@@ -1,6 +1,7 @@
 #include "WaterStickProcessor.h"
 #include <cmath>
 #include <algorithm>
+#include <set>
 
 namespace WaterStick {
 
@@ -420,7 +421,7 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
         float tapOutR = mDelayBufferR[readIdx1] * (1.0f - delayFrac) +
                        mDelayBufferR[readIdx2] * delayFrac;
 
-        float densityGain = 1.0f / std::sqrt(static_cast<float>(activeTapCount));
+        float densityGain = calculateAdaptiveDensityGain(activeTapCount);
         float slopeGain = getTapGain(tap);
         float totalGain = densityGain * slopeGain;
 
@@ -870,6 +871,71 @@ float CombProcessor::calculateTapRatioForDiscretePattern(int tapIndex, int patte
     }
 
     return std::max(0.0f, std::min(1.0f, tapRatio));
+}
+
+float CombProcessor::calculateAdaptiveDensityGain(int activeTapCount) const
+{
+    if (activeTapCount <= 1) {
+        return 1.0f;
+    }
+
+    // Base 1/N compensation
+    float baseDensityGain = 1.0f / static_cast<float>(activeTapCount);
+
+    // For larger comb sizes where clustering is minimal, use standard 1/N
+    float combSizeSeconds = getSyncedCombSize();
+    float delaySamples = combSizeSeconds * static_cast<float>(mSampleRate);
+
+    // If delay is large enough to avoid severe clustering, use standard compensation
+    if (delaySamples > static_cast<float>(activeTapCount) * 2.0f) {
+        return baseDensityGain;
+    }
+
+    // Calculate clustering factors for small delays
+    std::set<int> uniquePositions;
+    float totalCorrelation = 0.0f;
+
+    // Count unique integer delay positions and calculate correlation
+    for (int tap = 0; tap < activeTapCount; ++tap) {
+        float physicalTapFloat = getInterpolatedTapPosition(tap);
+        float tapDelay = getTapDelayFromFloat(physicalTapFloat);
+        float tapDelaySamples = tapDelay * static_cast<float>(mSampleRate);
+
+        // Count unique positions
+        int delayPosition = static_cast<int>(tapDelaySamples);
+        uniquePositions.insert(delayPosition);
+
+        // Calculate correlation with previous tap
+        if (tap > 0) {
+            float prevPhysicalTapFloat = getInterpolatedTapPosition(tap - 1);
+            float prevTapDelay = getTapDelayFromFloat(prevPhysicalTapFloat);
+            float prevTapDelaySamples = prevTapDelay * static_cast<float>(mSampleRate);
+
+            float delayDiff = std::abs(tapDelaySamples - prevTapDelaySamples);
+            // Exponential correlation decay with delay difference
+            float correlation = std::exp(-delayDiff);
+            totalCorrelation += correlation;
+        }
+    }
+
+    // Calculate clustering factor based on unique positions
+    float positionClusteringFactor = static_cast<float>(activeTapCount) / static_cast<float>(uniquePositions.size());
+
+    // Calculate correlation factor based on average correlation between adjacent taps
+    float averageCorrelation = (activeTapCount > 1) ? totalCorrelation / static_cast<float>(activeTapCount - 1) : 0.0f;
+    float correlationFactor = 1.0f + averageCorrelation * 2.0f; // Scale correlation impact
+
+    // Hybrid adaptive factor: geometric mean of clustering and correlation factors
+    float adaptiveFactor = std::sqrt(positionClusteringFactor * correlationFactor);
+
+    // Apply adaptive compensation
+    float adaptiveDensityGain = baseDensityGain / adaptiveFactor;
+
+    // Clamp to reasonable range to prevent over-compensation
+    float minGain = baseDensityGain * 0.1f;  // No more than 10x additional attenuation
+    float maxGain = baseDensityGain;         // No gain boost, only attenuation
+
+    return std::max(minGain, std::min(maxGain, adaptiveDensityGain));
 }
 
 } // namespace WaterStick
