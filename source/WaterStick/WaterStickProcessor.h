@@ -229,11 +229,20 @@ private:
     int mSlope;             // 0-3 envelope slope
     float mGain;            // Linear gain multiplier
 
+    // Allpass interpolation for smooth size modulation
+    float mPrevCombSize;    // Previous comb size for smoothing
+    float mAllpassState;    // Allpass filter state for size smoothing
+    float mSmoothingCoeff;  // Smoothing coefficient based on sample rate
+
     // Calculate tap delays based on comb size
     float getTapDelay(int tapIndex) const;
     float getTapGain(int tapIndex) const;
     float applyCVScaling(float baseDelay) const;
     float tanhLimiter(float input) const;
+
+    // Allpass interpolation for smooth delay modulation
+    float getSmoothedCombSize();
+    void updateSmoothingCoeff();
 };
 
 class TapDistribution {

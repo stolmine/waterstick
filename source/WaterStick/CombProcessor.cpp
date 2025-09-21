@@ -21,6 +21,9 @@ CombProcessor::CombProcessor()
     , mPattern(0)
     , mSlope(0)
     , mGain(1.0f)
+    , mPrevCombSize(0.1f)
+    , mAllpassState(0.0f)
+    , mSmoothingCoeff(0.0f)
 {
 }
 
@@ -37,6 +40,9 @@ void CombProcessor::initialize(double sampleRate, double maxDelaySeconds)
     mDelayBufferL.resize(mBufferSize, 0.0f);
     mDelayBufferR.resize(mBufferSize, 0.0f);
 
+    // Update smoothing coefficient based on sample rate
+    updateSmoothingCoeff();
+
     reset();
 }
 
@@ -47,6 +53,10 @@ void CombProcessor::reset()
     mWriteIndex = 0;
     mFeedbackBufferL = 0.0f;
     mFeedbackBufferR = 0.0f;
+
+    // Reset allpass interpolation state
+    mPrevCombSize = getSyncedCombSize();
+    mAllpassState = 0.0f;
 }
 
 void CombProcessor::setSize(float sizeSeconds)
@@ -214,8 +224,42 @@ float CombProcessor::tanhLimiter(float input) const
     return std::tanh(input);
 }
 
+void CombProcessor::updateSmoothingCoeff()
+{
+    // Set time constant for smooth modulation (10ms for musical modulation rates)
+    const float timeConstant = 0.01f; // 10ms
+    mSmoothingCoeff = std::exp(-1.0f / (timeConstant * static_cast<float>(mSampleRate)));
+}
+
+float CombProcessor::getSmoothedCombSize()
+{
+    float targetSize = getSyncedCombSize();
+
+    // Calculate the difference between target and previous size
+    float sizeDiff = targetSize - mPrevCombSize;
+
+    // Apply allpass interpolation using Stanford formula: Δ ≈ (1-η)/(1+η)
+    // where η is the smoothing coefficient
+    float eta = mSmoothingCoeff;
+    float allpassCoeff = (1.0f - eta) / (1.0f + eta);
+
+    // Update allpass state with the size difference
+    mAllpassState = allpassCoeff * (sizeDiff + mAllpassState);
+
+    // Calculate smoothed size
+    float smoothedSize = mPrevCombSize + mAllpassState;
+
+    // Update previous size for next sample
+    mPrevCombSize = smoothedSize;
+
+    return smoothedSize;
+}
+
 void CombProcessor::processStereo(float inputL, float inputR, float& outputL, float& outputR)
 {
+    // Get smoothed comb size for this sample
+    float smoothedCombSize = getSmoothedCombSize();
+
     float mixedL = inputL + mFeedbackBufferL * mFeedback;
     float mixedR = inputR + mFeedbackBufferR * mFeedback;
 
@@ -230,7 +274,35 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
         int physicalTap = tap * MAX_TAPS / mNumActiveTaps;
         if (physicalTap >= MAX_TAPS) physicalTap = MAX_TAPS - 1;
 
-        float tapDelay = getTapDelay(physicalTap);
+        // Calculate tap ratio based on pattern
+        float tapRatio;
+        if (mPattern == 0) {
+            tapRatio = static_cast<float>(physicalTap + 1) / static_cast<float>(MAX_TAPS);
+        } else {
+            switch (mPattern) {
+                case 1:
+                    tapRatio = std::log(physicalTap + 1.0f) / std::log(MAX_TAPS);
+                    break;
+                case 2:
+                    tapRatio = (std::exp(static_cast<float>(physicalTap + 1) / MAX_TAPS) - 1.0f) / (std::exp(1.0f) - 1.0f);
+                    break;
+                case 3:
+                    tapRatio = std::pow(static_cast<float>(physicalTap + 1) / static_cast<float>(MAX_TAPS), 2.0f);
+                    break;
+                case 4:
+                    tapRatio = std::sqrt(static_cast<float>(physicalTap + 1) / static_cast<float>(MAX_TAPS));
+                    break;
+                default:
+                    float normalizedIndex = static_cast<float>(physicalTap + 1) / static_cast<float>(MAX_TAPS);
+                    float patternOffset = static_cast<float>(mPattern - 5) / 10.0f;
+                    tapRatio = std::pow(normalizedIndex, 1.0f + patternOffset);
+                    break;
+            }
+        }
+        tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
+
+        // Apply smoothed comb size and CV scaling
+        float tapDelay = applyCVScaling(smoothedCombSize * tapRatio);
         float delaySamples = tapDelay * mSampleRate;
 
         int delayInt = static_cast<int>(delaySamples);
@@ -256,7 +328,8 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
     outputL *= mGain;
     outputR *= mGain;
 
-    float maxDelay = applyCVScaling(getSyncedCombSize());
+    // Use the same smoothed comb size for feedback calculation
+    float maxDelay = applyCVScaling(smoothedCombSize);
     float maxDelaySamples = maxDelay * mSampleRate;
     int maxDelayInt = static_cast<int>(maxDelaySamples);
     float maxDelayFrac = maxDelaySamples - maxDelayInt;
