@@ -24,6 +24,8 @@ CombProcessor::CombProcessor()
     , mPrevCombSize(0.1f)
     , mAllpassState(0.0f)
     , mSmoothingCoeff(0.0f)
+    , mPrevPitchCV(0.0f)
+    , mPitchAllpassState(0.0f)
 {
 }
 
@@ -57,6 +59,8 @@ void CombProcessor::reset()
     // Reset allpass interpolation state
     mPrevCombSize = getSyncedCombSize();
     mAllpassState = 0.0f;
+    mPrevPitchCV = mPitchCV;
+    mPitchAllpassState = 0.0f;
 }
 
 void CombProcessor::setSize(float sizeSeconds)
@@ -149,7 +153,7 @@ float CombProcessor::getSyncedCombSize() const
     }
 }
 
-float CombProcessor::getTapDelay(int tapIndex) const
+float CombProcessor::getTapDelay(int tapIndex, float smoothedPitchCV)
 {
     float tapRatio;
 
@@ -180,12 +184,12 @@ float CombProcessor::getTapDelay(int tapIndex) const
     tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
 
     float effectiveSize = getSyncedCombSize();
-    return applyCVScaling(effectiveSize * tapRatio);
+    return applyCVScaling(effectiveSize * tapRatio, smoothedPitchCV);
 }
 
-float CombProcessor::applyCVScaling(float baseDelay) const
+float CombProcessor::applyCVScaling(float baseDelay, float pitchCV)
 {
-    float scaleFactor = std::pow(2.0f, -mPitchCV);
+    float scaleFactor = std::pow(2.0f, -pitchCV);
     return baseDelay * scaleFactor;
 }
 
@@ -255,10 +259,35 @@ float CombProcessor::getSmoothedCombSize()
     return smoothedSize;
 }
 
+float CombProcessor::getSmoothedPitchCV()
+{
+    float targetPitchCV = mPitchCV;
+
+    // Calculate the difference between target and previous pitch CV
+    float pitchDiff = targetPitchCV - mPrevPitchCV;
+
+    // Apply allpass interpolation using Stanford formula: Δ ≈ (1-η)/(1+η)
+    // where η is the smoothing coefficient (same 10ms time constant as size)
+    float eta = mSmoothingCoeff;
+    float allpassCoeff = (1.0f - eta) / (1.0f + eta);
+
+    // Update allpass state with the pitch CV difference
+    mPitchAllpassState = allpassCoeff * (pitchDiff + mPitchAllpassState);
+
+    // Calculate smoothed pitch CV
+    float smoothedPitchCV = mPrevPitchCV + mPitchAllpassState;
+
+    // Update previous pitch CV for next sample
+    mPrevPitchCV = smoothedPitchCV;
+
+    return smoothedPitchCV;
+}
+
 void CombProcessor::processStereo(float inputL, float inputR, float& outputL, float& outputR)
 {
-    // Get smoothed comb size for this sample
+    // Get smoothed values for this sample
     float smoothedCombSize = getSmoothedCombSize();
+    float smoothedPitchCV = getSmoothedPitchCV();
 
     float mixedL = inputL + mFeedbackBufferL * mFeedback;
     float mixedR = inputR + mFeedbackBufferR * mFeedback;
@@ -302,7 +331,7 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
         tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
 
         // Apply smoothed comb size and CV scaling
-        float tapDelay = applyCVScaling(smoothedCombSize * tapRatio);
+        float tapDelay = applyCVScaling(smoothedCombSize * tapRatio, smoothedPitchCV);
         float delaySamples = tapDelay * mSampleRate;
 
         int delayInt = static_cast<int>(delaySamples);
@@ -328,8 +357,8 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
     outputL *= mGain;
     outputR *= mGain;
 
-    // Use the same smoothed comb size for feedback calculation
-    float maxDelay = applyCVScaling(smoothedCombSize);
+    // Use the same smoothed values for feedback calculation
+    float maxDelay = applyCVScaling(smoothedCombSize, smoothedPitchCV);
     float maxDelaySamples = maxDelay * mSampleRate;
     int maxDelayInt = static_cast<int>(maxDelaySamples);
     float maxDelayFrac = maxDelaySamples - maxDelayInt;

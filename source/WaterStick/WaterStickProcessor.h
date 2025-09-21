@@ -234,14 +234,19 @@ private:
     float mAllpassState;    // Allpass filter state for size smoothing
     float mSmoothingCoeff;  // Smoothing coefficient based on sample rate
 
+    // Allpass interpolation for smooth pitch CV modulation
+    float mPrevPitchCV;     // Previous pitch CV for smoothing
+    float mPitchAllpassState; // Allpass filter state for pitch CV smoothing
+
     // Calculate tap delays based on comb size
-    float getTapDelay(int tapIndex) const;
+    float getTapDelay(int tapIndex, float smoothedPitchCV);
     float getTapGain(int tapIndex) const;
-    float applyCVScaling(float baseDelay) const;
+    float applyCVScaling(float baseDelay, float pitchCV);
     float tanhLimiter(float input) const;
 
     // Allpass interpolation for smooth delay modulation
     float getSmoothedCombSize();
+    float getSmoothedPitchCV();
     void updateSmoothingCoeff();
 };
 
