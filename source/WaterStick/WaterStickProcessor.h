@@ -202,7 +202,8 @@ public:
         TAP_COUNT = 0,
         SIZE,
         PATTERN,
-        FEEDBACK
+        FEEDBACK,
+        PITCH
     };
 
     // Tap fade state structure
@@ -272,6 +273,11 @@ public:
     void updateFadeState();
     float calculateFadeGain(float fadePosition, TapFadeState::FadeType fadeType) const;
     void processFadedOutput(float& outputL, float& outputR);
+    float getMaxFadeTimeForParameter(ParameterType paramType) const;
+
+    // Maximum fade times for different parameter types (ms)
+    static constexpr float MAX_FADE_TIME_PERFORMANCE = 100.0f;
+    static constexpr float MAX_FADE_TIME_CREATIVE = 2000.0f;
     float calculateFadeDurationSamples() const;
 
     // Parameter fade management for multiple parameter types

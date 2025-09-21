@@ -511,8 +511,8 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
 
         case kCombFadeTime:
         {
-            // Format as milliseconds (1ms to 500ms range)
-            float fadeTimeMs = 1.0f + (normalizedValue * 499.0f);
+            // Format as milliseconds (1ms to 2000ms range)
+            float fadeTimeMs = 1.0f + (normalizedValue * normalizedValue * 1999.0f);
             oss << std::fixed << std::setprecision(0) << fadeTimeMs << "ms";
             return oss.str();
         }

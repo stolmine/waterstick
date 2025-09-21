@@ -318,7 +318,7 @@ void WaterStickController::setDefaultParameters()
     setParamNormalized(kCombPattern, 0.0);       // Pattern 1
     setParamNormalized(kCombSlope, 0.0);         // Flat
     setParamNormalized(kCombGain, 0.769231);     // 0dB (40/52 range for -40dB to +12dB)
-    setParamNormalized(kCombFadeTime, 0.5);      // 25ms (0.5 normalized for 1ms-500ms range)
+    setParamNormalized(kCombFadeTime, 0.5);      // 45ms (0.5 normalized for 1ms-2000ms range)
 
     // Set routing and mix parameters to defaults
     setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
@@ -423,7 +423,7 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kCombPattern) return 0.0f;
     if (id == kCombSlope) return 0.0f;
     if (id == kCombGain) return 0.769231f;  // 0dB (40/52 range for -40dB to +12dB)
-    if (id == kCombFadeTime) return 0.5f;  // 25ms (0.5 normalized for 1ms-500ms range)
+    if (id == kCombFadeTime) return 0.5f;  // 45ms (0.5 normalized for 1ms-2000ms range)
 
     return 0.0f;  // Safe default
 }
@@ -1256,8 +1256,8 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
         case kCombFadeTime:
         {
             // Convert normalized value to milliseconds using same scaling as processor
-            // Formula: time = 1.0f + (499.0f * value * value) -> range 1ms to 500ms
-            float fadeTime_ms = 1.0f + (499.0f * valueNormalized * valueNormalized);
+            // Formula: time = 1.0f + (1999.0f * value * value) -> range 1ms to 2000ms
+            float fadeTime_ms = 1.0f + (1999.0f * valueNormalized * valueNormalized);
             char fadeStr[32];
             snprintf(fadeStr, sizeof(fadeStr), "%.1f ms", fadeTime_ms);
             Steinberg::UString(string, 128).fromAscii(fadeStr);
@@ -1368,9 +1368,9 @@ tresult PLUGIN_API WaterStickController::getParamValueByString(Vst::ParamID id, 
             float fadeTime_ms = strtof(asciiBuffer, &endPtr);
 
             // Check if parsing was successful and value is in valid range
-            if (endPtr != asciiBuffer && fadeTime_ms >= 1.0f && fadeTime_ms <= 500.0f) {
-                // Inverse of convertCombFadeTime: normalize value = sqrt((time - 1.0) / 499.0)
-                valueNormalized = std::sqrt((fadeTime_ms - 1.0f) / 499.0f);
+            if (endPtr != asciiBuffer && fadeTime_ms >= 1.0f && fadeTime_ms <= 2000.0f) {
+                // Inverse of convertCombFadeTime: normalize value = sqrt((time - 1.0) / 1999.0)
+                valueNormalized = std::sqrt((fadeTime_ms - 1.0f) / 1999.0f);
                 return kResultTrue;
             }
             break;

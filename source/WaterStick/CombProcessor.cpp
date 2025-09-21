@@ -92,18 +92,29 @@ void CombProcessor::setSize(float sizeSeconds)
 {
     float clampedSize = std::max(0.0001f, std::min(2.0f, sizeSeconds));
 
-    // Check if size change is significant enough to warrant fade (>1% change)
-    float currentSize = mFadeState.isActive && mFadeState.parameterType == SIZE ?
-                       mFadeState.currentValue : mCombSize;
-    float changeThreshold = currentSize * 0.01f; // 1% threshold
+    // Deadband with hysteresis to prevent oscillation during parameter movement
+    static const float DEADBAND_THRESHOLD = 0.005f;  // 0.5% deadband threshold
+    static const float HYSTERESIS_FACTOR = 1.5f;     // 1.5x hysteresis factor
 
-    if (std::abs(clampedSize - currentSize) > changeThreshold) {
+    // Determine reference value and threshold based on fade state
+    float referenceValue;
+    float threshold;
+
+    if (mFadeState.isActive && mFadeState.parameterType == SIZE) {
+        // During active fade: use targetValue and hysteresis threshold
+        referenceValue = mFadeState.targetValue;
+        threshold = referenceValue * DEADBAND_THRESHOLD * HYSTERESIS_FACTOR; // 0.75% threshold
+    } else {
+        // No active fade: use current value and deadband threshold
+        referenceValue = mCombSize;
+        threshold = referenceValue * DEADBAND_THRESHOLD; // 0.5% threshold
+    }
+
+    if (std::abs(clampedSize - referenceValue) > threshold) {
         // Significant change - start parameter fade
         startParameterFade(SIZE, clampedSize);
-    } else {
-        // Small change - update directly
-        mCombSize = clampedSize;
     }
+    // For small changes: let existing fade complete, no direct updates
 }
 
 void CombProcessor::setNumTaps(int numTaps)
@@ -178,7 +189,7 @@ void CombProcessor::setFadeTime(float fadeTimeMs)
     } else {
         // Otherwise: set FADE_MODE_FIXED
         mFadeMode = FADE_MODE_FIXED;
-        mUserFadeTime = std::max(1.0f, std::min(500.0f, fadeTimeMs));  // Clamp to valid range
+        mUserFadeTime = std::max(1.0f, std::min(2000.0f, fadeTimeMs));  // Clamp to valid range
     }
 }
 
@@ -205,6 +216,9 @@ void CombProcessor::startParameterFade(ParameterType paramType, float newValue)
                 break;
             case PATTERN:
                 mPattern = static_cast<int>(mFadeState.targetValue);
+                break;
+            case PITCH:
+                mPitchCV = mFadeState.targetValue;
                 break;
             default:
                 break;
@@ -237,6 +251,10 @@ void CombProcessor::startParameterFade(ParameterType paramType, float newValue)
             mFadeState.previousValue = static_cast<float>(mPattern);
             mFadeState.currentValue = static_cast<float>(mPattern);
             break;
+        case PITCH:
+            mFadeState.previousValue = mPitchCV;
+            mFadeState.currentValue = mPitchCV;
+            break;
         default:
             mFadeState.previousValue = 0.0f;
             mFadeState.currentValue = 0.0f;
@@ -260,6 +278,8 @@ float CombProcessor::getSmoothedParameterValue(ParameterType paramType) const
             return mFeedback;
         case PATTERN:
             return static_cast<float>(mPattern);
+        case PITCH:
+            return mPitchCV;
         default:
             return 0.0f;
     }
@@ -502,10 +522,13 @@ void CombProcessor::updateFadeState()
     float elapsed = mSampleCounter - mFadeState.fadeStartTime;
     mFadeState.fadePosition = elapsed / mFadeState.fadeDuration;
 
-    // Check if fade is complete
-    if (mFadeState.fadePosition >= 1.0f) {
+    // Check if fade is complete (99.8% to avoid interpolation errors)
+    if (mFadeState.fadePosition >= 0.998f) {
         mFadeState.fadePosition = 1.0f;
         mFadeState.isActive = false;
+
+        // Force exact target value to eliminate settling issues
+        mFadeState.currentValue = mFadeState.targetValue;
 
         // Update the actual parameter value when fade completes
         if (mFadeState.parameterType == TAP_COUNT) {
@@ -521,6 +544,9 @@ void CombProcessor::updateFadeState()
                 case PATTERN:
                     mPattern = static_cast<int>(mFadeState.targetValue);
                     break;
+                case PITCH:
+                    mPitchCV = mFadeState.targetValue;
+                    break;
                 default:
                     break;
             }
@@ -534,9 +560,9 @@ void CombProcessor::updateFadeState()
     // Update current interpolated value for parameter fades
     if (mFadeState.parameterType != TAP_COUNT) {
         float t = mFadeState.fadePosition;
-        // Use hermite interpolation for smooth curves
-        float smoothT = t * t * (3.0f - 2.0f * t);
-        mFadeState.currentValue = mFadeState.previousValue + (mFadeState.targetValue - mFadeState.previousValue) * smoothT;
+        // Use exponential approach for better settling behavior
+        float alpha = 1.0f - std::exp(-6.0f * t);
+        mFadeState.currentValue = mFadeState.previousValue + (mFadeState.targetValue - mFadeState.previousValue) * alpha;
     }
 }
 
@@ -607,6 +633,21 @@ void CombProcessor::processFadedOutput(float& outputL, float& outputR)
     }
 }
 
+float CombProcessor::getMaxFadeTimeForParameter(ParameterType paramType) const
+{
+    switch (paramType) {
+        case SIZE:
+        case PATTERN:
+        case PITCH:
+            return mUserFadeTime; // Full range: 1ms-2000ms
+        case FEEDBACK:
+        case TAP_COUNT:
+            return std::min(mUserFadeTime, 100.0f); // Capped at 100ms for responsiveness
+        default:
+            return mUserFadeTime;
+    }
+}
+
 float CombProcessor::calculateFadeDurationSamples() const
 {
     float clampedFadeMs;
@@ -614,33 +655,54 @@ float CombProcessor::calculateFadeDurationSamples() const
     switch (mFadeMode) {
         case FADE_MODE_AUTO:
             {
-                // Professional audio standards for parameter smoothing:
-                // - Max/MSP: 25ms for comb filter changes
-                // - General: 10-50ms range for musical applications
-                // - Anti-click: Under 50ms to avoid perceptible gaps
+                // Parameter-type-specific fade durations for optimal responsiveness
+                switch (mFadeState.parameterType) {
+                    case FEEDBACK:
+                    case TAP_COUNT:
+                        // Fast fade for real-time control parameters - keep responsive (5ms-100ms max)
+                        if (mFadeState.parameterType == TAP_COUNT) {
+                            // Adaptive timing for discrete parameter changes
+                            // Calculate tap count change magnitude for adaptive timing
+                            int tapCountChange = std::abs(mFadeState.targetTapCount - mFadeState.previousTapCount);
+                            float tapChangeRatio = static_cast<float>(tapCountChange) / static_cast<float>(MAX_TAPS);
 
-                // Calculate tap count change magnitude for adaptive timing
-                int tapCountChange = std::abs(mFadeState.targetTapCount - mFadeState.previousTapCount);
-                float tapChangeRatio = static_cast<float>(tapCountChange) / static_cast<float>(MAX_TAPS);
+                            // Base fade time: 25ms for discrete changes
+                            float baseFadeMs = 25.0f;
 
-                // Base fade time: 25ms (Max/MSP standard for comb filters)
-                float baseFadeMs = 25.0f;
+                            // Adaptive scaling based on magnitude of change:
+                            // - Small changes (1-8 taps): 15-25ms
+                            // - Medium changes (9-32 taps): 25-60ms
+                            // - Large changes (33-64 taps): 60-100ms
+                            float adaptiveScale = 1.0f + (tapChangeRatio * 3.0f);  // Scale up to 4x for full range
+                            float adaptiveFadeMs = baseFadeMs * adaptiveScale;
 
-                // Adaptive scaling based on magnitude of change:
-                // - Small changes (1-8 taps): 15-25ms
-                // - Medium changes (9-32 taps): 25-40ms
-                // - Large changes (33-64 taps): 40-60ms
-                float adaptiveScale = 1.0f + (tapChangeRatio * 1.4f);  // Scale up to 2.4x for full range
-                float adaptiveFadeMs = baseFadeMs * adaptiveScale;
-
-                // Clamp to professional range: 15-60ms
-                clampedFadeMs = std::max(15.0f, std::min(60.0f, adaptiveFadeMs));
+                            // Clamp to responsive range: 15-100ms for tap count
+                            clampedFadeMs = std::max(15.0f, std::min(100.0f, adaptiveFadeMs));
+                        } else {
+                            // Fast fade for continuous feedback parameter - reduces artifacts during real-time movement
+                            clampedFadeMs = 5.0f;
+                        }
+                        break;
+                    case SIZE:
+                    case PITCH:
+                        // Fast fade for continuous parameters - reduces artifacts during real-time movement
+                        clampedFadeMs = 5.0f;
+                        break;
+                    case PATTERN:
+                        // Fast fade for discrete parameter changes
+                        clampedFadeMs = 25.0f;
+                        break;
+                    default:
+                        // Fallback for unknown parameter types
+                        clampedFadeMs = 25.0f;
+                        break;
+                }
             }
             break;
 
         case FADE_MODE_FIXED:
-            // Use mUserFadeTime directly
-            clampedFadeMs = mUserFadeTime;
+            // Use parameter-specific maximum fade time
+            clampedFadeMs = getMaxFadeTimeForParameter(mFadeState.parameterType);
             break;
 
         case FADE_MODE_INSTANT:
@@ -656,12 +718,13 @@ float CombProcessor::calculateFadeDurationSamples() const
     // Convert to samples
     float fadeDurationSamples = (clampedFadeMs / 1000.0f) * static_cast<float>(mSampleRate);
 
-    // Ensure minimum of 64 samples (about 1.45ms at 44.1kHz) for numerical stability
+    // Ensure minimum of 32 samples (about 0.73ms at 44.1kHz) for numerical stability
+    // Reduced from 64 samples for faster response to continuous parameter changes
     // Exception: INSTANT mode can go below this threshold
     if (mFadeMode == FADE_MODE_INSTANT) {
         return std::max(1.0f, fadeDurationSamples);
     } else {
-        return std::max(64.0f, fadeDurationSamples);
+        return std::max(32.0f, fadeDurationSamples);
     }
 }
 

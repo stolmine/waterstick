@@ -63,10 +63,10 @@ struct ParameterConverter {
     }
 
     static float convertCombFadeTime(double value) {
-        // Logarithmic scaling: 0.0→1ms, 0.5→25ms, 1.0→500ms
-        // Formula: time = 1.0f + (499.0f * value * value)
+        // Logarithmic scaling: 0.0→1ms, 0.5→45ms, 1.0→2000ms
+        // Formula: time = 1.0f + (1999.0f * value * value)
         float normalizedValue = static_cast<float>(value);
-        return 1.0f + (499.0f * normalizedValue * normalizedValue);
+        return 1.0f + (1999.0f * normalizedValue * normalizedValue);
     }
 };
 
