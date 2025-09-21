@@ -21,6 +21,8 @@ CombProcessor::CombProcessor()
     , mPattern(0)
     , mSlope(0)
     , mGain(1.0f)
+    , mFadeMode(FADE_MODE_AUTO)
+    , mUserFadeTime(25.0f)
     , mSampleCounter(0.0f)
 {
     // Initialize tap positions vector
@@ -125,6 +127,24 @@ void CombProcessor::setSlope(int slope)
 void CombProcessor::setGain(float gain)
 {
     mGain = std::max(0.0f, gain);  // Ensure non-negative gain
+}
+
+void CombProcessor::setFadeTime(float fadeTimeMs)
+{
+    // Set mUserFadeTime and mFadeMode based on fade time
+    if (fadeTimeMs <= 1.0f) {
+        // If fadeTime <= 1ms: set FADE_MODE_INSTANT
+        mFadeMode = FADE_MODE_INSTANT;
+        mUserFadeTime = 1.0f;  // Minimum time for instant mode
+    } else if (fadeTimeMs <= 0.0f) {
+        // If fadeTime is special value (0 or negative): set FADE_MODE_AUTO
+        mFadeMode = FADE_MODE_AUTO;
+        mUserFadeTime = 25.0f;  // Default auto time
+    } else {
+        // Otherwise: set FADE_MODE_FIXED
+        mFadeMode = FADE_MODE_FIXED;
+        mUserFadeTime = std::max(1.0f, std::min(500.0f, fadeTimeMs));  // Clamp to valid range
+    }
 }
 
 void CombProcessor::updateTempo(double hostTempo, bool isValid)
@@ -468,15 +488,60 @@ void CombProcessor::processFadedOutput(float& outputL, float& outputR)
 
 float CombProcessor::calculateFadeDurationSamples() const
 {
-    // Calculate fade duration as one echo period (the time for the longest delay)
-    float maxDelay = applyCVScaling(getSyncedCombSize());
-    float fadeDurationSeconds = maxDelay;
+    float clampedFadeMs;
 
-    // Convert to samples and ensure minimum duration
-    float fadeDurationSamples = fadeDurationSeconds * static_cast<float>(mSampleRate);
+    switch (mFadeMode) {
+        case FADE_MODE_AUTO:
+            {
+                // Professional audio standards for parameter smoothing:
+                // - Max/MSP: 25ms for comb filter changes
+                // - General: 10-50ms range for musical applications
+                // - Anti-click: Under 50ms to avoid perceptible gaps
 
-    // Ensure minimum fade duration of 64 samples (about 1.45ms at 44.1kHz)
-    return std::max(64.0f, fadeDurationSamples);
+                // Calculate tap count change magnitude for adaptive timing
+                int tapCountChange = std::abs(mFadeState.targetTapCount - mFadeState.previousTapCount);
+                float tapChangeRatio = static_cast<float>(tapCountChange) / static_cast<float>(MAX_TAPS);
+
+                // Base fade time: 25ms (Max/MSP standard for comb filters)
+                float baseFadeMs = 25.0f;
+
+                // Adaptive scaling based on magnitude of change:
+                // - Small changes (1-8 taps): 15-25ms
+                // - Medium changes (9-32 taps): 25-40ms
+                // - Large changes (33-64 taps): 40-60ms
+                float adaptiveScale = 1.0f + (tapChangeRatio * 1.4f);  // Scale up to 2.4x for full range
+                float adaptiveFadeMs = baseFadeMs * adaptiveScale;
+
+                // Clamp to professional range: 15-60ms
+                clampedFadeMs = std::max(15.0f, std::min(60.0f, adaptiveFadeMs));
+            }
+            break;
+
+        case FADE_MODE_FIXED:
+            // Use mUserFadeTime directly
+            clampedFadeMs = mUserFadeTime;
+            break;
+
+        case FADE_MODE_INSTANT:
+            // Return minimal samples (1-2 samples)
+            return std::max(1.0f, 2.0f);
+
+        default:
+            // Fallback to auto mode logic
+            clampedFadeMs = 25.0f;
+            break;
+    }
+
+    // Convert to samples
+    float fadeDurationSamples = (clampedFadeMs / 1000.0f) * static_cast<float>(mSampleRate);
+
+    // Ensure minimum of 64 samples (about 1.45ms at 44.1kHz) for numerical stability
+    // Exception: INSTANT mode can go below this threshold
+    if (mFadeMode == FADE_MODE_INSTANT) {
+        return std::max(1.0f, fadeDurationSamples);
+    } else {
+        return std::max(64.0f, fadeDurationSamples);
+    }
 }
 
 void CombProcessor::updateTapPositions()

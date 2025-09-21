@@ -176,6 +176,13 @@ private:
 
 class CombProcessor {
 public:
+    // Fade mode enumeration for parameter transitions
+    enum FadeMode {
+        FADE_MODE_AUTO = 0,     // Adaptive system (default)
+        FADE_MODE_FIXED,        // User-defined fixed time
+        FADE_MODE_INSTANT       // Minimal delay for immediate response
+    };
+
     // Tap position structure for interpolated mapping
     struct TapPosition {
         float currentPos;     // Current interpolated position
@@ -232,6 +239,7 @@ public:
     void setPattern(int pattern);     // 0-15 tap spacing patterns
     void setSlope(int slope);         // 0-3 envelope slopes
     void setGain(float gain);         // Linear gain multiplier
+    void setFadeTime(float fadeTimeMs); // Set user-controlled fade time in milliseconds
     void updateTempo(double hostTempo, bool isValid); // Update tempo for sync calculations
 
     void processStereo(float inputL, float inputR, float& outputL, float& outputR);
@@ -278,6 +286,10 @@ private:
     int mPattern;           // 0-15 tap spacing pattern
     int mSlope;             // 0-3 envelope slope
     float mGain;            // Linear gain multiplier
+
+    // Fade control parameters
+    FadeMode mFadeMode;     // Current fade mode (auto/fixed/instant)
+    float mUserFadeTime;    // User-defined fade time in milliseconds (for fixed mode)
 
     // Tap fade state management
     TapFadeState mFadeState;                    // Current fade state

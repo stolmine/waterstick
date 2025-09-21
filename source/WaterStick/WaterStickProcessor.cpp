@@ -61,6 +61,13 @@ struct ParameterConverter {
     static int convertCombTaps(double value) {
         return static_cast<int>(value * 63.0 + 1.0 + 0.5);
     }
+
+    static float convertCombFadeTime(double value) {
+        // Logarithmic scaling: 0.0→1ms, 0.5→25ms, 1.0→500ms
+        // Formula: time = 1.0f + (499.0f * value * value)
+        float normalizedValue = static_cast<float>(value);
+        return 1.0f + (499.0f * normalizedValue * normalizedValue);
+    }
 };
 
 struct TapParameterRange {
@@ -1455,6 +1462,13 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                                 float gain_dB = (value * 52.0f) - 40.0f;
                                 mCombGain = std::pow(10.0f, gain_dB / 20.0f);  // Convert dB to linear gain
                                 mCombProcessor.setGain(mCombGain);
+                            }
+                            break;
+                        case kCombFadeTime:
+                            {
+                                // Convert normalized value using convertCombFadeTime()
+                                float fadeTime = ParameterConverter::convertCombFadeTime(value);
+                                mCombProcessor.setFadeTime(fadeTime);
                             }
                             break;
                         default:

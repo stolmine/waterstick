@@ -129,6 +129,7 @@ enum {
     kCombPattern,        // Comb tap spacing pattern (0-15)
     kCombSlope,          // Comb envelope slope (0-3: Flat, Rising, Falling, Rise/Fall)
     kCombGain,           // Comb section gain (-40dB to +12dB)
+    kCombFadeTime,       // Comb parameter fade time (0.0-1.0, maps to 1ms-500ms)
     kNumParams
 };
 

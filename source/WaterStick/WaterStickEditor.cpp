@@ -60,6 +60,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combSlopeKnob = nullptr;
     combGainKnob = nullptr;
     combDryWetKnob = nullptr;
+    combFadeKnob = nullptr;
 
     syncModeLabel = nullptr;
     timeDivisionLabel = nullptr;
@@ -81,6 +82,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combSlopeLabel = nullptr;
     combGainLabel = nullptr;
     combDryWetLabel = nullptr;
+    combFadeLabel = nullptr;
 
     syncModeValue = nullptr;
     timeDivisionValue = nullptr;
@@ -102,6 +104,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     combSlopeValue = nullptr;
     combGainValue = nullptr;
     combDryWetValue = nullptr;
+    combFadeValue = nullptr;
 
     delayBypassLabel = nullptr;
     combBypassLabel = nullptr;
@@ -506,6 +509,14 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
             return "D>C";
         }
 
+        case kCombFadeTime:
+        {
+            // Format as milliseconds (1ms to 500ms range)
+            float fadeTimeMs = 1.0f + (normalizedValue * 499.0f);
+            oss << std::fixed << std::setprecision(0) << fadeTimeMs << "ms";
+            return oss.str();
+        }
+
         case kDelayBypass:
         case kCombBypass:
             // Format as bypass state
@@ -556,10 +567,10 @@ void WaterStickEditor::updateValueReadouts()
     }
 
     // Update comb control value readouts
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPattern, kCombPitchCV, kCombTaps, kCombSlope, kCombSync, kCombDivision, kRouteMode, kCombDryWet};
-    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPatternValue, combPitchValue, combTapsValue, combSlopeValue, combSyncValue, combDivisionValue, routeModeValue, combDryWetValue};
+    const int combTags[] = {kCombSize, kCombFeedback, kCombPattern, kCombPitchCV, kCombTaps, kCombSlope, kCombSync, kCombDivision, kRouteMode, kCombDryWet, kCombFadeTime};
+    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPatternValue, combPitchValue, combTapsValue, combSlopeValue, combSyncValue, combDivisionValue, routeModeValue, combDryWetValue, combFadeValue};
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 11; i++) {
         if (combValueLabels[i]) {
             float value = controller->getParamNormalized(combTags[i]);
             std::string valueText = formatParameterValue(combTags[i], value);
@@ -1799,10 +1810,10 @@ void WaterStickEditor::forceParameterSynchronization()
     }
 
     // Sync all comb knobs with current parameter values
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPitchCV, kCombTaps, kCombSync, kCombDivision, kRouteMode, kCombDryWet};
-    KnobControl* combKnobs[] = {combSizeKnob, combFeedbackKnob, combPitchKnob, combTapsKnob, combSyncKnob, combDivisionKnob, routeModeKnob, combDryWetKnob};
+    const int combTags[] = {kCombSize, kCombFeedback, kCombPitchCV, kCombTaps, kCombSync, kCombDivision, kRouteMode, kCombDryWet, kCombFadeTime};
+    KnobControl* combKnobs[] = {combSizeKnob, combFeedbackKnob, combPitchKnob, combTapsKnob, combSyncKnob, combDivisionKnob, routeModeKnob, combDryWetKnob, combFadeKnob};
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         if (combKnobs[i]) {
             float paramValue = controller->getParamNormalized(combTags[i]);
             combKnobs[i]->setValue(paramValue);
@@ -1857,6 +1868,22 @@ void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
     };
 
     factory.createCombKnobsGrid(startX, combStartY, knobSize, combHSpacing, combVSpacing, combColumns, combKnobs, 11);
+
+    // Create fade knob below TAPS (TAPS is at position [1,1] in the 3-column grid)
+    // Calculate TAPS position
+    const int tapsGridRow = 1;  // TAPS is in row 1 (0-indexed)
+    const int tapsGridCol = 1;  // TAPS is in column 1 (0-indexed)
+    const int tapsX = startX + (tapsGridCol * combHSpacing);
+    const int tapsY = combStartY + (tapsGridRow * combVSpacing);
+
+    // Position fade knob below TAPS with smaller size (35x35px)
+    const int miniKnobSize = 35;
+    const int fadeX = tapsX + (knobSize - miniKnobSize) / 2;  // Center horizontally under TAPS
+    const int fadeY = tapsY + 55;  // 55px below TAPS knob center
+
+    // Create fade knob using ControlFactory
+    KnobDefinition fadeDef = {"FADE", kCombFadeTime, &combFadeKnob, &combFadeLabel, &combFadeValue, false};
+    factory.createKnobWithLayout(fadeX, fadeY, miniKnobSize, fadeDef);
 }
 
 //========================================================================
