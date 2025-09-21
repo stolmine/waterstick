@@ -425,8 +425,8 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
         outputR += tapOutR * totalGain;
     }
 
-    // Apply fade processing if active
-    if (mFadeState.isActive) {
+    // Apply volume fading only for tap count changes
+    if (mFadeState.isActive && mFadeState.parameterType == TAP_COUNT) {
         processFadedOutput(outputL, outputR);
     }
 
@@ -639,9 +639,9 @@ float CombProcessor::getMaxFadeTimeForParameter(ParameterType paramType) const
         case SIZE:
         case PATTERN:
         case PITCH:
+        case TAP_COUNT:
             return mUserFadeTime; // Full range: 1ms-2000ms
         case FEEDBACK:
-        case TAP_COUNT:
             return std::min(mUserFadeTime, 100.0f); // Capped at 100ms for responsiveness
         default:
             return mUserFadeTime;
