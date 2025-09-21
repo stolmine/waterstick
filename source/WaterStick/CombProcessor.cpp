@@ -347,6 +347,9 @@ float CombProcessor::applyCVScaling(float baseDelay) const
 
 float CombProcessor::getTapGain(int tapIndex) const
 {
+    // Handle edge case: when there's only 1 active tap, all slope modes should return gain = 1.0f
+    if (mNumActiveTaps <= 1) return 1.0f;
+
     float tapPosition = static_cast<float>(tapIndex) / static_cast<float>(mNumActiveTaps - 1);
     float slopeGain = 1.0f;
 
