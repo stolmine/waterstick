@@ -197,6 +197,14 @@ public:
         }
     };
 
+    // Parameter type enumeration for fade system
+    enum ParameterType {
+        TAP_COUNT = 0,
+        SIZE,
+        PATTERN,
+        FEEDBACK
+    };
+
     // Tap fade state structure
     struct TapFadeState {
         enum FadeType {
@@ -214,6 +222,12 @@ public:
         int previousTapCount;       // Previous number of taps
         bool isActive;              // Whether fade is currently active
 
+        // General parameter fade support
+        ParameterType parameterType; // Type of parameter being faded
+        float previousValue;        // Previous parameter value
+        float targetValue;          // Target parameter value
+        float currentValue;         // Current interpolated value
+
         TapFadeState()
             : fadeType(FADE_NONE)
             , fadePosition(0.0f)
@@ -222,6 +236,10 @@ public:
             , targetTapCount(0)
             , previousTapCount(0)
             , isActive(false)
+            , parameterType(TAP_COUNT)
+            , previousValue(0.0f)
+            , targetValue(0.0f)
+            , currentValue(0.0f)
         {
         }
     };
@@ -255,6 +273,12 @@ public:
     float calculateFadeGain(float fadePosition, TapFadeState::FadeType fadeType) const;
     void processFadedOutput(float& outputL, float& outputR);
     float calculateFadeDurationSamples() const;
+
+    // Parameter fade management for multiple parameter types
+    void startParameterFade(ParameterType paramType, float newValue);
+    void updateParameterFades();
+    float getSmoothedParameterValue(ParameterType paramType) const;
+    bool isParameterFading(ParameterType paramType) const;
 
 private:
     static const int MAX_TAPS = 64;
@@ -291,11 +315,15 @@ private:
     FadeMode mFadeMode;     // Current fade mode (auto/fixed/instant)
     float mUserFadeTime;    // User-defined fade time in milliseconds (for fixed mode)
 
+
     // Tap fade state management
     TapFadeState mFadeState;                    // Current fade state
     float mSampleCounter;                       // Sample counter for fade timing
     std::vector<float> mPreviousOutputL;        // Previous output buffer for crossfade (left)
     std::vector<float> mPreviousOutputR;        // Previous output buffer for crossfade (right)
+
+    // Parameter fade state management
+    std::vector<TapFadeState> mParameterFades;  // Active parameter fades (multiple concurrent)
 
     // Tap position interpolation
     std::vector<TapPosition> mTapPositions;     // Interpolated tap positions for smooth mapping
@@ -310,6 +338,11 @@ private:
     void updateTapPositions();
     float getInterpolatedTapPosition(int tap) const;
     float getTapDelayFromFloat(float tapPosition) const;
+
+    // Pattern calculation helpers for smooth interpolation
+    float calculateTapRatioForPattern(int tapIndex, float patternValue) const;
+    float calculateTapRatioForDiscretePattern(int tapIndex, int pattern) const;
+
 };
 
 class TapDistribution {

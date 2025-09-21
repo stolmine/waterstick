@@ -70,6 +70,11 @@ void CombProcessor::reset()
     mFadeState.fadeStartTime = 0.0f;
     mFadeState.targetTapCount = 0;
     mFadeState.previousTapCount = 0;
+    mFadeState.parameterType = TAP_COUNT;
+    mFadeState.previousValue = 0.0f;
+    mFadeState.targetValue = 0.0f;
+    mFadeState.currentValue = 0.0f;
+
 
     // Clear previous output buffers
     mPreviousOutputL.clear();
@@ -85,7 +90,20 @@ void CombProcessor::reset()
 
 void CombProcessor::setSize(float sizeSeconds)
 {
-    mCombSize = std::max(0.0001f, std::min(2.0f, sizeSeconds));
+    float clampedSize = std::max(0.0001f, std::min(2.0f, sizeSeconds));
+
+    // Check if size change is significant enough to warrant fade (>1% change)
+    float currentSize = mFadeState.isActive && mFadeState.parameterType == SIZE ?
+                       mFadeState.currentValue : mCombSize;
+    float changeThreshold = currentSize * 0.01f; // 1% threshold
+
+    if (std::abs(clampedSize - currentSize) > changeThreshold) {
+        // Significant change - start parameter fade
+        startParameterFade(SIZE, clampedSize);
+    } else {
+        // Small change - update directly
+        mCombSize = clampedSize;
+    }
 }
 
 void CombProcessor::setNumTaps(int numTaps)
@@ -96,7 +114,19 @@ void CombProcessor::setNumTaps(int numTaps)
 
 void CombProcessor::setFeedback(float feedback)
 {
-    mFeedback = std::max(0.0f, std::min(0.99f, feedback));
+    float newFeedback = std::max(0.0f, std::min(0.99f, feedback));
+
+    // Check if change is significant enough to warrant smoothing (threshold: 0.01)
+    float currentFeedbackValue = getSmoothedParameterValue(FEEDBACK);
+    float changeAmount = std::abs(newFeedback - currentFeedbackValue);
+
+    if (changeAmount > 0.01f) {
+        // Start parameter fade for significant changes
+        startParameterFade(FEEDBACK, newFeedback);
+    } else {
+        // For small changes, update directly
+        mFeedback = newFeedback;
+    }
 }
 
 void CombProcessor::setSyncMode(bool synced)
@@ -116,7 +146,12 @@ void CombProcessor::setPitchCV(float cv)
 
 void CombProcessor::setPattern(int pattern)
 {
-    mPattern = std::max(0, std::min(kNumCombPatterns - 1, pattern));
+    int clampedPattern = std::max(0, std::min(kNumCombPatterns - 1, pattern));
+
+    // Only start fade if pattern actually changes
+    if (clampedPattern != mPattern) {
+        startParameterFade(PATTERN, static_cast<float>(clampedPattern));
+    }
 }
 
 void CombProcessor::setSlope(int slope)
@@ -153,8 +188,93 @@ void CombProcessor::updateTempo(double hostTempo, bool isValid)
     mHostTempoValid = isValid;
 }
 
+void CombProcessor::startParameterFade(ParameterType paramType, float newValue)
+{
+    // If a different parameter type is already fading, complete it first
+    if (mFadeState.isActive && mFadeState.parameterType != paramType) {
+        // Complete current fade by setting the parameter directly
+        switch (mFadeState.parameterType) {
+            case SIZE:
+                mCombSize = mFadeState.targetValue;
+                break;
+            case TAP_COUNT:
+                mNumActiveTaps = static_cast<int>(mFadeState.targetValue);
+                break;
+            case FEEDBACK:
+                mFeedback = mFadeState.targetValue;
+                break;
+            case PATTERN:
+                mPattern = static_cast<int>(mFadeState.targetValue);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // Set up new parameter fade
+    mFadeState.parameterType = paramType;
+    mFadeState.fadeStartTime = mSampleCounter;
+    mFadeState.targetValue = newValue;
+    mFadeState.fadeDuration = calculateFadeDurationSamples();
+    mFadeState.fadePosition = 0.0f;
+    mFadeState.isActive = true;
+
+    // Set previous value and current value based on parameter type
+    switch (paramType) {
+        case SIZE:
+            mFadeState.previousValue = mCombSize;
+            mFadeState.currentValue = mCombSize;
+            break;
+        case TAP_COUNT:
+            mFadeState.previousValue = static_cast<float>(mNumActiveTaps);
+            mFadeState.currentValue = static_cast<float>(mNumActiveTaps);
+            break;
+        case FEEDBACK:
+            mFadeState.previousValue = mFeedback;
+            mFadeState.currentValue = mFeedback;
+            break;
+        case PATTERN:
+            mFadeState.previousValue = static_cast<float>(mPattern);
+            mFadeState.currentValue = static_cast<float>(mPattern);
+            break;
+        default:
+            mFadeState.previousValue = 0.0f;
+            mFadeState.currentValue = 0.0f;
+            break;
+    }
+}
+
+float CombProcessor::getSmoothedParameterValue(ParameterType paramType) const
+{
+    if (mFadeState.isActive && mFadeState.parameterType == paramType) {
+        return mFadeState.currentValue;
+    }
+
+    // Return current direct value if not fading
+    switch (paramType) {
+        case SIZE:
+            return mCombSize;
+        case TAP_COUNT:
+            return static_cast<float>(mNumActiveTaps);
+        case FEEDBACK:
+            return mFeedback;
+        case PATTERN:
+            return static_cast<float>(mPattern);
+        default:
+            return 0.0f;
+    }
+}
+
+bool CombProcessor::isParameterFading(ParameterType paramType) const
+{
+    return mFadeState.isActive && mFadeState.parameterType == paramType;
+}
+
 float CombProcessor::getSyncedCombSize() const
 {
+    // Use smoothed size value if fading, otherwise use direct size
+    float baseSize = getSmoothedParameterValue(SIZE);
+
     if (mIsSynced && mHostTempoValid) {
         double quarterNoteTime = 60.0 / mHostTempo;
 
@@ -188,42 +308,15 @@ float CombProcessor::getSyncedCombSize() const
         float syncTime = static_cast<float>(quarterNoteTime * divisionValue);
         return std::max(0.0001f, std::min(2.0f, syncTime));
     } else {
-        return mCombSize;
+        return baseSize;
     }
 }
 
 float CombProcessor::getTapDelay(int tapIndex) const
 {
-    float tapRatio;
-
-    if (mPattern == 0) {
-        tapRatio = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
-    } else {
-        switch (mPattern) {
-            case 1:
-                tapRatio = std::log(tapIndex + 1.0f) / std::log(MAX_TAPS);
-                break;
-            case 2:
-                tapRatio = (std::exp(static_cast<float>(tapIndex + 1) / MAX_TAPS) - 1.0f) / (std::exp(1.0f) - 1.0f);
-                break;
-            case 3:
-                tapRatio = std::pow(static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS), 2.0f);
-                break;
-            case 4:
-                tapRatio = std::sqrt(static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS));
-                break;
-            default:
-                float normalizedIndex = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
-                float patternOffset = static_cast<float>(mPattern - 5) / 10.0f;
-                tapRatio = std::pow(normalizedIndex, 1.0f + patternOffset);
-                break;
-        }
-    }
-
-    tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
-
-    float effectiveSize = getSyncedCombSize();
-    return applyCVScaling(effectiveSize * tapRatio);
+    // Use smoothed pattern value for smooth transitions
+    float smoothedPattern = getSmoothedParameterValue(PATTERN);
+    return calculateTapRatioForPattern(tapIndex, smoothedPattern);
 }
 
 float CombProcessor::applyCVScaling(float baseDelay) const
@@ -272,8 +365,11 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
     // Update fade state and increment sample counter
     updateFadeState();
 
-    float mixedL = inputL + mFeedbackBufferL * mFeedback;
-    float mixedR = inputR + mFeedbackBufferR * mFeedback;
+    // Use smoothed feedback value instead of direct mFeedback
+    float smoothedFeedback = getSmoothedParameterValue(FEEDBACK);
+
+    float mixedL = inputL + mFeedbackBufferL * smoothedFeedback;
+    float mixedR = inputR + mFeedbackBufferR * smoothedFeedback;
 
     mDelayBufferL[mWriteIndex] = mixedL;
     mDelayBufferR[mWriteIndex] = mixedR;
@@ -354,6 +450,7 @@ void CombProcessor::startTapCountFade(int newTapCount)
     }
 
     // Store the current state
+    mFadeState.parameterType = TAP_COUNT;
     mFadeState.previousTapCount = mNumActiveTaps;
     mFadeState.targetTapCount = clampedTapCount;
     mFadeState.fadeStartTime = mSampleCounter;
@@ -410,12 +507,36 @@ void CombProcessor::updateFadeState()
         mFadeState.fadePosition = 1.0f;
         mFadeState.isActive = false;
 
-        // Update the actual tap count when fade completes
-        mNumActiveTaps = mFadeState.targetTapCount;
+        // Update the actual parameter value when fade completes
+        if (mFadeState.parameterType == TAP_COUNT) {
+            mNumActiveTaps = mFadeState.targetTapCount;
+        } else {
+            switch (mFadeState.parameterType) {
+                case SIZE:
+                    mCombSize = mFadeState.targetValue;
+                    break;
+                case FEEDBACK:
+                    mFeedback = mFadeState.targetValue;
+                    break;
+                case PATTERN:
+                    mPattern = static_cast<int>(mFadeState.targetValue);
+                    break;
+                default:
+                    break;
+            }
+        }
 
         // Clear previous output buffers
         mPreviousOutputL.clear();
         mPreviousOutputR.clear();
+    }
+
+    // Update current interpolated value for parameter fades
+    if (mFadeState.parameterType != TAP_COUNT) {
+        float t = mFadeState.fadePosition;
+        // Use hermite interpolation for smooth curves
+        float smoothT = t * t * (3.0f - 2.0f * t);
+        mFadeState.currentValue = mFadeState.previousValue + (mFadeState.targetValue - mFadeState.previousValue) * smoothT;
     }
 }
 
@@ -599,13 +720,69 @@ float CombProcessor::getTapDelayFromFloat(float tapPosition) const
     int tapIndex = static_cast<int>(tapPosition);
     float frac = tapPosition - static_cast<float>(tapIndex);
 
-    // Calculate delay for this tap index using existing pattern logic
+    // Use smoothed pattern value for smooth transitions
+    float smoothedPattern = getSmoothedParameterValue(PATTERN);
+
+    // Calculate delay for this tap index using smoothed pattern
+    float tapRatio = calculateTapRatioForPattern(tapIndex, smoothedPattern);
+
+    // If there's a fractional part, interpolate with next tap
+    if (frac > 0.0f && tapIndex < MAX_TAPS - 1) {
+        int nextTapIndex = tapIndex + 1;
+        float nextTapRatio = calculateTapRatioForPattern(nextTapIndex, smoothedPattern);
+
+        // Interpolate between the two tap ratios
+        tapRatio = tapRatio + (nextTapRatio - tapRatio) * frac;
+    }
+
+    tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
+
+    float effectiveSize = getSyncedCombSize();
+    return applyCVScaling(effectiveSize * tapRatio);
+}
+
+
+void CombProcessor::updateParameterFades()
+{
+    // This is now handled by updateFadeState() which supports both tap count and parameter fades
+    updateFadeState();
+}
+
+float CombProcessor::calculateTapRatioForPattern(int tapIndex, float patternValue) const
+{
+    // Handle fractional pattern values by interpolating between adjacent patterns
+    int patternLow = static_cast<int>(patternValue);
+    int patternHigh = std::min(patternLow + 1, kNumCombPatterns - 1);
+    float patternFrac = patternValue - static_cast<float>(patternLow);
+
+    // Calculate tap ratio for lower pattern
+    float tapRatioLow = calculateTapRatioForDiscretePattern(tapIndex, patternLow);
+
+    // If no interpolation needed (integer pattern value), return directly
+    if (patternFrac <= 0.0f || patternLow == patternHigh) {
+        float effectiveSize = getSyncedCombSize();
+        return applyCVScaling(effectiveSize * tapRatioLow);
+    }
+
+    // Calculate tap ratio for higher pattern
+    float tapRatioHigh = calculateTapRatioForDiscretePattern(tapIndex, patternHigh);
+
+    // Interpolate between the two patterns
+    float interpolatedRatio = tapRatioLow + (tapRatioHigh - tapRatioLow) * patternFrac;
+    interpolatedRatio = std::max(0.0f, std::min(1.0f, interpolatedRatio));
+
+    float effectiveSize = getSyncedCombSize();
+    return applyCVScaling(effectiveSize * interpolatedRatio);
+}
+
+float CombProcessor::calculateTapRatioForDiscretePattern(int tapIndex, int pattern) const
+{
     float tapRatio;
 
-    if (mPattern == 0) {
+    if (pattern == 0) {
         tapRatio = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
     } else {
-        switch (mPattern) {
+        switch (pattern) {
             case 1:
                 tapRatio = std::log(tapIndex + 1.0f) / std::log(MAX_TAPS);
                 break;
@@ -620,49 +797,13 @@ float CombProcessor::getTapDelayFromFloat(float tapPosition) const
                 break;
             default:
                 float normalizedIndex = static_cast<float>(tapIndex + 1) / static_cast<float>(MAX_TAPS);
-                float patternOffset = static_cast<float>(mPattern - 5) / 10.0f;
+                float patternOffset = static_cast<float>(pattern - 5) / 10.0f;
                 tapRatio = std::pow(normalizedIndex, 1.0f + patternOffset);
                 break;
         }
     }
 
-    // If there's a fractional part, interpolate with next tap
-    if (frac > 0.0f && tapIndex < MAX_TAPS - 1) {
-        int nextTapIndex = tapIndex + 1;
-        float nextTapRatio;
-
-        if (mPattern == 0) {
-            nextTapRatio = static_cast<float>(nextTapIndex + 1) / static_cast<float>(MAX_TAPS);
-        } else {
-            switch (mPattern) {
-                case 1:
-                    nextTapRatio = std::log(nextTapIndex + 1.0f) / std::log(MAX_TAPS);
-                    break;
-                case 2:
-                    nextTapRatio = (std::exp(static_cast<float>(nextTapIndex + 1) / MAX_TAPS) - 1.0f) / (std::exp(1.0f) - 1.0f);
-                    break;
-                case 3:
-                    nextTapRatio = std::pow(static_cast<float>(nextTapIndex + 1) / static_cast<float>(MAX_TAPS), 2.0f);
-                    break;
-                case 4:
-                    nextTapRatio = std::sqrt(static_cast<float>(nextTapIndex + 1) / static_cast<float>(MAX_TAPS));
-                    break;
-                default:
-                    float normalizedIndex = static_cast<float>(nextTapIndex + 1) / static_cast<float>(MAX_TAPS);
-                    float patternOffset = static_cast<float>(mPattern - 5) / 10.0f;
-                    nextTapRatio = std::pow(normalizedIndex, 1.0f + patternOffset);
-                    break;
-            }
-        }
-
-        // Interpolate between the two tap ratios
-        tapRatio = tapRatio + (nextTapRatio - tapRatio) * frac;
-    }
-
-    tapRatio = std::max(0.0f, std::min(1.0f, tapRatio));
-
-    float effectiveSize = getSyncedCombSize();
-    return applyCVScaling(effectiveSize * tapRatio);
+    return std::max(0.0f, std::min(1.0f, tapRatio));
 }
 
 } // namespace WaterStick
