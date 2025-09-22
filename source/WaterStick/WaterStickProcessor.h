@@ -6,6 +6,7 @@
 #include "WaterStickParameters.h"
 #include "ThreeSistersFilter.h"
 #include "AdaptiveSmoother.h"
+#include "SafetyOptimizer.h"
 #include <vector>
 #include <cmath>
 #include <algorithm>
@@ -195,6 +196,7 @@ public:
 
     // Adaptive smoothing configuration
     void setAdaptiveSmoothingEnabled(bool enabled);
+    void setCascadedSmoothingEnabled(bool enabled);
     void setAdaptiveSmoothingParameters(float combSizeSensitivity = 2.0f,
                                        float pitchCVSensitivity = 1.5f,
                                        float fastTimeConstant = 0.0005f,
@@ -206,6 +208,10 @@ public:
                                    float& pitchCVTimeConstant,
                                    float& combSizeVelocity,
                                    float& pitchCVVelocity) const;
+
+    // Real-time safety integration
+    void setSafetyOptimizer(SafetyOptimizer* optimizer);
+    void setSafetyEnabled(bool enabled);
 
     void processStereo(float inputL, float inputR, float& outputL, float& outputR);
     void reset();
@@ -459,6 +465,9 @@ private:
 
     // Routing manager
     RoutingManager mRoutingManager;
+
+    // Real-time safety system
+    SafetyOptimizer mSafetyOptimizer;
 
     // Parameter change tracking for tempo sync optimization
     float mLastTempoSyncDelayTime;

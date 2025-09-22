@@ -48,6 +48,8 @@ smtg_add_vst3plugin(${target}
     source/WaterStick/AdaptiveSmoother.h
     source/WaterStick/CascadedSmoother.cpp
     source/WaterStick/CascadedSmoother.h
+    source/WaterStick/SafetyOptimizer.cpp
+    source/WaterStick/SafetyOptimizer.h
     source/WaterStick/ControlFactory.cpp
     source/WaterStick/ControlFactory.h
     source/WaterStick/version.h
