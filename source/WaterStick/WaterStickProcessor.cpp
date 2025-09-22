@@ -770,6 +770,7 @@ WaterStickProcessor::WaterStickProcessor()
 , mCombPattern(0)       // Default pattern 1
 , mCombSlope(0)         // Default flat slope
 , mCombGain(1.0f)       // Default 0dB gain (unity)
+, mCombSmoothingTime(0.01f)  // Default 10ms smoothing time constant
 , mDelayBypassPrevious(false)
 , mCombBypassPrevious(false)
 , mDelayFadingOut(false)
@@ -1457,6 +1458,20 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                                 mCombProcessor.setGain(mCombGain);
                             }
                             break;
+                        case kCombSmoothingTime:
+                            {
+                                // Convert normalized value to time constant range (0.1ms to 50ms)
+                                mCombSmoothingTime = 0.0001f + (value * 0.0499f);  // 0.1ms to 50ms
+                                mCombProcessor.setSmoothingTimeConstant(mCombSmoothingTime);
+                            }
+                            break;
+                        case kCascadedSmoothingEnabled:
+                            {
+                                // Toggle cascaded smoothing (0=disabled, 1=enabled)
+                                bool enabled = value > 0.5f;
+                                mCombProcessor.setCascadedSmoothingEnabled(enabled);
+                            }
+                            break;
                         default:
                             TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);
                             break;
@@ -1709,6 +1724,7 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
     mCombProcessor.setNumTaps(mCombTaps);
     mCombProcessor.setSyncMode(mCombSync);
     mCombProcessor.setClockDivision(mCombDivision);
+    mCombProcessor.setSmoothingTimeConstant(mCombSmoothingTime);
 
     // Load all tap parameters
     for (int i = 0; i < 16; i++) {

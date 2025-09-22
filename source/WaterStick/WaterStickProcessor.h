@@ -5,6 +5,8 @@
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "WaterStickParameters.h"
 #include "ThreeSistersFilter.h"
+#include "AdaptiveSmoother.h"
+#include "SafetyOptimizer.h"
 #include <vector>
 #include <cmath>
 #include <algorithm>
@@ -189,7 +191,32 @@ public:
     void setPattern(int pattern);     // 0-15 tap spacing patterns
     void setSlope(int slope);         // 0-3 envelope slopes
     void setGain(float gain);         // Linear gain multiplier
+    void setSmoothingTimeConstant(float timeConstant); // Set smoothing time constant (0.1ms to 50ms)
     void updateTempo(double hostTempo, bool isValid); // Update tempo for sync calculations
+
+    // Adaptive smoothing configuration
+    void setAdaptiveSmoothingEnabled(bool enabled);
+    void setCascadedSmoothingEnabled(bool enabled);
+    void setAdaptiveSmoothingParameters(float combSizeSensitivity = 2.0f,
+                                       float pitchCVSensitivity = 1.5f,
+                                       float fastTimeConstant = 0.0005f,
+                                       float slowTimeConstant = 0.008f);
+
+    // Enhanced smoothing configuration
+    void setEnhancedSmoothingEnabled(bool enabled);
+    void setComplexityMode(int complexityMode);  // 0=basic, 1=balanced, 2=high-quality
+    bool isEnhancedSmoothingEnabled() const;
+
+    // Debugging and monitoring
+    void getAdaptiveSmoothingStatus(bool& enabled,
+                                   float& combSizeTimeConstant,
+                                   float& pitchCVTimeConstant,
+                                   float& combSizeVelocity,
+                                   float& pitchCVVelocity) const;
+
+    // Real-time safety integration
+    void setSafetyOptimizer(SafetyOptimizer* optimizer);
+    void setSafetyEnabled(bool enabled);
 
     void processStereo(float inputL, float inputR, float& outputL, float& outputR);
     void reset();
@@ -229,11 +256,34 @@ private:
     int mSlope;             // 0-3 envelope slope
     float mGain;            // Linear gain multiplier
 
+    // Legacy smoothing state for backwards compatibility
+    float mPrevCombSize;            // Previous comb size for legacy smoothing
+    float mAllpassState;            // Allpass filter state for legacy size smoothing
+    float mSmoothingCoeff;          // Legacy smoothing coefficient based on sample rate
+    float mSmoothingTimeConstant;   // Legacy smoothing time constant (0.0001f to 0.05f)
+    float mPrevPitchCV;             // Previous pitch CV for legacy smoothing
+    float mPitchAllpassState;       // Allpass filter state for legacy pitch CV smoothing
+
+    // Adaptive smoothing system
+    CombParameterSmoother mAdaptiveSmoother;  // Main adaptive smoothing engine
+    bool mAdaptiveSmoothingEnabled;           // Enable adaptive vs legacy smoothing
+
+    // Smoothed parameter cache (updated per sample)
+    float mSmoothedCombSize;        // Current smoothed comb size
+    float mSmoothedPitchCV;         // Current smoothed pitch CV
+
     // Calculate tap delays based on comb size
-    float getTapDelay(int tapIndex) const;
+    float getTapDelay(int tapIndex, float smoothedPitchCV);
     float getTapGain(int tapIndex) const;
-    float applyCVScaling(float baseDelay) const;
+    float applyCVScaling(float baseDelay, float pitchCV);
     float tanhLimiter(float input) const;
+
+    // Allpass interpolation for smooth delay modulation
+    float getSmoothedCombSize();
+    float getSmoothedPitchCV();
+    void updateSmoothingCoeff();
+    void updateSmoothingCoeff(float timeConstant);
+
 };
 
 class TapDistribution {
@@ -355,6 +405,7 @@ private:
     int mCombPattern;         // Comb tap spacing pattern (0-15)
     int mCombSlope;           // Comb envelope slope (0-3)
     float mCombGain;          // Comb section gain (linear multiplier)
+    float mCombSmoothingTime; // Comb allpass smoothing time constant in seconds
 
     // Bypass fade system state
     bool mDelayBypassPrevious;     // Track previous state for fade triggering
@@ -419,6 +470,9 @@ private:
 
     // Routing manager
     RoutingManager mRoutingManager;
+
+    // Real-time safety system
+    SafetyOptimizer mSafetyOptimizer;
 
     // Parameter change tracking for tempo sync optimization
     float mLastTempoSyncDelayTime;

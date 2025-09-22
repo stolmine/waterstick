@@ -1,0 +1,35 @@
+# WaterStick Routing Test Configuration
+
+# Global Settings
+Global Dry/Wet: 1.0
+Input Gain: 1.0
+Output Gain: 1.0
+
+# Delay Section
+Delay Bypass: false
+Delay Dry/Wet: 0.0  # Test zero wet
+Delay Time: 0.5
+Feedback: 0.0
+
+# Tap Configuration (All Disabled)
+Tap1 Enable: false
+Tap2 Enable: false
+...
+Tap16 Enable: false
+
+# Comb Section
+Comb Bypass: false
+Comb Dry/Wet: 0.0  # Test zero wet
+Comb Size: 0.1
+Comb Feedback: 0.0
+
+# Test Mode Transitions
+Route Modes:
+1. Delay > Comb
+2. Comb > Delay
+3. Delay + Comb
+
+Expected Results:
+- Zero signal with zero-wet settings
+- Dry passthrough preserved
+- No signal leakage between sections

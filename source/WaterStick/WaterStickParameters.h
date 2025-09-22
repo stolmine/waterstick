@@ -129,6 +129,8 @@ enum {
     kCombPattern,        // Comb tap spacing pattern (0-15)
     kCombSlope,          // Comb envelope slope (0-3: Flat, Rising, Falling, Rise/Fall)
     kCombGain,           // Comb section gain (-40dB to +12dB)
+    kCombSmoothingTime,  // Comb allpass smoothing time constant (0.1ms to 50ms)
+    kCascadedSmoothingEnabled, // Enable/disable cascaded smoothing (0=disabled, 1=enabled)
     kNumParams
 };
 
