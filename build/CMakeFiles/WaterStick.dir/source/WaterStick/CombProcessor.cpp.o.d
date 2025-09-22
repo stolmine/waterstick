@@ -810,4 +810,12 @@ CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/perfect_forward.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstprocesscontext.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h \
-  /Users/why/repos/waterstick/source/WaterStick/ThreeSistersFilter.h
+  /Users/why/repos/waterstick/source/WaterStick/ThreeSistersFilter.h \
+  /Users/why/repos/waterstick/source/WaterStick/AdaptiveSmoother.h \
+  /Users/why/repos/waterstick/source/WaterStick/CascadedSmoother.h \
+  /Users/why/repos/waterstick/source/WaterStick/EnhancedAdaptiveSmoother.h \
+  /Users/why/repos/waterstick/source/WaterStick/PerceptualVelocityDetector.h \
+  /Users/why/repos/waterstick/source/WaterStick/SafetyOptimizer.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/chrono \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/file_clock.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/forward_list

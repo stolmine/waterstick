@@ -204,76 +204,15 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 16 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16FilterType, 0, STR16("Filter"));
 
-    // Routing and Wet/Dry controls
-    parameters.addParameter(STR16("Routing Mode"), nullptr, 2, 0.0,
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kRouteMode, 0,
-                           STR16("Routing"));
-
+    // Global controls
     parameters.addParameter(STR16("Global Dry/Wet"), STR16("%"), 0, 0.5,
                            Vst::ParameterInfo::kCanAutomate, kGlobalDryWet, 0,
-                           STR16("Mix"));
-
-    parameters.addParameter(STR16("Delay Dry/Wet"), STR16("%"), 0, 1.0,
-                           Vst::ParameterInfo::kCanAutomate, kDelayDryWet, 0,
-                           STR16("Mix"));
-
-    parameters.addParameter(STR16("Comb Dry/Wet"), STR16("%"), 0, 1.0,
-                           Vst::ParameterInfo::kCanAutomate, kCombDryWet, 0,
                            STR16("Mix"));
 
     parameters.addParameter(STR16("Delay Bypass"), nullptr, 1, 0.0,
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kDelayBypass, 0,
                            STR16("Control"));
 
-    parameters.addParameter(STR16("Comb Bypass"), nullptr, 1, 0.0,
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombBypass, 0,
-                           STR16("Control"));
-
-    // Comb control parameters
-    parameters.addParameter(STR16("Comb Size"), STR16("s"), 0, 0.4,  // Default ~10ms (0.4 normalized for log scale)
-                           Vst::ParameterInfo::kCanAutomate, kCombSize, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Feedback"), STR16("%"), 0, 0.6,  // Default moderate feedback (0.6 normalized)
-                           Vst::ParameterInfo::kCanAutomate, kCombFeedback, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Pitch CV"), STR16("V"), 0, 0.5,  // Default 0.0V (0.5 normalized for -5 to +5V range)
-                           Vst::ParameterInfo::kCanAutomate, kCombPitchCV, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Taps"), nullptr, 63, 31.0/63.0,  // Default 32 taps (31/63 normalized for 1-64 range)
-                           Vst::ParameterInfo::kCanAutomate, kCombTaps, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Sync"), nullptr, 1, 0.0,  // Default free mode
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombSync, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Division"), nullptr, kNumSyncDivisions - 1,
-                           static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1),  // Default 1/4 note
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombDivision, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Pattern"), nullptr, kNumCombPatterns - 1, 0.0,  // Default Pattern 1
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombPattern, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Slope"), nullptr, kNumCombSlopes - 1, 0.0,  // Default Flat
-                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kCombSlope, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Gain"), STR16("dB"), 0, 0.769231,  // Default 0dB (52/52 range, -40dB to +12dB)
-                           Vst::ParameterInfo::kCanAutomate, kCombGain, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Comb Smoothing Time"), STR16("ms"), 0, 0.2,  // Default 10ms (0.2 normalized for 0.1-50ms range)
-                           Vst::ParameterInfo::kCanAutomate, kCombSmoothingTime, 0,
-                           STR16("Comb"));
-
-    parameters.addParameter(STR16("Cascaded Smoothing"), nullptr, 1, 0.0,  // Default disabled (0.0)
-                           Vst::ParameterInfo::kCanAutomate, kCascadedSmoothingEnabled, 0,
-                           STR16("Comb"));
 
     // Initialize all parameters to their default values
     // This ensures proper display even if setComponentState is never called
@@ -312,26 +251,9 @@ void WaterStickController::setDefaultParameters()
         setParamNormalized(kTap1FilterType + (i * 3), 0.0);       // Bypass filter
     }
 
-    // Set comb processor parameters to musical defaults
-    setParamNormalized(kCombSize, 0.4);          // ~10ms (log scale: 0.0001 * 20000^0.4 ≈ 0.01s)
-    setParamNormalized(kCombFeedback, 0.6);      // Moderate feedback (cubic: 0.6^3 * 0.99 ≈ 0.21)
-    setParamNormalized(kCombPitchCV, 0.5);       // 0V pitch CV (center position)
-    setParamNormalized(kCombTaps, 0.5);          // 32 taps (middle density)
-    setParamNormalized(kCombSync, 0.0);          // Free mode
-    setParamNormalized(kCombDivision, static_cast<Vst::ParamValue>(kSync_1_4) / (kNumSyncDivisions - 1)); // 1/4 note
-    setParamNormalized(kCombPattern, 0.0);       // Pattern 1
-    setParamNormalized(kCombSlope, 0.0);         // Flat
-    setParamNormalized(kCombGain, 0.769231);     // 0dB (40/52 range for -40dB to +12dB)
-    setParamNormalized(kCombSmoothingTime, 0.2); // 10ms (0.2 normalized for 0.1-50ms range)
-    setParamNormalized(kCascadedSmoothingEnabled, 0.0); // Disabled by default
-
-    // Set routing and mix parameters to defaults
-    setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
+    // Set global mix parameters to defaults
     setParamNormalized(kGlobalDryWet, 0.5);      // 50%
-    setParamNormalized(kDelayDryWet, 1.0);       // 100% wet
-    setParamNormalized(kCombDryWet, 1.0);        // 100% wet
     setParamNormalized(kDelayBypass, 0.0);       // Active
-    setParamNormalized(kCombBypass, 0.0);        // Active
 }
 
 //------------------------------------------------------------------------
@@ -411,25 +333,8 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kSyncDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
     if (id == kGrid) return static_cast<float>(kGrid_4) / (kNumGridValues - 1);
     if (id >= kTap1Enable && id <= kTap16Enable && ((id - kTap1Enable) % 3 == 0)) return 0.0f;
-    if (id == kRouteMode) return 0.0f;
     if (id == kGlobalDryWet) return 0.5f;
-    if (id == kDelayDryWet) return 1.0f;
-    if (id == kCombDryWet) return 1.0f;
     if (id == kDelayBypass) return 0.0f;
-    if (id == kCombBypass) return 0.0f;
-
-    // Comb processor parameter defaults
-    if (id == kCombSize) return 0.4f;
-    if (id == kCombFeedback) return 0.6f;
-    if (id == kCombPitchCV) return 0.5f;
-    if (id == kCombTaps) return 0.5f;
-    if (id == kCombSync) return 0.0f;
-    if (id == kCombDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
-    if (id == kCombPattern) return 0.0f;
-    if (id == kCombSlope) return 0.0f;
-    if (id == kCombGain) return 0.769231f;  // 0dB (40/52 range for -40dB to +12dB)
-    if (id == kCombSmoothingTime) return 0.2f;  // 10ms (0.2 normalized for 0.1-50ms range)
-    if (id == kCascadedSmoothingEnabled) return 0.0f;  // Disabled by default
 
     return 0.0f;  // Safe default
 }
@@ -786,19 +691,9 @@ tresult WaterStickController::readLegacyState(IBStream* state)
             }
     }
 
-    // Load routing and wet/dry parameters with individual validation
-    int32 routeMode;
-    float globalDryWet, delayDryWet;
-    bool delayBypass, combBypass;
-
-    // Route Mode
-    if (streamer.readInt32(routeMode) && routeMode >= 0 && routeMode <= 2) {
-        setParamNormalized(kRouteMode, static_cast<Vst::ParamValue>(routeMode) / 2.0);
-        validParameterCount++;
-    } else {
-        setParamNormalized(kRouteMode, getDefaultParameterValue(kRouteMode));
-        invalidParameterCount++;
-    }
+    // Load global control parameters with individual validation
+    float globalDryWet;
+    bool delayBypass;
 
     // Global Dry/Wet
     if (streamer.readFloat(globalDryWet) && isValidParameterValue(kGlobalDryWet, globalDryWet)) {
@@ -806,15 +701,6 @@ tresult WaterStickController::readLegacyState(IBStream* state)
         validParameterCount++;
     } else {
         setParamNormalized(kGlobalDryWet, getDefaultParameterValue(kGlobalDryWet));
-        invalidParameterCount++;
-    }
-
-    // Delay Dry/Wet
-    if (streamer.readFloat(delayDryWet) && isValidParameterValue(kDelayDryWet, delayDryWet)) {
-        setParamNormalized(kDelayDryWet, delayDryWet);
-        validParameterCount++;
-    } else {
-        setParamNormalized(kDelayDryWet, getDefaultParameterValue(kDelayDryWet));
         invalidParameterCount++;
     }
 
@@ -826,21 +712,6 @@ tresult WaterStickController::readLegacyState(IBStream* state)
         setParamNormalized(kDelayBypass, getDefaultParameterValue(kDelayBypass));
         invalidParameterCount++;
     }
-
-    // Comb Bypass
-    if (streamer.readBool(combBypass)) {
-        setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
-        validParameterCount++;
-    } else {
-        setParamNormalized(kCombBypass, getDefaultParameterValue(kCombBypass));
-        invalidParameterCount++;
-    }
-
-    // Log validation results
-
-    // Log key parameter values after enhanced validation
-
-
 
     return kResultOk;
 }
@@ -1040,19 +911,9 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
             }
     }
 
-    // Load routing and wet/dry parameters with individual validation
-    int32 routeMode;
-    float globalDryWet, delayDryWet;
-    bool delayBypass, combBypass;
-
-    // Route Mode
-    if (streamer.readInt32(routeMode) && routeMode >= 0 && routeMode <= 2) {
-        setParamNormalized(kRouteMode, static_cast<Vst::ParamValue>(routeMode) / 2.0);
-        validParameterCount++;
-    } else {
-        setParamNormalized(kRouteMode, getDefaultParameterValue(kRouteMode));
-        invalidParameterCount++;
-    }
+    // Load global control parameters with individual validation
+    float globalDryWet;
+    bool delayBypass;
 
     // Global Dry/Wet
     if (streamer.readFloat(globalDryWet) && isValidParameterValue(kGlobalDryWet, globalDryWet)) {
@@ -1060,15 +921,6 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
         validParameterCount++;
     } else {
         setParamNormalized(kGlobalDryWet, getDefaultParameterValue(kGlobalDryWet));
-        invalidParameterCount++;
-    }
-
-    // Delay Dry/Wet
-    if (streamer.readFloat(delayDryWet) && isValidParameterValue(kDelayDryWet, delayDryWet)) {
-        setParamNormalized(kDelayDryWet, delayDryWet);
-        validParameterCount++;
-    } else {
-        setParamNormalized(kDelayDryWet, getDefaultParameterValue(kDelayDryWet));
         invalidParameterCount++;
     }
 
@@ -1080,16 +932,6 @@ tresult WaterStickController::readCurrentVersionState(IBStream* state)
         setParamNormalized(kDelayBypass, getDefaultParameterValue(kDelayBypass));
         invalidParameterCount++;
     }
-
-    // Comb Bypass
-    if (streamer.readBool(combBypass)) {
-        setParamNormalized(kCombBypass, combBypass ? 1.0 : 0.0);
-        validParameterCount++;
-    } else {
-        setParamNormalized(kCombBypass, getDefaultParameterValue(kCombBypass));
-        invalidParameterCount++;
-    }
-
 
     return kResultOk;
 }
@@ -1204,21 +1046,7 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             Steinberg::UString(string, 128).fromAscii(percentText);
             return kResultTrue;
         }
-        case kRouteMode:
-        {
-            int routeMode = static_cast<int>(valueNormalized * 2.0 + 0.5);
-            if (routeMode >= 0 && routeMode <= 2) {
-                static const char* routeModeTexts[3] = {
-                    "Delay>Comb", "Comb>Delay", "Delay+Comb"
-                };
-                Steinberg::UString(string, 128).fromAscii(routeModeTexts[routeMode]);
-                return kResultTrue;
-            }
-            break;
-        }
         case kGlobalDryWet:
-        case kDelayDryWet:
-        case kCombDryWet:
         {
             // Convert normalized value to percentage for display
             float percentage = valueNormalized * 100.0f;
@@ -1227,49 +1055,7 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             Steinberg::UString(string, 128).fromAscii(percentText);
             return kResultTrue;
         }
-        case kCombPattern:
-        {
-            int pattern = static_cast<int>(valueNormalized * (kNumCombPatterns - 1) + 0.5);
-            if (pattern >= 0 && pattern < kNumCombPatterns) {
-                char patternText[128];
-                snprintf(patternText, sizeof(patternText), "Pattern %d", pattern + 1);
-                Steinberg::UString(string, 128).fromAscii(patternText);
-                return kResultTrue;
-            }
-            break;
-        }
-        case kCombSlope:
-        {
-            int slope = static_cast<int>(valueNormalized * (kNumCombSlopes - 1) + 0.5);
-            if (slope >= 0 && slope < kNumCombSlopes) {
-                static const char* slopeTexts[kNumCombSlopes] = {
-                    "Flat", "Rising", "Falling", "Rise/Fall"
-                };
-                Steinberg::UString(string, 128).fromAscii(slopeTexts[slope]);
-                return kResultTrue;
-            }
-            break;
-        }
-        case kCombGain:
-        {
-            // Convert normalized value to dB range (-40dB to +12dB)
-            float gain_dB = (valueNormalized * 52.0f) - 40.0f;
-            char gainStr[32];
-            snprintf(gainStr, sizeof(gainStr), "%.1f dB", gain_dB);
-            Steinberg::UString(string, 128).fromAscii(gainStr);
-            return kResultTrue;
-        }
-        case kCombSmoothingTime:
-        {
-            // Convert normalized value to time range (0.1ms to 50ms)
-            float timeMs = 0.1f + (valueNormalized * 49.9f);
-            char timeStr[32];
-            snprintf(timeStr, sizeof(timeStr), "%.1f ms", timeMs);
-            Steinberg::UString(string, 128).fromAscii(timeStr);
-            return kResultTrue;
-        }
         case kDelayBypass:
-        case kCombBypass:
         {
             const char* text = (valueNormalized > 0.5) ? "Bypassed" : "Active";
             Steinberg::UString(string, 128).fromAscii(text);

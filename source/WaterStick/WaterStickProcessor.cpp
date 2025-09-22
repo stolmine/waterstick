@@ -44,23 +44,6 @@ struct ParameterConverter {
         return normalizedValue * normalizedValue * normalizedValue;
     }
 
-    static float convertCombSize(double value) {
-        float normalizedValue = static_cast<float>(value);
-        return 0.0001f * std::pow(20000.0f, normalizedValue);
-    }
-
-    static float convertCombFeedback(double value) {
-        float normalizedValue = static_cast<float>(value);
-        return normalizedValue * normalizedValue * normalizedValue * 0.99f;
-    }
-
-    static float convertCombPitchCV(double value) {
-        return -5.0f + (static_cast<float>(value) * 10.0f);
-    }
-
-    static int convertCombTaps(double value) {
-        return static_cast<int>(value * 63.0 + 1.0 + 0.5);
-    }
 };
 
 struct TapParameterRange {
@@ -651,99 +634,6 @@ void STKDelayLine::reset()
     mNextOutput = 0.0f;
 }
 
-const char* RoutingManager::sRouteModeTexts[3] = {
-    "Delay>Comb",
-    "Comb>Delay",
-    "Delay+Comb"
-};
-
-RoutingManager::RoutingManager()
-: mRouteMode(DelayToComb)
-, mPendingRouteMode(DelayToComb)
-, mTransitionInProgress(false)
-, mSampleRate(44100.0)
-, mTransitionSamples(0)
-, mTransitionCounter(0)
-{
-}
-
-RoutingManager::~RoutingManager()
-{
-}
-
-void RoutingManager::initialize(double sampleRate)
-{
-    mSampleRate = sampleRate;
-
-    mTransitionSamples = static_cast<int>(sampleRate * 0.01);
-
-    reset();
-}
-
-void RoutingManager::setRouteMode(RouteMode mode)
-{
-    if (mode != mRouteMode) {
-        startTransition(mode);
-    }
-}
-
-bool RoutingManager::isValidRouting() const
-{
-    return (mRouteMode >= DelayToComb && mRouteMode <= DelayPlusComb) &&
-           (mPendingRouteMode >= DelayToComb && mPendingRouteMode <= DelayPlusComb);
-}
-
-void RoutingManager::processRouteTransition()
-{
-    if (!mTransitionInProgress) {
-        return;
-    }
-
-    mTransitionCounter = (mTransitionCounter < mTransitionSamples)
-        ? mTransitionCounter + 1
-        : mTransitionSamples;
-
-    if (mTransitionCounter >= mTransitionSamples) {
-        if (mPendingRouteMode >= DelayToComb && mPendingRouteMode <= DelayPlusComb) {
-            completeTransition();
-        } else {
-            mPendingRouteMode = DelayToComb;
-            mRouteMode = DelayToComb;
-            mTransitionInProgress = false;
-            mTransitionCounter = 0;
-        }
-    }
-}
-
-const char* RoutingManager::getRouteModeText() const
-{
-    if (mRouteMode >= DelayToComb && mRouteMode <= DelayPlusComb) {
-        return sRouteModeTexts[mRouteMode];
-    }
-    return "Unknown";
-}
-
-void RoutingManager::reset()
-{
-    mRouteMode = DelayToComb;
-    mPendingRouteMode = DelayToComb;
-    mTransitionInProgress = false;
-    mTransitionCounter = 0;
-}
-
-void RoutingManager::startTransition(RouteMode newMode)
-{
-    mPendingRouteMode = newMode;
-    mTransitionInProgress = true;
-    mTransitionCounter = 0;
-}
-
-void RoutingManager::completeTransition()
-{
-    mRouteMode = mPendingRouteMode;
-    mTransitionInProgress = false;
-    mTransitionCounter = 0;
-}
 
 
 WaterStickProcessor::WaterStickProcessor()
@@ -755,36 +645,16 @@ WaterStickProcessor::WaterStickProcessor()
 , mSyncDivision(kSync_1_4)
 , mGrid(kGrid_4)
 , mDelayGain(1.0f)
-, mRouteMode(DelayToComb)
 , mGlobalDryWet(0.5f)
-, mDelayDryWet(1.0f)
-, mCombDryWet(1.0f)
 , mDelayBypass(false)
-, mCombBypass(false)
-, mCombSize(0.1f)
-, mCombFeedback(0.0f)
-, mCombPitchCV(0.0f)
-, mCombTaps(16)
-, mCombSync(false)
-, mCombDivision(kSync_1_4)
-, mCombPattern(0)       // Default pattern 1
-, mCombSlope(0)         // Default flat slope
-, mCombGain(1.0f)       // Default 0dB gain (unity)
-, mCombSmoothingTime(0.01f)  // Default 10ms smoothing time constant
 , mDelayBypassPrevious(false)
-, mCombBypassPrevious(false)
 , mDelayFadingOut(false)
 , mDelayFadingIn(false)
-, mCombFadingOut(false)
-, mCombFadingIn(false)
 , mDelayFadeRemaining(0)
 , mDelayFadeTotalLength(0)
-, mCombFadeRemaining(0)
-, mCombFadeTotalLength(0)
 , mDelayFadeGain(1.0f)
-, mCombFadeGain(1.0f)
 , mSampleRate(44100.0)
-, mLastTempoSyncDelayTime(-1.0f)  // Initialize to invalid value to force first update
+, mLastTempoSyncDelayTime(-1.0f)
 , mTempoSyncParametersChanged(false)
 , mParameterHistoryWriteIndex(0)
 {
@@ -874,37 +744,29 @@ void WaterStickProcessor::checkTapStateChangesAndClearBuffers()
 
 void WaterStickProcessor::checkBypassStateChanges()
 {
-    const float MIN_SAMPLE_RATE = 8000.0f;  // Minimum reasonable sample rate
-    const float MAX_SAMPLE_RATE = 192000.0f;  // Maximum reasonable sample rate
+    const float MIN_SAMPLE_RATE = 8000.0f;
+    const float MAX_SAMPLE_RATE = 192000.0f;
 
-    // Validate sample rate before processing
     if (mSampleRate < MIN_SAMPLE_RATE || mSampleRate > MAX_SAMPLE_RATE) {
-        // Reset to default if sample rate is unreasonable
         mSampleRate = 44100.0f;
     }
 
-    // Check delay bypass state change with enhanced safety
     if (mDelayBypassPrevious != mDelayBypass) {
-        // Prevent multiple simultaneous fade states
         if (!mDelayFadingOut && !mDelayFadingIn) {
             if (!mDelayBypassPrevious && mDelayBypass) {
-                // Delay section was enabled, now bypassed - start fade-out
                 mDelayFadingOut = true;
                 mDelayFadingIn = false;
                 mDelayFadeGain = 1.0f;
 
-                // Adaptive fade length based on sample rate (10ms)
                 int fadeLength = static_cast<int>(std::max(64.0f, std::min(static_cast<float>(mSampleRate * 0.01f), 2048.0f)));
                 mDelayFadeRemaining = fadeLength;
                 mDelayFadeTotalLength = fadeLength;
             }
             else if (mDelayBypassPrevious && !mDelayBypass) {
-                // Delay section was bypassed, now enabled - start fade-in
                 mDelayFadingOut = false;
                 mDelayFadingIn = true;
                 mDelayFadeGain = 0.0f;
 
-                // Adaptive fade length (5ms)
                 int fadeLength = static_cast<int>(std::max(32.0f, std::min(static_cast<float>(mSampleRate * 0.005f), 1024.0f)));
                 mDelayFadeRemaining = fadeLength;
                 mDelayFadeTotalLength = fadeLength;
@@ -912,45 +774,10 @@ void WaterStickProcessor::checkBypassStateChanges()
         }
         mDelayBypassPrevious = mDelayBypass;
     }
-
-    // Check comb bypass state change with enhanced safety
-    if (mCombBypassPrevious != mCombBypass) {
-        // Prevent multiple simultaneous fade states
-        if (!mCombFadingOut && !mCombFadingIn) {
-            if (!mCombBypassPrevious && mCombBypass) {
-                // Comb section was enabled, now bypassed - start fade-out
-                mCombFadingOut = true;
-                mCombFadingIn = false;
-                mCombFadeGain = 1.0f;
-
-                // Adaptive fade length based on sample rate (10ms)
-                int fadeLength = static_cast<int>(std::max(64.0f, std::min(static_cast<float>(mSampleRate * 0.01f), 2048.0f)));
-                mCombFadeRemaining = fadeLength;
-                mCombFadeTotalLength = fadeLength;
-            }
-            else if (mCombBypassPrevious && !mCombBypass) {
-                // Comb section was bypassed, now enabled - start fade-in
-                mCombFadingOut = false;
-                mCombFadingIn = true;
-                mCombFadeGain = 0.0f;
-
-                // Clear comb processor buffers for clean start with safety check
-                // Directly call reset on mCombProcessor
-                mCombProcessor.reset();
-
-                // Adaptive fade length (5ms)
-                int fadeLength = static_cast<int>(std::max(32.0f, std::min(static_cast<float>(mSampleRate * 0.005f), 1024.0f)));
-                mCombFadeRemaining = fadeLength;
-                mCombFadeTotalLength = fadeLength;
-            }
-        }
-        mCombBypassPrevious = mCombBypass;
-    }
 }
 
-void WaterStickProcessor::processDelaySection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode)
+void WaterStickProcessor::processDelaySection(float inputL, float inputR, float& outputL, float& outputR)
 {
-    // Process through all 16 tap delay lines (existing delay processing logic)
     float sumL = 0.0f;
     float sumR = 0.0f;
 
@@ -958,112 +785,74 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float 
         bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
         if (processTap) {
-
-            // Process through both L and R delay lines for this tap
             float tapOutputL, tapOutputR;
             mTapDelayLinesL[tap].processSample(inputL, tapOutputL);
             mTapDelayLinesR[tap].processSample(inputR, tapOutputR);
 
-            // Get historic parameters that were active when this audio entered the delay
             float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
             ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
 
-            // Apply historic tap level (parameters that were active when audio entered delay)
             tapOutputL *= historicParams.level;
             tapOutputR *= historicParams.level;
 
-            // Apply per-tap filter with historic parameters
-            // Temporarily set filter parameters to historic values
             mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
             mTapFiltersR[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
             tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
             tapOutputR = static_cast<float>(mTapFiltersR[tap].process(tapOutputR));
-            // Note: Filter states will be overwritten by current parameters after all taps are processed
 
-            // Apply fade-out if in progress
             if (mTapFadingOut[tap]) {
                 tapOutputL *= mTapFadeGain[tap];
                 tapOutputR *= mTapFadeGain[tap];
 
-                // Update fade-out state
                 mTapFadeOutRemaining[tap]--;
                 if (mTapFadeOutRemaining[tap] <= 0) {
-                    // Fade-out complete - clear buffers and stop fading
                     mTapFadingOut[tap] = false;
                     mTapFadeGain[tap] = 1.0f;
                     mTapDelayLinesL[tap].reset();
                     mTapDelayLinesR[tap].reset();
                 } else {
-                    // Calculate exponential fade-out (1.0 to 0.0)
                     float fadeProgress = 1.0f - (static_cast<float>(mTapFadeOutRemaining[tap]) / static_cast<float>(mTapFadeOutTotalLength[tap]));
-                    mTapFadeGain[tap] = std::exp(-6.0f * fadeProgress); // -60dB fade curve
+                    mTapFadeGain[tap] = std::exp(-6.0f * fadeProgress);
                 }
             }
-            // Apply fade-in if in progress
             else if (mTapFadingIn[tap]) {
                 tapOutputL *= mTapFadeGain[tap];
                 tapOutputR *= mTapFadeGain[tap];
 
-                // Update fade-in state
                 mTapFadeInRemaining[tap]--;
                 if (mTapFadeInRemaining[tap] <= 0) {
-                    // Fade-in complete - set to full gain and stop fading
                     mTapFadingIn[tap] = false;
                     mTapFadeGain[tap] = 1.0f;
                 } else {
-                    // Calculate exponential fade-in (0.0 to 1.0)
                     float fadeProgress = 1.0f - (static_cast<float>(mTapFadeInRemaining[tap]) / static_cast<float>(mTapFadeInTotalLength[tap]));
-                    mTapFadeGain[tap] = 1.0f - std::exp(-6.0f * fadeProgress); // Inverse exponential for fade-in
+                    mTapFadeGain[tap] = 1.0f - std::exp(-6.0f * fadeProgress);
                 }
             }
 
-            // Apply stereo panning using historic parameters (0.0 = full left, 0.5 = center, 1.0 = full right)
             float pan = historicParams.pan;
-            float leftGain = 1.0f - pan;   // Left channel gain
-            float rightGain = pan;         // Right channel gain
+            float leftGain = 1.0f - pan;
+            float rightGain = pan;
 
-            // Pan the tap output and add to sum
             sumL += (tapOutputL * leftGain) + (tapOutputR * leftGain);
             sumR += (tapOutputL * rightGain) + (tapOutputR * rightGain);
         }
     }
 
-    // Update feedback buffers with wet signal for next sample
     mFeedbackBufferL = sumL;
     mFeedbackBufferR = sumR;
 
-    // Apply serial-aware dry/wet mixing based on routing mode
-    ProcessingMode mode = getProcessingMode(routeMode);
-    bool hasActiveTaps = hasAnyTapsEnabled();
+    // Delay section is always 100% wet now
+    float dryGain = 0.0f;
+    float wetGain = 1.0f;
+    float delayWetGain = wetGain * mDelayGain;
 
-    if (mode == SERIAL_MODE && !hasActiveTaps) {
-        // Serial mode with no processing: Mix control determines dry passthrough vs silence
-        if (mDelayDryWet == 0.0f) {
-            // 0% wet = pass dry reference signal through
-            outputL = dryRefL;
-            outputR = dryRefR;
-        } else {
-            // Any wet amount with no processing = silence
-            outputL = 0.0f;
-            outputR = 0.0f;
-        }
-    } else {
-        // Parallel mode OR serial mode with active processing: Standard dry/wet mixing
-        // Use dry reference signal for mixing (in C>D mode, this is comb output; in other modes, original input)
-        float dryGain = std::cos(mDelayDryWet * M_PI_2);    // Cosine curve for dry
-        float wetGain = std::sin(mDelayDryWet * M_PI_2);    // Sine curve for wet
-        float delayWetGain = wetGain * mDelayGain;          // Combine wet mix with delay gain
+    outputL = (inputL * dryGain) + (sumL * delayWetGain);
+    outputR = (inputR * dryGain) + (sumR * delayWetGain);
 
-        outputL = (dryRefL * dryGain) + (sumL * delayWetGain);
-        outputR = (dryRefR * dryGain) + (sumR * delayWetGain);
-    }
-
-    // Apply delay section bypass fade
     if (mDelayFadingOut) {
         outputL *= mDelayFadeGain;
         outputR *= mDelayFadeGain;
 
-        // Update delay fade-out state
         mDelayFadeRemaining--;
         if (mDelayFadeRemaining <= 0) {
             mDelayFadingOut = false;
@@ -1077,7 +866,6 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float 
         outputL *= mDelayFadeGain;
         outputR *= mDelayFadeGain;
 
-        // Update delay fade-in state
         mDelayFadeRemaining--;
         if (mDelayFadeRemaining <= 0) {
             mDelayFadingIn = false;
@@ -1088,92 +876,13 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float 
         }
     }
 
-    // If delay is bypassed and not fading, pass through the processing input (not dry reference)
     if (mDelayBypass && !mDelayFadingOut && !mDelayFadingIn) {
         outputL = inputL;
         outputR = inputR;
     }
 }
 
-void WaterStickProcessor::processCombSection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode)
-{
-    // Process through comb processor
-    float combWetL, combWetR;
-    mCombProcessor.processStereo(inputL, inputR, combWetL, combWetR);
 
-    // Apply serial-aware dry/wet mixing based on routing mode
-    ProcessingMode mode = getProcessingMode(routeMode);
-
-    if (mode == SERIAL_MODE) {
-        // Serial mode: Mix control determines dry/processed balance
-        // Use dry reference signal for mixing (in D>C mode, this is delay output; in other modes, original input)
-        // Comb always produces output (resonator always active), so always apply mixing
-        float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
-        float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
-
-        outputL = (dryRefL * dryGain) + (combWetL * wetGain);
-        outputR = (dryRefR * dryGain) + (combWetR * wetGain);
-    } else {
-        // Parallel mode: Always mix dry + processed (use dry reference signal)
-        float dryGain = std::cos(mCombDryWet * M_PI_2);    // Cosine curve for dry
-        float wetGain = std::sin(mCombDryWet * M_PI_2);    // Sine curve for wet
-
-        outputL = (dryRefL * dryGain) + (combWetL * wetGain);
-        outputR = (dryRefR * dryGain) + (combWetR * wetGain);
-    }
-
-    // Apply comb section bypass fade
-    if (mCombFadingOut) {
-        outputL *= mCombFadeGain;
-        outputR *= mCombFadeGain;
-
-        // Update comb fade-out state
-        mCombFadeRemaining--;
-        if (mCombFadeRemaining <= 0) {
-            mCombFadingOut = false;
-            mCombFadeGain = 1.0f;
-        } else {
-            float fadeProgress = 1.0f - (static_cast<float>(mCombFadeRemaining) / static_cast<float>(mCombFadeTotalLength));
-            mCombFadeGain = std::exp(-6.0f * fadeProgress);
-        }
-    }
-    else if (mCombFadingIn) {
-        outputL *= mCombFadeGain;
-        outputR *= mCombFadeGain;
-
-        // Update comb fade-in state
-        mCombFadeRemaining--;
-        if (mCombFadeRemaining <= 0) {
-            mCombFadingIn = false;
-            mCombFadeGain = 1.0f;
-        } else {
-            float fadeProgress = 1.0f - (static_cast<float>(mCombFadeRemaining) / static_cast<float>(mCombFadeTotalLength));
-            mCombFadeGain = 1.0f - std::exp(-6.0f * fadeProgress);
-        }
-    }
-
-    // If comb is bypassed and not fading, pass through the processing input (not dry reference)
-    if (mCombBypass && !mCombFadingOut && !mCombFadingIn) {
-        outputL = inputL;
-        outputR = inputR;
-    }
-}
-
-// Serial-aware processing helper methods
-WaterStickProcessor::ProcessingMode WaterStickProcessor::getProcessingMode(RouteMode routeMode) const
-{
-    return (routeMode == DelayPlusComb) ? PARALLEL_MODE : SERIAL_MODE;
-}
-
-bool WaterStickProcessor::hasAnyTapsEnabled() const
-{
-    for (int i = 0; i < 16; i++) {
-        if (mTapEnabled[i]) {
-            return true;
-        }
-    }
-    return false;
-}
 
 tresult PLUGIN_API WaterStickProcessor::initialize(FUnknown* context)
 {
@@ -1199,35 +908,22 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
 {
     mSampleRate = newSetup.sampleRate;
 
-    // Initialize delay lines with 2 second max delay
     mDelayLineL.initialize(mSampleRate, 2.0);
     mDelayLineR.initialize(mSampleRate, 2.0);
 
-    // Initialize all 16 tap delay lines with larger buffer for longer delays
-    // Need longer delays since tap 16 at grid 1 could be 16 beats long
-    double maxDelayTime = 20.0; // 20 seconds should handle very long delays
+    double maxDelayTime = 20.0;
     for (int i = 0; i < NUM_TAPS; i++) {
         mTapDelayLinesL[i].initialize(mSampleRate, maxDelayTime);
         mTapDelayLinesR[i].initialize(mSampleRate, maxDelayTime);
     }
 
-    // Initialize tempo sync
     mTempoSync.initialize(mSampleRate);
-
-    // Initialize tap distribution
     mTapDistribution.initialize(mSampleRate);
 
-    // Initialize per-tap filters
     for (int i = 0; i < NUM_TAPS; i++) {
         mTapFiltersL[i].setSampleRate(mSampleRate);
         mTapFiltersR[i].setSampleRate(mSampleRate);
     }
-
-    // Initialize routing manager
-    mRoutingManager.initialize(mSampleRate);
-
-    // Initialize comb processor
-    mCombProcessor.initialize(mSampleRate, maxDelayTime);
 
     return AudioEffect::setupProcessing(newSetup);
 }
@@ -1296,66 +992,49 @@ void WaterStickProcessor::checkTempoSyncParameterChanges()
 
 void WaterStickProcessor::updateParameters()
 {
-    // Update tempo sync settings
     mTempoSync.setMode(mTempoSyncMode);
     mTempoSync.setSyncDivision(mSyncDivision);
     mTempoSync.setFreeTime(mDelayTime);
 
-    // Check for parameter changes to optimize tempo sync updates
     checkTempoSyncParameterChanges();
 
-    // Update tap distribution
     mTapDistribution.setGrid(mGrid);
     mTapDistribution.updateTempo(mTempoSync);
 
-    // Update per-tap settings
     for (int i = 0; i < 16; i++) {
         mTapDistribution.setTapEnable(i, mTapEnabled[i]);
         mTapDistribution.setTapLevel(i, mTapLevel[i]);
         mTapDistribution.setTapPan(i, mTapPan[i]);
     }
 
-    // Update all tap delay times based on current grid and tempo settings
     for (int i = 0; i < NUM_TAPS; i++) {
         float tapDelayTime = mTapDistribution.getTapDelayTime(i);
         mTapDelayLinesL[i].setDelayTime(tapDelayTime);
         mTapDelayLinesR[i].setDelayTime(tapDelayTime);
     }
 
-    // Only update legacy delay lines if not in sync mode (sync mode updates continuously)
     if (!mTempoSyncMode) {
         float finalDelayTime = mTempoSync.getDelayTime();
         mDelayLineL.setDelayTime(finalDelayTime);
         mDelayLineR.setDelayTime(finalDelayTime);
     }
 
-    // Update per-tap filter parameters
     for (int i = 0; i < NUM_TAPS; i++) {
         mTapFiltersL[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
         mTapFiltersR[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
     }
-
-    // Update routing manager
-    mRoutingManager.setRouteMode(mRouteMode);
-
-    // Update comb processor with available parameters
-    mCombProcessor.setFeedback(mCombFeedback);  // Use comb-specific feedback
-    mCombProcessor.setSize(mCombSize);          // Use actual comb size parameter
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
 {
-    // Update tempo info from host
     if (data.processContext && data.processContext->state & Vst::ProcessContext::kTempoValid)
     {
         double hostTempo = data.processContext->tempo;
         mTempoSync.updateTempo(hostTempo, true);
-        mCombProcessor.updateTempo(hostTempo, true); // Update comb processor tempo
     }
     else
     {
-        mTempoSync.updateTempo(120.0, false); // Fallback tempo
-        mCombProcessor.updateTempo(120.0, false); // Update comb processor tempo
+        mTempoSync.updateTempo(120.0, false);
     }
 
     // Process parameter changes
@@ -1399,78 +1078,11 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kDelayGain:
                             mDelayGain = ParameterConverter::convertGain(value);
                             break;
-                        // Routing and Wet/Dry controls
-                        case kRouteMode:
-                            mRouteMode = static_cast<RouteMode>(static_cast<int>(value * 2.0 + 0.5)); // 0-2 routing modes
-                            break;
                         case kGlobalDryWet:
-                            mGlobalDryWet = static_cast<float>(value); // 0-1 (dry to wet)
-                            break;
-                        case kDelayDryWet:
-                            mDelayDryWet = static_cast<float>(value); // 0-1 (dry to wet)
-                            break;
-                        case kCombDryWet:
-                            mCombDryWet = static_cast<float>(value); // 0-1 (dry to wet)
+                            mGlobalDryWet = static_cast<float>(value);
                             break;
                         case kDelayBypass:
-                            mDelayBypass = value > 0.5; // Toggle: >0.5 = bypassed
-                            break;
-                        case kCombBypass:
-                            mCombBypass = value > 0.5; // Toggle: >0.5 = bypassed
-                            break;
-                        case kCombSize:
-                            mCombSize = ParameterConverter::convertCombSize(value);
-                            mCombProcessor.setSize(mCombSize);
-                            break;
-                        case kCombFeedback:
-                            mCombFeedback = ParameterConverter::convertCombFeedback(value);
-                            mCombProcessor.setFeedback(mCombFeedback);
-                            break;
-                        case kCombPitchCV:
-                            mCombPitchCV = ParameterConverter::convertCombPitchCV(value);
-                            mCombProcessor.setPitchCV(mCombPitchCV);
-                            break;
-                        case kCombTaps:
-                            mCombTaps = ParameterConverter::convertCombTaps(value);
-                            mCombProcessor.setNumTaps(mCombTaps);
-                            break;
-                        case kCombSync:
-                            mCombSync = value > 0.5;
-                            mCombProcessor.setSyncMode(mCombSync);
-                            break;
-                        case kCombDivision:
-                            mCombDivision = static_cast<int>(value * (kNumSyncDivisions - 1) + 0.5);
-                            mCombProcessor.setClockDivision(mCombDivision);
-                            break;
-                        case kCombPattern:
-                            mCombPattern = static_cast<int>(value * (kNumCombPatterns - 1) + 0.5);
-                            mCombProcessor.setPattern(mCombPattern);
-                            break;
-                        case kCombSlope:
-                            mCombSlope = static_cast<int>(value * (kNumCombSlopes - 1) + 0.5);
-                            mCombProcessor.setSlope(mCombSlope);
-                            break;
-                        case kCombGain:
-                            {
-                                // Convert normalized value to dB range (-40dB to +12dB), then to linear gain
-                                float gain_dB = (value * 52.0f) - 40.0f;
-                                mCombGain = std::pow(10.0f, gain_dB / 20.0f);  // Convert dB to linear gain
-                                mCombProcessor.setGain(mCombGain);
-                            }
-                            break;
-                        case kCombSmoothingTime:
-                            {
-                                // Convert normalized value to time constant range (0.1ms to 50ms)
-                                mCombSmoothingTime = 0.0001f + (value * 0.0499f);  // 0.1ms to 50ms
-                                mCombProcessor.setSmoothingTimeConstant(mCombSmoothingTime);
-                            }
-                            break;
-                        case kCascadedSmoothingEnabled:
-                            {
-                                // Toggle cascaded smoothing (0=disabled, 1=enabled)
-                                bool enabled = value > 0.5f;
-                                mCombProcessor.setCascadedSmoothingEnabled(enabled);
-                            }
+                            mDelayBypass = value > 0.5;
                             break;
                         default:
                             TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);
@@ -1530,80 +1142,30 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
     float* outputL = output->channelBuffers32[0];
     float* outputR = output->channelBuffers32[1];
 
-    // Process routing transitions
-    mRoutingManager.processRouteTransition();
-
-    // Process samples
     for (int32 sample = 0; sample < data.numSamples; sample++)
     {
-        // Capture current parameters before processing each sample
         captureCurrentParameters();
 
-        // Get input samples
         float inL = inputL[sample];
         float inR = inputR[sample];
 
-        // Apply input gain and feedback with tanh limiting
         float inputWithFeedbackL = inL + (mFeedbackBufferL * mFeedback);
         float inputWithFeedbackR = inR + (mFeedbackBufferR * mFeedback);
 
-        // Apply tanh saturation to prevent runaway feedback
         inputWithFeedbackL = std::tanh(inputWithFeedbackL);
         inputWithFeedbackR = std::tanh(inputWithFeedbackR);
 
         float gainedL = inputWithFeedbackL * mInputGain;
         float gainedR = inputWithFeedbackR * mInputGain;
 
-        // Route processing based on current mode
-        float delayOutputL = 0.0f, delayOutputR = 0.0f;
-        float combOutputL = 0.0f, combOutputR = 0.0f;
-        float finalOutputL = 0.0f, finalOutputR = 0.0f;
+        float delayOutputL, delayOutputR;
+        processDelaySection(gainedL, gainedR, delayOutputL, delayOutputR);
 
-        RouteMode currentRouteMode = mRoutingManager.getRouteMode();
-        switch (currentRouteMode) {
-            case DelayToComb:
-            {
-                // Serial mode: Delay feeds into Comb
-                // Delay section processes input, uses original input as dry reference
-                processDelaySection(gainedL, gainedR, gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
-                // Comb section processes delay output, uses delay output as dry reference for mixing
-                processCombSection(delayOutputL, delayOutputR, delayOutputL, delayOutputR, combOutputL, combOutputR, currentRouteMode);
-                finalOutputL = combOutputL;
-                finalOutputR = combOutputR;
-                break;
-            }
-            case CombToDelay:
-            {
-                // Serial mode: Comb feeds into Delay
-                // Comb section processes input, uses original input as dry reference
-                processCombSection(gainedL, gainedR, gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
-                // Delay section processes comb output, uses comb output as dry reference for mixing
-                processDelaySection(combOutputL, combOutputR, combOutputL, combOutputR, delayOutputL, delayOutputR, currentRouteMode);
-                finalOutputL = delayOutputL;
-                finalOutputR = delayOutputR;
-                break;
-            }
-            case DelayPlusComb:
-            {
-                // Parallel mode: both sections process input independently with equal-power mixing
-                // Both sections use original input as dry reference
-                processDelaySection(gainedL, gainedR, gainedL, gainedR, delayOutputL, delayOutputR, currentRouteMode);
-                processCombSection(gainedL, gainedR, gainedL, gainedR, combOutputL, combOutputR, currentRouteMode);
+        float globalDryGain = std::cos(mGlobalDryWet * M_PI_2);
+        float globalWetGain = std::sin(mGlobalDryWet * M_PI_2);
+        float mixedL = (inL * globalDryGain) + (delayOutputL * globalWetGain);
+        float mixedR = (inR * globalDryGain) + (delayOutputR * globalWetGain);
 
-                // Apply equal-power parallel mixing for DelayPlusComb mode only
-                finalOutputL = (delayOutputL + combOutputL) * 0.7071f;  // sqrt(0.5) for equal-power
-                finalOutputR = (delayOutputR + combOutputR) * 0.7071f;  // sqrt(0.5) for equal-power
-                break;
-            }
-        }
-
-        // Apply professional equal-power global dry/wet mix
-        float globalDryGain = std::cos(mGlobalDryWet * M_PI_2);    // Cosine curve for dry
-        float globalWetGain = std::sin(mGlobalDryWet * M_PI_2);    // Sine curve for wet
-        float mixedL = (inL * globalDryGain) + (finalOutputL * globalWetGain);
-        float mixedR = (inR * globalDryGain) + (finalOutputR * globalWetGain);
-
-        // Apply output gain and write to output
         outputL[sample] = mixedL * mOutputGain;
         outputR[sample] = mixedR * mOutputGain;
     }
@@ -1630,21 +1192,8 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeInt32(mSyncDivision);
     streamer.writeInt32(mGrid);
 
-    // Save routing and wet/dry parameters
-    streamer.writeInt32(static_cast<int32>(mRouteMode));
     streamer.writeFloat(mGlobalDryWet);
-    streamer.writeFloat(mDelayDryWet);
-    streamer.writeFloat(mCombDryWet);
     streamer.writeBool(mDelayBypass);
-    streamer.writeBool(mCombBypass);
-
-    // Save comb control parameters
-    streamer.writeFloat(mCombSize);
-    streamer.writeFloat(mCombFeedback);
-    streamer.writeFloat(mCombPitchCV);
-    streamer.writeInt32(mCombTaps);
-    streamer.writeBool(mCombSync);
-    streamer.writeInt32(mCombDivision);
 
     // Save all tap parameters
     for (int i = 0; i < 16; i++) {
@@ -1699,32 +1248,8 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
     streamer.readInt32(mSyncDivision);
     streamer.readInt32(mGrid);
 
-    // Load routing and wet/dry parameters
-    int32 routeModeInt;
-    streamer.readInt32(routeModeInt);
-    mRouteMode = static_cast<RouteMode>(routeModeInt);
     streamer.readFloat(mGlobalDryWet);
-    streamer.readFloat(mDelayDryWet);
-    if (!streamer.readFloat(mCombDryWet)) mCombDryWet = 1.0f; // Default for older saves
     streamer.readBool(mDelayBypass);
-    streamer.readBool(mCombBypass);
-
-    // Load comb control parameters (with defaults for older state versions)
-    if (!streamer.readFloat(mCombSize)) mCombSize = 0.1f;
-    if (!streamer.readFloat(mCombFeedback)) mCombFeedback = 0.0f;
-    if (!streamer.readFloat(mCombPitchCV)) mCombPitchCV = 0.0f;
-    if (!streamer.readInt32(mCombTaps)) mCombTaps = 16;
-    if (!streamer.readBool(mCombSync)) mCombSync = false;
-    if (!streamer.readInt32(mCombDivision)) mCombDivision = kSync_1_4;
-
-    // Apply loaded comb parameters to processor
-    mCombProcessor.setSize(mCombSize);
-    mCombProcessor.setFeedback(mCombFeedback);
-    mCombProcessor.setPitchCV(mCombPitchCV);
-    mCombProcessor.setNumTaps(mCombTaps);
-    mCombProcessor.setSyncMode(mCombSync);
-    mCombProcessor.setClockDivision(mCombDivision);
-    mCombProcessor.setSmoothingTimeConstant(mCombSmoothingTime);
 
     // Load all tap parameters
     for (int i = 0; i < 16; i++) {
@@ -1740,9 +1265,7 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
         mTapEnabledPrevious[i] = mTapEnabled[i];
     }
 
-    // Initialize bypass previous states to prevent unwanted fades on load
     mDelayBypassPrevious = mDelayBypass;
-    mCombBypassPrevious = mCombBypass;
 
     return kResultOk;
 }

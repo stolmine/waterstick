@@ -128,19 +128,19 @@ CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.s: cmake_forc
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/why/repos/waterstick/source/WaterStick/ThreeSistersFilter.cpp -o CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.s
 
-CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o: CMakeFiles/WaterStick.dir/flags.make
-CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o: /Users/why/repos/waterstick/source/WaterStick/CombProcessor.cpp
-CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o: CMakeFiles/WaterStick.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o -MF CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o.d -o CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/CombProcessor.cpp
+CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o: CMakeFiles/WaterStick.dir/flags.make
+CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o: /Users/why/repos/waterstick/source/WaterStick/ControlFactory.cpp
+CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o: CMakeFiles/WaterStick.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o -MF CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o.d -o CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o -c /Users/why/repos/waterstick/source/WaterStick/ControlFactory.cpp
 
-CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/why/repos/waterstick/source/WaterStick/CombProcessor.cpp > CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.i
+CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/why/repos/waterstick/source/WaterStick/ControlFactory.cpp > CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.i
 
-CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/why/repos/waterstick/source/WaterStick/CombProcessor.cpp -o CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.s
+CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/why/repos/waterstick/source/WaterStick/ControlFactory.cpp -o CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.s
 
 CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: CMakeFiles/WaterStick.dir/flags.make
 CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o: /Users/why/repos/waterstick/source/WaterStick/factory.cpp
@@ -176,7 +176,7 @@ WaterStick_OBJECTS = \
 "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o" \
-"CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o" \
+"CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o" \
 "CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o"
 
@@ -187,7 +187,7 @@ VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.di
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o
-VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o
 VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/build.make

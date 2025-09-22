@@ -571,29 +571,29 @@ utf16-name/fast:
 	$(MAKE) $(MAKESILENT) -f vst3sdk/public.sdk/samples/vst/utf16name/CMakeFiles/utf16-name.dir/build.make vst3sdk/public.sdk/samples/vst/utf16name/CMakeFiles/utf16-name.dir/build
 .PHONY : utf16-name/fast
 
-source/WaterStick/CombProcessor.o: source/WaterStick/CombProcessor.cpp.o
-.PHONY : source/WaterStick/CombProcessor.o
+source/WaterStick/ControlFactory.o: source/WaterStick/ControlFactory.cpp.o
+.PHONY : source/WaterStick/ControlFactory.o
 
 # target to build an object file
-source/WaterStick/CombProcessor.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.o
-.PHONY : source/WaterStick/CombProcessor.cpp.o
+source/WaterStick/ControlFactory.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o
+.PHONY : source/WaterStick/ControlFactory.cpp.o
 
-source/WaterStick/CombProcessor.i: source/WaterStick/CombProcessor.cpp.i
-.PHONY : source/WaterStick/CombProcessor.i
+source/WaterStick/ControlFactory.i: source/WaterStick/ControlFactory.cpp.i
+.PHONY : source/WaterStick/ControlFactory.i
 
 # target to preprocess a source file
-source/WaterStick/CombProcessor.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.i
-.PHONY : source/WaterStick/CombProcessor.cpp.i
+source/WaterStick/ControlFactory.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.i
+.PHONY : source/WaterStick/ControlFactory.cpp.i
 
-source/WaterStick/CombProcessor.s: source/WaterStick/CombProcessor.cpp.s
-.PHONY : source/WaterStick/CombProcessor.s
+source/WaterStick/ControlFactory.s: source/WaterStick/ControlFactory.cpp.s
+.PHONY : source/WaterStick/ControlFactory.s
 
 # target to generate assembly for a file
-source/WaterStick/CombProcessor.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/CombProcessor.cpp.s
-.PHONY : source/WaterStick/CombProcessor.cpp.s
+source/WaterStick/ControlFactory.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.s
+.PHONY : source/WaterStick/ControlFactory.cpp.s
 
 source/WaterStick/ThreeSistersFilter.o: source/WaterStick/ThreeSistersFilter.cpp.o
 .PHONY : source/WaterStick/ThreeSistersFilter.o
@@ -782,9 +782,9 @@ help:
 	@echo "... vstgui_standalone"
 	@echo "... vstgui_support"
 	@echo "... vstgui_uidescription"
-	@echo "... source/WaterStick/CombProcessor.o"
-	@echo "... source/WaterStick/CombProcessor.i"
-	@echo "... source/WaterStick/CombProcessor.s"
+	@echo "... source/WaterStick/ControlFactory.o"
+	@echo "... source/WaterStick/ControlFactory.i"
+	@echo "... source/WaterStick/ControlFactory.s"
 	@echo "... source/WaterStick/ThreeSistersFilter.o"
 	@echo "... source/WaterStick/ThreeSistersFilter.i"
 	@echo "... source/WaterStick/ThreeSistersFilter.s"

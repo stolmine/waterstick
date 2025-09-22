@@ -813,4 +813,5 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: \
   /Users/why/repos/waterstick/source/WaterStick/ThreeSistersFilter.h \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickCIDs.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstparameterchanges.h \
-  /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h
+  /Users/why/repos/waterstick/vst3sdk/base/source/fstreamer.h \
+  /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/ibstream.h

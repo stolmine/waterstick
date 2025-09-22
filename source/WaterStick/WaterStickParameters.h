@@ -112,25 +112,9 @@ enum {
     kTap16FilterCutoff,  // Tap 16 filter cutoff frequency
     kTap16FilterResonance, // Tap 16 filter resonance (-1.0 to +1.0)
     kTap16FilterType,    // Tap 16 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
-    // Routing and Wet/Dry controls
-    kRouteMode,          // Routing mode: 0=Delay>Comb, 1=Comb>Delay, 2=Delay+Comb
+    // Global controls
     kGlobalDryWet,       // Global Dry/Wet mix (affects final output)
-    kDelayDryWet,        // Delay section Dry/Wet mix (delay section only)
-    kCombDryWet,         // Comb section Dry/Wet mix (comb section only)
     kDelayBypass,        // Delay section bypass toggle
-    kCombBypass,         // Comb section bypass toggle
-    // Comb control parameters
-    kCombSize,           // Comb delay size (0.0001f to 2.0f seconds)
-    kCombFeedback,       // Comb feedback (0.0f to 0.99f)
-    kCombPitchCV,        // Comb pitch CV (-5.0f to +5.0f volts)
-    kCombTaps,           // Number of active taps (1 to 64)
-    kCombSync,           // Comb sync mode (0=free, 1=tempo-synced)
-    kCombDivision,       // Comb sync division (0 to 21)
-    kCombPattern,        // Comb tap spacing pattern (0-15)
-    kCombSlope,          // Comb envelope slope (0-3: Flat, Rising, Falling, Rise/Fall)
-    kCombGain,           // Comb section gain (-40dB to +12dB)
-    kCombSmoothingTime,  // Comb allpass smoothing time constant (0.1ms to 50ms)
-    kCascadedSmoothingEnabled, // Enable/disable cascaded smoothing (0=disabled, 1=enabled)
     kNumParams
 };
 
@@ -184,34 +168,5 @@ enum FilterTypes {
     kNumFilterTypes
 };
 
-// Comb pattern types (16 different tap spacing patterns)
-enum CombPatterns {
-    kCombPattern_1 = 0,          // Pattern 1 (uniform spacing)
-    kCombPattern_2,              // Pattern 2
-    kCombPattern_3,              // Pattern 3
-    kCombPattern_4,              // Pattern 4
-    kCombPattern_5,              // Pattern 5
-    kCombPattern_6,              // Pattern 6
-    kCombPattern_7,              // Pattern 7
-    kCombPattern_8,              // Pattern 8
-    kCombPattern_9,              // Pattern 9
-    kCombPattern_10,             // Pattern 10
-    kCombPattern_11,             // Pattern 11
-    kCombPattern_12,             // Pattern 12
-    kCombPattern_13,             // Pattern 13
-    kCombPattern_14,             // Pattern 14
-    kCombPattern_15,             // Pattern 15
-    kCombPattern_16,             // Pattern 16
-    kNumCombPatterns
-};
-
-// Comb slope types (4 envelope patterns)
-enum CombSlopes {
-    kCombSlope_Flat = 0,         // Flat envelope
-    kCombSlope_Rising,           // Rising envelope
-    kCombSlope_Falling,          // Falling envelope
-    kCombSlope_RiseFall,         // Rise/Fall envelope
-    kNumCombSlopes
-};
 
 } // namespace WaterStick

@@ -5,8 +5,6 @@
 #include "pluginterfaces/vst/ivstprocesscontext.h"
 #include "WaterStickParameters.h"
 #include "ThreeSistersFilter.h"
-#include "AdaptiveSmoother.h"
-#include "SafetyOptimizer.h"
 #include <vector>
 #include <cmath>
 #include <algorithm>
@@ -131,160 +129,6 @@ private:
     float nextOut();
 };
 
-// Routing modes for signal path control
-enum RouteMode {
-    DelayToComb = 0,    // Delay section feeds into Comb section
-    CombToDelay,        // Comb section feeds into Delay section
-    DelayPlusComb       // Parallel processing: both sections process input independently
-};
-
-class RoutingManager {
-public:
-    RoutingManager();
-    ~RoutingManager();
-
-    void initialize(double sampleRate);
-    void setRouteMode(RouteMode mode);
-    RouteMode getRouteMode() const { return mRouteMode; }
-
-    // Signal path validation
-    bool isValidRouting() const;
-
-    // State management for routing transitions
-    void processRouteTransition();
-    bool isTransitionInProgress() const { return mTransitionInProgress; }
-
-    // Get text representation for display
-    const char* getRouteModeText() const;
-
-    void reset();
-
-private:
-    RouteMode mRouteMode;
-    RouteMode mPendingRouteMode;
-    bool mTransitionInProgress;
-    double mSampleRate;
-
-    // Transition state management
-    int mTransitionSamples;
-    int mTransitionCounter;
-
-    // Text lookup for route modes
-    static const char* sRouteModeTexts[3];
-
-    void startTransition(RouteMode newMode);
-    void completeTransition();
-};
-
-class CombProcessor {
-public:
-    CombProcessor();
-    ~CombProcessor();
-
-    void initialize(double sampleRate, double maxDelaySeconds = 2.0);
-    void setSize(float sizeSeconds);  // Comb size (delay time of tap 64)
-    void setNumTaps(int numTaps);     // 1-64 active taps
-    void setFeedback(float feedback); // 0-1 feedback amount
-    void setSyncMode(bool synced);
-    void setClockDivision(int division);
-    void setPitchCV(float cv);        // 1V/oct control
-    void setPattern(int pattern);     // 0-15 tap spacing patterns
-    void setSlope(int slope);         // 0-3 envelope slopes
-    void setGain(float gain);         // Linear gain multiplier
-    void setSmoothingTimeConstant(float timeConstant); // Set smoothing time constant (0.1ms to 50ms)
-    void updateTempo(double hostTempo, bool isValid); // Update tempo for sync calculations
-
-    // Adaptive smoothing configuration
-    void setAdaptiveSmoothingEnabled(bool enabled);
-    void setCascadedSmoothingEnabled(bool enabled);
-    void setAdaptiveSmoothingParameters(float combSizeSensitivity = 2.0f,
-                                       float pitchCVSensitivity = 1.5f,
-                                       float fastTimeConstant = 0.0005f,
-                                       float slowTimeConstant = 0.008f);
-
-    // Enhanced smoothing configuration
-    void setEnhancedSmoothingEnabled(bool enabled);
-    void setComplexityMode(int complexityMode);  // 0=basic, 1=balanced, 2=high-quality
-    bool isEnhancedSmoothingEnabled() const;
-
-    // Debugging and monitoring
-    void getAdaptiveSmoothingStatus(bool& enabled,
-                                   float& combSizeTimeConstant,
-                                   float& pitchCVTimeConstant,
-                                   float& combSizeVelocity,
-                                   float& pitchCVVelocity) const;
-
-    // Real-time safety integration
-    void setSafetyOptimizer(SafetyOptimizer* optimizer);
-    void setSafetyEnabled(bool enabled);
-
-    void processStereo(float inputL, float inputR, float& outputL, float& outputR);
-    void reset();
-
-    // Get current size for display
-    float getCurrentSize() const { return mCombSize; }
-    float getSyncedCombSize() const;  // Get sync-adjusted comb size
-
-private:
-    static const int MAX_TAPS = 64;
-
-    // Delay buffers for all taps (stereo)
-    std::vector<float> mDelayBufferL;
-    std::vector<float> mDelayBufferR;
-    int mBufferSize;
-    int mWriteIndex;
-    double mSampleRate;
-
-    // Comb parameters
-    float mCombSize;        // Base delay time in seconds
-    int mNumActiveTaps;     // 1-64
-    float mFeedback;        // Feedback amount 0-1
-    float mPitchCV;         // 1V/oct control voltage
-
-    // Feedback buffers and limiters
-    float mFeedbackBufferL;
-    float mFeedbackBufferR;
-
-    // Sync parameters
-    bool mIsSynced;
-    int mClockDivision;
-    float mHostTempo;
-    bool mHostTempoValid;
-
-    // Pattern and slope parameters
-    int mPattern;           // 0-15 tap spacing pattern
-    int mSlope;             // 0-3 envelope slope
-    float mGain;            // Linear gain multiplier
-
-    // Legacy smoothing state for backwards compatibility
-    float mPrevCombSize;            // Previous comb size for legacy smoothing
-    float mAllpassState;            // Allpass filter state for legacy size smoothing
-    float mSmoothingCoeff;          // Legacy smoothing coefficient based on sample rate
-    float mSmoothingTimeConstant;   // Legacy smoothing time constant (0.0001f to 0.05f)
-    float mPrevPitchCV;             // Previous pitch CV for legacy smoothing
-    float mPitchAllpassState;       // Allpass filter state for legacy pitch CV smoothing
-
-    // Adaptive smoothing system
-    CombParameterSmoother mAdaptiveSmoother;  // Main adaptive smoothing engine
-    bool mAdaptiveSmoothingEnabled;           // Enable adaptive vs legacy smoothing
-
-    // Smoothed parameter cache (updated per sample)
-    float mSmoothedCombSize;        // Current smoothed comb size
-    float mSmoothedPitchCV;         // Current smoothed pitch CV
-
-    // Calculate tap delays based on comb size
-    float getTapDelay(int tapIndex, float smoothedPitchCV);
-    float getTapGain(int tapIndex) const;
-    float applyCVScaling(float baseDelay, float pitchCV);
-    float tanhLimiter(float input) const;
-
-    // Allpass interpolation for smooth delay modulation
-    float getSmoothedCombSize();
-    float getSmoothedPitchCV();
-    void updateSmoothingCoeff();
-    void updateSmoothingCoeff(float timeConstant);
-
-};
 
 class TapDistribution {
 public:
@@ -361,16 +205,9 @@ private:
     // State signature for freshness detection (magic number)
     static constexpr Steinberg::int32 kStateMagicNumber = 0x57415453; // "WATS" in hex
 
-    // Helper methods
     void checkTapStateChangesAndClearBuffers();
     void checkBypassStateChanges();
-    void processDelaySection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode);
-    void processCombSection(float inputL, float inputR, float dryRefL, float dryRefR, float& outputL, float& outputR, RouteMode routeMode);
-
-    // Serial-aware processing helpers
-    enum ProcessingMode { SERIAL_MODE, PARALLEL_MODE };
-    ProcessingMode getProcessingMode(RouteMode routeMode) const;
-    bool hasAnyTapsEnabled() const;
+    void processDelaySection(float inputL, float inputR, float& outputL, float& outputR);
 
     // State versioning methods
     Steinberg::tresult readLegacyProcessorState(Steinberg::IBStream* state);
@@ -387,39 +224,15 @@ private:
     int mGrid;
     float mDelayGain;
 
-    // Routing and Wet/Dry controls
-    RouteMode mRouteMode;
-    float mGlobalDryWet;      // Global Dry/Wet mix (affects final output)
-    float mDelayDryWet;       // Delay section Dry/Wet mix (delay section only)
-    float mCombDryWet;        // Comb section Dry/Wet mix (comb section only)
-    bool mDelayBypass;        // Delay section bypass toggle
-    bool mCombBypass;         // Comb section bypass toggle
+    float mGlobalDryWet;
+    bool mDelayBypass;
 
-    // Comb control parameters
-    float mCombSize;          // Comb delay size in seconds
-    float mCombFeedback;      // Comb feedback amount
-    float mCombPitchCV;       // Comb pitch CV in volts
-    int mCombTaps;            // Number of active comb taps
-    bool mCombSync;           // Comb sync mode
-    int mCombDivision;        // Comb sync division
-    int mCombPattern;         // Comb tap spacing pattern (0-15)
-    int mCombSlope;           // Comb envelope slope (0-3)
-    float mCombGain;          // Comb section gain (linear multiplier)
-    float mCombSmoothingTime; // Comb allpass smoothing time constant in seconds
-
-    // Bypass fade system state
-    bool mDelayBypassPrevious;     // Track previous state for fade triggering
-    bool mCombBypassPrevious;      // Track previous state for fade triggering
-    bool mDelayFadingOut;          // True when delay section is fading out
-    bool mDelayFadingIn;           // True when delay section is fading in
-    bool mCombFadingOut;           // True when comb section is fading out
-    bool mCombFadingIn;            // True when comb section is fading in
-    int mDelayFadeRemaining;       // Samples remaining in delay fade
-    int mDelayFadeTotalLength;     // Total delay fade length for calculation
-    int mCombFadeRemaining;        // Samples remaining in comb fade
-    int mCombFadeTotalLength;      // Total comb fade length for calculation
-    float mDelayFadeGain;          // Current delay fade gain (0.0 to 1.0)
-    float mCombFadeGain;           // Current comb fade gain (0.0 to 1.0)
+    bool mDelayBypassPrevious;
+    bool mDelayFadingOut;
+    bool mDelayFadingIn;
+    int mDelayFadeRemaining;
+    int mDelayFadeTotalLength;
+    float mDelayFadeGain;
 
     // Per-tap parameters
     bool mTapEnabled[16];
@@ -465,14 +278,6 @@ private:
     float mFeedbackBufferL;
     float mFeedbackBufferR;
 
-    // Comb processor
-    CombProcessor mCombProcessor;
-
-    // Routing manager
-    RoutingManager mRoutingManager;
-
-    // Real-time safety system
-    SafetyOptimizer mSafetyOptimizer;
 
     // Parameter change tracking for tempo sync optimization
     float mLastTempoSyncDelayTime;

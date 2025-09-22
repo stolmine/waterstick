@@ -33,7 +33,6 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     }
 
     delayBypassToggle = nullptr;
-    combBypassToggle = nullptr;
 
     minimapContainer = nullptr;
     for (int i = 0; i < 16; i++) {
@@ -49,18 +48,6 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     dryWetKnob = nullptr;
     globalDryWetKnob = nullptr;
 
-    combSizeKnob = nullptr;
-    combFeedbackKnob = nullptr;
-    combPitchKnob = nullptr;
-    combTapsKnob = nullptr;
-    combSyncKnob = nullptr;
-    combDivisionKnob = nullptr;
-    routeModeKnob = nullptr;
-    combPatternKnob = nullptr;
-    combSlopeKnob = nullptr;
-    combGainKnob = nullptr;
-    combDryWetKnob = nullptr;
-
     syncModeLabel = nullptr;
     timeDivisionLabel = nullptr;
     feedbackLabel = nullptr;
@@ -69,18 +56,6 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     outputGainLabel = nullptr;
     dryWetLabel = nullptr;
     globalDryWetLabel = nullptr;
-
-    combSizeLabel = nullptr;
-    combFeedbackLabel = nullptr;
-    combPitchLabel = nullptr;
-    combTapsLabel = nullptr;
-    combSyncLabel = nullptr;
-    combDivisionLabel = nullptr;
-    routeModeLabel = nullptr;
-    combPatternLabel = nullptr;
-    combSlopeLabel = nullptr;
-    combGainLabel = nullptr;
-    combDryWetLabel = nullptr;
 
     syncModeValue = nullptr;
     timeDivisionValue = nullptr;
@@ -91,20 +66,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     dryWetValue = nullptr;
     globalDryWetValue = nullptr;
 
-    combSizeValue = nullptr;
-    combFeedbackValue = nullptr;
-    combPitchValue = nullptr;
-    combTapsValue = nullptr;
-    combSyncValue = nullptr;
-    combDivisionValue = nullptr;
-    routeModeValue = nullptr;
-    combPatternValue = nullptr;
-    combSlopeValue = nullptr;
-    combGainValue = nullptr;
-    combDryWetValue = nullptr;
-
     delayBypassLabel = nullptr;
-    combBypassLabel = nullptr;
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -121,7 +83,6 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     createModeButtons(container);
     createBypassControls(container);
     createGlobalControls(container);
-    createCombControls(container);
     createMinimap(container);
 
     frame->addView(container);
@@ -317,10 +278,9 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
         {"D-GAIN", kDelayGain, &delayGainKnob, &delayGainLabel, &delayGainValue, false},
         {"INPUT", kInputGain, &inputGainKnob, &inputGainLabel, &inputGainValue, false},
         {"OUTPUT", kOutputGain, &outputGainKnob, &outputGainLabel, &outputGainValue, false},
-        {"D-MIX", kDelayDryWet, &dryWetKnob, &dryWetLabel, &dryWetValue, false}
     };
 
-    factory.createGlobalKnobsHorizontal(tapGridLeft, knobY, knobSize, knobSpacing, globalKnobs, 8);
+    factory.createGlobalKnobsHorizontal(tapGridLeft, knobY, knobSize, knobSpacing, globalKnobs, 7);
 
     // Create G-MIX global dry/wet control (larger, 63px) in upper-right of delay section
     const int largeMixKnobSize = 63;
@@ -348,7 +308,6 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
                 case kFeedback: paramName = "Feedback"; break;
                 case kGrid: paramName = "Grid"; break;
                 case kDelayGain: paramName = "DelayGain"; break;
-                case kDelayDryWet: paramName = "DelayDryWet"; break;
                 default: paramName = "Unknown"; break;
             }
             WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", globalKnobs[i].tag, paramName, value);
@@ -401,8 +360,6 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
         }
 
         case kGlobalDryWet:
-        case kDelayDryWet:
-        case kCombDryWet:
             // Convert to percentage
             oss << std::fixed << std::setprecision(0) << (normalizedValue * 100.0f) << "%";
             return oss.str();
@@ -420,94 +377,7 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
             return oss.str();
         }
 
-        case kCombSize:
-        {
-            // Format as seconds using same logarithmic scaling as processor (0.0001f to 2.0f range)
-            float actualValue = 0.0001f * std::pow(20000.0f, normalizedValue);
-            if (actualValue < 0.001f) {
-                // Display in microseconds for very small values
-                oss << std::fixed << std::setprecision(0) << (actualValue * 1000000.0f) << "μs";
-            } else if (actualValue < 1.0f) {
-                // Display in milliseconds for small values
-                oss << std::fixed << std::setprecision(1) << (actualValue * 1000.0f) << "ms";
-            } else {
-                // Display in seconds for large values
-                oss << std::fixed << std::setprecision(3) << actualValue << "s";
-            }
-            return oss.str();
-        }
-
-        case kCombFeedback:
-            // Format as percentage (0-99%)
-            oss << std::fixed << std::setprecision(0) << (normalizedValue * 99.0f) << "%";
-            return oss.str();
-
-        case kCombPitchCV:
-        {
-            // Format as volts (-5.0 to +5.0V)
-            float volts = -5.0f + (normalizedValue * 10.0f);
-            oss << std::fixed << std::setprecision(2) << volts << "V";
-            return oss.str();
-        }
-
-        case kCombTaps:
-        {
-            // Format as discrete count (1 to 64)
-            int taps = 1 + static_cast<int>(normalizedValue * 63);
-            oss << taps << " taps";
-            return oss.str();
-        }
-
-        case kCombSync:
-            // Format as sync mode
-            return normalizedValue > 0.5f ? "SYNC" : "FREE";
-
-        case kCombDivision:
-        {
-            // Format as sync division (reuse existing sync division logic)
-            int divIndex = static_cast<int>(normalizedValue * (kNumSyncDivisions - 1));
-            const char* divNames[] = {
-                "1/64", "1/32T", "1/64.", "1/32", "1/16T", "1/32.", "1/16", "1/8T", "1/16.",
-                "1/8", "1/4T", "1/8.", "1/4", "1/2T", "1/4.", "1/2", "1T", "1/2.", "1", "2", "4", "8"
-            };
-            if (divIndex >= 0 && divIndex < kNumSyncDivisions) {
-                return divNames[divIndex];
-            }
-            return "1/4";
-        }
-
-        case kCombPattern:
-        {
-            // Format as pattern number
-            int pattern = 1 + static_cast<int>(normalizedValue * (kNumCombPatterns - 1));
-            oss << "Pattern " << pattern;
-            return oss.str();
-        }
-
-        case kCombSlope:
-        {
-            // Format as slope type
-            int slope = static_cast<int>(normalizedValue * (kNumCombSlopes - 1));
-            const char* slopeNames[] = {"Flat", "Rising", "Falling", "Rise/Fall"};
-            if (slope >= 0 && slope < kNumCombSlopes) {
-                return slopeNames[slope];
-            }
-            return "Flat";
-        }
-
-        case kRouteMode:
-        {
-            // Format as routing mode
-            int mode = static_cast<int>(normalizedValue * 2);
-            const char* modes[] = {"D>C", "C>D", "D+C"};
-            if (mode >= 0 && mode <= 2) {
-                return modes[mode];
-            }
-            return "D>C";
-        }
-
         case kDelayBypass:
-        case kCombBypass:
             // Format as bypass state
             return normalizedValue > 0.5f ? "BYP" : "OFF";
 
@@ -523,7 +393,7 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kDelayDryWet};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain};
     VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, delayGainValue, inputGainValue, outputGainValue, dryWetValue};
 
     for (int i = 0; i < 8; i++) {
@@ -555,18 +425,6 @@ void WaterStickEditor::updateValueReadouts()
         globalDryWetValue->invalid();
     }
 
-    // Update comb control value readouts
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPattern, kCombPitchCV, kCombTaps, kCombSlope, kCombSync, kCombDivision, kRouteMode, kCombDryWet};
-    VSTGUI::CTextLabel* combValueLabels[] = {combSizeValue, combFeedbackValue, combPatternValue, combPitchValue, combTapsValue, combSlopeValue, combSyncValue, combDivisionValue, routeModeValue, combDryWetValue};
-
-    for (int i = 0; i < 10; i++) {
-        if (combValueLabels[i]) {
-            float value = controller->getParamNormalized(combTags[i]);
-            std::string valueText = formatParameterValue(combTags[i], value);
-            combValueLabels[i]->setText(valueText.c_str());
-            combValueLabels[i]->invalid();
-        }
-    }
 }
 
 void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
@@ -1768,7 +1626,7 @@ void WaterStickEditor::forceParameterSynchronization()
     }
 
     // Sync all global knobs with current parameter values
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain, kDelayDryWet};
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kDelayGain, kInputGain, kOutputGain};
     KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, delayGainKnob, inputGainKnob, outputGainKnob, dryWetKnob};
 
     for (int i = 0; i < 8; i++) {
@@ -1798,29 +1656,12 @@ void WaterStickEditor::forceParameterSynchronization()
         globalDryWetKnob->invalid();
     }
 
-    // Sync all comb knobs with current parameter values
-    const int combTags[] = {kCombSize, kCombFeedback, kCombPitchCV, kCombTaps, kCombSync, kCombDivision, kRouteMode, kCombDryWet};
-    KnobControl* combKnobs[] = {combSizeKnob, combFeedbackKnob, combPitchKnob, combTapsKnob, combSyncKnob, combDivisionKnob, routeModeKnob, combDryWetKnob};
 
-    for (int i = 0; i < 8; i++) {
-        if (combKnobs[i]) {
-            float paramValue = controller->getParamNormalized(combTags[i]);
-            combKnobs[i]->setValue(paramValue);
-            combKnobs[i]->invalid();
-        }
-    }
-
-    // Sync bypass toggles with current parameter values
+    // Sync bypass toggle with current parameter value
     if (delayBypassToggle) {
         float delayBypassValue = controller->getParamNormalized(kDelayBypass);
         delayBypassToggle->setValue(delayBypassValue);
         delayBypassToggle->invalid();
-    }
-
-    if (combBypassToggle) {
-        float combBypassValue = controller->getParamNormalized(kCombBypass);
-        combBypassToggle->setValue(combBypassValue);
-        combBypassToggle->invalid();
     }
 
     // Force visual updates
@@ -1829,35 +1670,6 @@ void WaterStickEditor::forceParameterSynchronization()
 
 }
 
-void WaterStickEditor::createCombControls(VSTGUI::CViewContainer* container)
-{
-    const int combSectionLeft = (kEditorWidth * 2) / 3;
-    const int combMargin = 25;
-    const int knobSize = 53;
-    const int combColumns = 3;
-    const int combHSpacing = 75;
-    const int combVSpacing = 70;
-    const int combStartY = 120;
-    const int startX = combSectionLeft + combMargin;
-
-    ControlFactory factory(this, container);
-
-    KnobDefinition combKnobs[] = {
-        {"SIZE", kCombSize, &combSizeKnob, &combSizeLabel, &combSizeValue, false},
-        {"C-GAIN", kCombGain, &combGainKnob, &combGainLabel, &combGainValue, false},
-        {"FEEDBACK", kCombFeedback, &combFeedbackKnob, &combFeedbackLabel, &combFeedbackValue, false},
-        {"PITCH", kCombPitchCV, &combPitchKnob, &combPitchLabel, &combPitchValue, false},
-        {"TAPS", kCombTaps, &combTapsKnob, &combTapsLabel, &combTapsValue, false},
-        {"PATTERN", kCombPattern, &combPatternKnob, &combPatternLabel, &combPatternValue, false},
-        {"SYNC", kCombSync, &combSyncKnob, &combSyncLabel, &combSyncValue, false},
-        {"DIVISION", kCombDivision, &combDivisionKnob, &combDivisionLabel, &combDivisionValue, false},
-        {"SLOPE", kCombSlope, &combSlopeKnob, &combSlopeLabel, &combSlopeValue, false},
-        {"ROUTE", kRouteMode, &routeModeKnob, &routeModeLabel, &routeModeValue, false},
-        {"C-MIX", kCombDryWet, &combDryWetKnob, &combDryWetLabel, &combDryWetValue, false}
-    };
-
-    factory.createCombKnobsGrid(startX, combStartY, knobSize, combHSpacing, combVSpacing, combColumns, combKnobs, 11);
-}
 
 //========================================================================
 // BypassToggle Implementation
@@ -1954,22 +1766,20 @@ VSTGUI::CMouseEventResult BypassToggle::onMouseDown(VSTGUI::CPoint& where, const
 
 void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
 {
-    // Position bypass toggles in top left corner of the window
-    const int toggleWidth = 50;          // Smaller width for bypass toggles
-    const int toggleHeight = 30;         // Smaller height for bypass toggles
+    // Position bypass toggle in top left corner of the window
+    const int toggleWidth = 50;          // Smaller width for bypass toggle
+    const int toggleHeight = 30;         // Smaller height for bypass toggle
 
     // Top left corner positioning with clean margins
     const int topMargin = 20;            // Distance from top edge
     const int leftMargin = 30;           // Distance from left edge (matching delay section margin)
-    const int toggleGap = 10;            // Gap between the two bypass toggles
 
-    // Calculate positions for both toggles in top left
-    const int firstToggleX = leftMargin;
-    const int secondToggleX = firstToggleX + toggleWidth + toggleGap;
+    // Calculate position for toggle in top left
+    const int toggleX = leftMargin;
     const int toggleY = topMargin;
 
     // Create delay bypass toggle in top left
-    VSTGUI::CRect delayToggleRect(firstToggleX, toggleY, firstToggleX + toggleWidth, toggleY + toggleHeight);
+    VSTGUI::CRect delayToggleRect(toggleX, toggleY, toggleX + toggleWidth, toggleY + toggleHeight);
     delayBypassToggle = new BypassToggle(delayToggleRect, this, kDelayBypass);
 
     // Load initial value from controller
@@ -1984,7 +1794,7 @@ void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
     // Create delay bypass label below the toggle
     const int labelHeight = 20;
     const int labelY = toggleY + toggleHeight + 5;  // Position label 5px below toggle
-    VSTGUI::CRect delayLabelRect(firstToggleX, labelY, firstToggleX + toggleWidth, labelY + labelHeight);
+    VSTGUI::CRect delayLabelRect(toggleX, labelY, toggleX + toggleWidth, labelY + labelHeight);
     delayBypassLabel = new VSTGUI::CTextLabel(delayLabelRect, "D-BYP");
 
     // Set label styling to match mode button labels
@@ -2000,35 +1810,6 @@ void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
     }
 
     container->addView(delayBypassLabel);
-
-    // Create comb bypass toggle (positioned to the right of delay bypass)
-    VSTGUI::CRect combToggleRect(secondToggleX, toggleY, secondToggleX + toggleWidth, toggleY + toggleHeight);
-    combBypassToggle = new BypassToggle(combToggleRect, this, kCombBypass);
-
-    // Load initial value from controller
-    if (controller) {
-        float value = controller->getParamNormalized(kCombBypass);
-        combBypassToggle->setValue(value);
-    }
-
-    container->addView(combBypassToggle);
-
-    // Create comb bypass label
-    VSTGUI::CRect combLabelRect(secondToggleX, labelY, secondToggleX + toggleWidth, labelY + labelHeight);
-    combBypassLabel = new VSTGUI::CTextLabel(combLabelRect, "C-BYP");
-
-    // Set label styling to match mode button labels
-    combBypassLabel->setHoriAlign(VSTGUI::kCenterText);
-    combBypassLabel->setFontColor(VSTGUI::kBlackCColor);
-    combBypassLabel->setBackColor(VSTGUI::kTransparentCColor);
-    combBypassLabel->setFrameColor(VSTGUI::kTransparentCColor);
-    combBypassLabel->setStyle(VSTGUI::CTextLabel::kNoFrame);
-
-    if (customFont) {
-        combBypassLabel->setFont(customFont);
-    }
-
-    container->addView(combBypassLabel);
 }
 
 } // namespace WaterStick

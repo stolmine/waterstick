@@ -175,7 +175,6 @@ private:
 
     // Bypass toggle controls
     BypassToggle* delayBypassToggle;
-    BypassToggle* combBypassToggle;
 
     // Global control knobs
     KnobControl* syncModeKnob;
@@ -188,18 +187,6 @@ private:
     KnobControl* delayGainKnob;
     KnobControl* globalDryWetKnob;  // G-MIX: Global dry/wet control (larger, in delay section upper-right)
 
-    // Comb control knobs
-    KnobControl* combSizeKnob;
-    KnobControl* combFeedbackKnob;
-    KnobControl* combPitchKnob;
-    KnobControl* combTapsKnob;
-    KnobControl* combSyncKnob;
-    KnobControl* combDivisionKnob;
-    KnobControl* routeModeKnob;
-    KnobControl* combPatternKnob;
-    KnobControl* combSlopeKnob;
-    KnobControl* combGainKnob;
-    KnobControl* combDryWetKnob;  // C-MIX: Comb dry/wet control
 
     // Knob labels
     VSTGUI::CTextLabel* syncModeLabel;
@@ -212,18 +199,6 @@ private:
     VSTGUI::CTextLabel* delayGainLabel;
     VSTGUI::CTextLabel* globalDryWetLabel;
 
-    // Comb knob labels
-    VSTGUI::CTextLabel* combSizeLabel;
-    VSTGUI::CTextLabel* combFeedbackLabel;
-    VSTGUI::CTextLabel* combPitchLabel;
-    VSTGUI::CTextLabel* combTapsLabel;
-    VSTGUI::CTextLabel* combSyncLabel;
-    VSTGUI::CTextLabel* combDivisionLabel;
-    VSTGUI::CTextLabel* routeModeLabel;
-    VSTGUI::CTextLabel* combPatternLabel;
-    VSTGUI::CTextLabel* combSlopeLabel;
-    VSTGUI::CTextLabel* combGainLabel;
-    VSTGUI::CTextLabel* combDryWetLabel;
 
     // Value readout labels
     VSTGUI::CTextLabel* syncModeValue;
@@ -236,25 +211,12 @@ private:
     VSTGUI::CTextLabel* delayGainValue;
     VSTGUI::CTextLabel* globalDryWetValue;
 
-    // Comb value readout labels
-    VSTGUI::CTextLabel* combSizeValue;
-    VSTGUI::CTextLabel* combFeedbackValue;
-    VSTGUI::CTextLabel* combPitchValue;
-    VSTGUI::CTextLabel* combTapsValue;
-    VSTGUI::CTextLabel* combSyncValue;
-    VSTGUI::CTextLabel* combDivisionValue;
-    VSTGUI::CTextLabel* routeModeValue;
-    VSTGUI::CTextLabel* combPatternValue;
-    VSTGUI::CTextLabel* combSlopeValue;
-    VSTGUI::CTextLabel* combGainValue;
-    VSTGUI::CTextLabel* combDryWetValue;
 
     // Mode button labels
     VSTGUI::CTextLabel* modeButtonLabels[8];
 
     // Bypass toggle labels
     VSTGUI::CTextLabel* delayBypassLabel;
-    VSTGUI::CTextLabel* combBypassLabel;
 
     // Minimap components
     VSTGUI::CViewContainer* minimapContainer;
@@ -270,7 +232,6 @@ private:
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
-    void createCombControls(VSTGUI::CViewContainer* container);
 };
 
 } // namespace WaterStick
