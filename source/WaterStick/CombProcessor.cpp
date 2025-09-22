@@ -1,4 +1,5 @@
 #include "WaterStickProcessor.h"
+#include "AdaptiveSmoother.h"
 #include <cmath>
 #include <algorithm>
 
@@ -24,8 +25,12 @@ CombProcessor::CombProcessor()
     , mPrevCombSize(0.1f)
     , mAllpassState(0.0f)
     , mSmoothingCoeff(0.0f)
+    , mSmoothingTimeConstant(0.01f)  // Default 10ms time constant
     , mPrevPitchCV(0.0f)
     , mPitchAllpassState(0.0f)
+    , mAdaptiveSmoothingEnabled(true)  // Enable adaptive smoothing by default
+    , mSmoothedCombSize(0.1f)
+    , mSmoothedPitchCV(0.0f)
 {
 }
 
@@ -45,6 +50,9 @@ void CombProcessor::initialize(double sampleRate, double maxDelaySeconds)
     // Update smoothing coefficient based on sample rate
     updateSmoothingCoeff();
 
+    // Initialize adaptive smoother
+    mAdaptiveSmoother.initialize(sampleRate);
+
     reset();
 }
 
@@ -61,6 +69,13 @@ void CombProcessor::reset()
     mAllpassState = 0.0f;
     mPrevPitchCV = mPitchCV;
     mPitchAllpassState = 0.0f;
+
+    // Reset adaptive smoother
+    mAdaptiveSmoother.reset();
+
+    // Initialize smoothed parameter cache
+    mSmoothedCombSize = getSyncedCombSize();
+    mSmoothedPitchCV = mPitchCV;
 }
 
 void CombProcessor::setSize(float sizeSeconds)
@@ -108,10 +123,48 @@ void CombProcessor::setGain(float gain)
     mGain = std::max(0.0f, gain);  // Ensure non-negative gain
 }
 
+void CombProcessor::setSmoothingTimeConstant(float timeConstant)
+{
+    // Clamp to reasonable bounds: 0.1ms to 50ms
+    mSmoothingTimeConstant = std::max(0.0001f, std::min(0.05f, timeConstant));
+    // Update coefficient immediately when time constant changes
+    updateSmoothingCoeff(mSmoothingTimeConstant);
+}
+
 void CombProcessor::updateTempo(double hostTempo, bool isValid)
 {
     mHostTempo = static_cast<float>(hostTempo);
     mHostTempoValid = isValid;
+}
+
+void CombProcessor::setAdaptiveSmoothingEnabled(bool enabled)
+{
+    mAdaptiveSmoothingEnabled = enabled;
+    mAdaptiveSmoother.setAdaptiveEnabled(enabled);
+}
+
+void CombProcessor::setAdaptiveSmoothingParameters(float combSizeSensitivity,
+                                                   float pitchCVSensitivity,
+                                                   float fastTimeConstant,
+                                                   float slowTimeConstant)
+{
+    mAdaptiveSmoother.setAdaptiveParameters(combSizeSensitivity,
+                                           pitchCVSensitivity,
+                                           fastTimeConstant,
+                                           slowTimeConstant);
+}
+
+void CombProcessor::getAdaptiveSmoothingStatus(bool& enabled,
+                                              float& combSizeTimeConstant,
+                                              float& pitchCVTimeConstant,
+                                              float& combSizeVelocity,
+                                              float& pitchCVVelocity) const
+{
+    enabled = mAdaptiveSmoothingEnabled;
+    mAdaptiveSmoother.getDebugInfo(combSizeTimeConstant,
+                                  pitchCVTimeConstant,
+                                  combSizeVelocity,
+                                  pitchCVVelocity);
 }
 
 float CombProcessor::getSyncedCombSize() const
@@ -230,8 +283,13 @@ float CombProcessor::tanhLimiter(float input) const
 
 void CombProcessor::updateSmoothingCoeff()
 {
-    // Set time constant for smooth modulation (10ms for musical modulation rates)
-    const float timeConstant = 0.01f; // 10ms
+    // Use the stored time constant
+    updateSmoothingCoeff(mSmoothingTimeConstant);
+}
+
+void CombProcessor::updateSmoothingCoeff(float timeConstant)
+{
+    // Calculate smoothing coefficient based on time constant and sample rate
     mSmoothingCoeff = std::exp(-1.0f / (timeConstant * static_cast<float>(mSampleRate)));
 }
 
@@ -239,48 +297,62 @@ float CombProcessor::getSmoothedCombSize()
 {
     float targetSize = getSyncedCombSize();
 
-    // Calculate the difference between target and previous size
-    float sizeDiff = targetSize - mPrevCombSize;
+    if (mAdaptiveSmoothingEnabled) {
+        // Use adaptive smoothing
+        mSmoothedCombSize = mAdaptiveSmoother.processComSize(targetSize);
+        return mSmoothedCombSize;
+    } else {
+        // Use legacy allpass interpolation for backwards compatibility
+        // Calculate the difference between target and previous size
+        float sizeDiff = targetSize - mPrevCombSize;
 
-    // Apply allpass interpolation using Stanford formula: Δ ≈ (1-η)/(1+η)
-    // where η is the smoothing coefficient
-    float eta = mSmoothingCoeff;
-    float allpassCoeff = (1.0f - eta) / (1.0f + eta);
+        // Apply allpass interpolation using Stanford formula: Δ ≈ (1-η)/(1+η)
+        // where η is the smoothing coefficient
+        float eta = mSmoothingCoeff;
+        float allpassCoeff = (1.0f - eta) / (1.0f + eta);
 
-    // Update allpass state with the size difference
-    mAllpassState = allpassCoeff * (sizeDiff + mAllpassState);
+        // Update allpass state with the size difference
+        mAllpassState = allpassCoeff * (sizeDiff + mAllpassState);
 
-    // Calculate smoothed size
-    float smoothedSize = mPrevCombSize + mAllpassState;
+        // Calculate smoothed size
+        float smoothedSize = mPrevCombSize + mAllpassState;
 
-    // Update previous size for next sample
-    mPrevCombSize = smoothedSize;
+        // Update previous size for next sample
+        mPrevCombSize = smoothedSize;
 
-    return smoothedSize;
+        return smoothedSize;
+    }
 }
 
 float CombProcessor::getSmoothedPitchCV()
 {
     float targetPitchCV = mPitchCV;
 
-    // Calculate the difference between target and previous pitch CV
-    float pitchDiff = targetPitchCV - mPrevPitchCV;
+    if (mAdaptiveSmoothingEnabled) {
+        // Use adaptive smoothing
+        mSmoothedPitchCV = mAdaptiveSmoother.processPitchCV(targetPitchCV);
+        return mSmoothedPitchCV;
+    } else {
+        // Use legacy allpass interpolation for backwards compatibility
+        // Calculate the difference between target and previous pitch CV
+        float pitchDiff = targetPitchCV - mPrevPitchCV;
 
-    // Apply allpass interpolation using Stanford formula: Δ ≈ (1-η)/(1+η)
-    // where η is the smoothing coefficient (same 10ms time constant as size)
-    float eta = mSmoothingCoeff;
-    float allpassCoeff = (1.0f - eta) / (1.0f + eta);
+        // Apply allpass interpolation using Stanford formula: Δ ≈ (1-η)/(1+η)
+        // where η is the smoothing coefficient (same 10ms time constant as size)
+        float eta = mSmoothingCoeff;
+        float allpassCoeff = (1.0f - eta) / (1.0f + eta);
 
-    // Update allpass state with the pitch CV difference
-    mPitchAllpassState = allpassCoeff * (pitchDiff + mPitchAllpassState);
+        // Update allpass state with the pitch CV difference
+        mPitchAllpassState = allpassCoeff * (pitchDiff + mPitchAllpassState);
 
-    // Calculate smoothed pitch CV
-    float smoothedPitchCV = mPrevPitchCV + mPitchAllpassState;
+        // Calculate smoothed pitch CV
+        float smoothedPitchCV = mPrevPitchCV + mPitchAllpassState;
 
-    // Update previous pitch CV for next sample
-    mPrevPitchCV = smoothedPitchCV;
+        // Update previous pitch CV for next sample
+        mPrevPitchCV = smoothedPitchCV;
 
-    return smoothedPitchCV;
+        return smoothedPitchCV;
+    }
 }
 
 void CombProcessor::processStereo(float inputL, float inputR, float& outputL, float& outputR)
@@ -376,5 +448,7 @@ void CombProcessor::processStereo(float inputL, float inputR, float& outputL, fl
 
     mWriteIndex = (mWriteIndex + 1) % mBufferSize;
 }
+
+
 
 } // namespace WaterStick
