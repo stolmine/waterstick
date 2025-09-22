@@ -97,6 +97,62 @@ public:
     void setAdaptiveEnabled(bool enabled, float fixedTimeConstant = 0.01f);
 
     /**
+     * @brief Configure perceptual time constant mapping based on psychoacoustic principles
+     * @param enabled True to enable perceptual mapping, false for linear velocity mapping
+     * @param imperceptibleThreshold Velocity threshold for imperceptible changes (0.5ms response)
+     * @param justNoticeableThreshold Velocity threshold for just noticeable changes (2-5ms response)
+     * @param largeChangeThreshold Velocity threshold for large changes (10-30ms response)
+     * @param frequencyWeighting Frequency content importance weighting (0.0-2.0)
+     */
+    void setPerceptualMapping(bool enabled,
+                             float imperceptibleThreshold = 0.01f,
+                             float justNoticeableThreshold = 0.1f,
+                             float largeChangeThreshold = 1.0f,
+                             float frequencyWeighting = 1.0f);
+
+    /**
+     * @brief Configure psychoacoustic time constants for perceptual regions
+     * @param imperceptibleTime Time constant for imperceptible changes (0.0005s)
+     * @param justNoticeableTime Time constant for just noticeable changes (0.002-0.005s)
+     * @param largeChangeTime Time constant for large changes (0.010-0.030s)
+     * @param transitionSharpness Sharpness of transitions between regions (0.5-3.0)
+     */
+    void setPerceptualTimeConstants(float imperceptibleTime = 0.0005f,
+                                   float justNoticeableTime = 0.003f,
+                                   float largeChangeTime = 0.020f,
+                                   float transitionSharpness = 1.5f);
+
+    /**
+     * @brief Configure frequency content analysis for perceptual weighting
+     * @param lowFreqWeight Weighting for low frequency content (100Hz-1kHz)
+     * @param midFreqWeight Weighting for mid frequency content (1kHz-5kHz)
+     * @param highFreqWeight Weighting for high frequency content (5kHz-20kHz)
+     * @param analysisWindow Window size for frequency analysis (samples)
+     */
+    void setFrequencyWeighting(float lowFreqWeight = 0.8f,
+                              float midFreqWeight = 1.2f,
+                              float highFreqWeight = 1.0f,
+                              int analysisWindow = 64);
+
+    /**
+     * @brief Check if perceptual mapping is enabled
+     * @return True if perceptual mapping is active
+     */
+    bool isPerceptualMappingEnabled() const { return mPerceptualMappingEnabled; }
+
+    /**
+     * @brief Get current perceptual region for debugging
+     * @return Current perceptual region (0=imperceptible, 1=just noticeable, 2=large change)
+     */
+    int getCurrentPerceptualRegion() const { return mCurrentPerceptualRegion; }
+
+    /**
+     * @brief Get current frequency-weighted velocity for debugging
+     * @return Frequency-weighted velocity estimate
+     */
+    float getFrequencyWeightedVelocity() const { return mFrequencyWeightedVelocity; }
+
+    /**
      * @brief Enable/disable cascaded filtering with adaptive stage selection
      * @param enabled True to enable cascaded filtering
      * @param maxStages Maximum number of cascade stages (1-5)
@@ -106,8 +162,8 @@ public:
 
     /**
      * @brief Configure velocity-to-stage mapping parameters
-     * @param lowVelocityThreshold Velocity threshold for maximum stages
-     * @param highVelocityThreshold Velocity threshold for minimum stages
+     * @param lowVelocityThreshold Velocity threshold for minimum stages (stable parameters)
+     * @param highVelocityThreshold Velocity threshold for maximum stages (changing parameters)
      * @param velocityScaling Velocity scaling factor for stage calculation
      */
     void setStageMapping(float lowVelocityThreshold = 0.1f,
@@ -171,6 +227,37 @@ private:
     // Sample time for velocity calculation
     float mSampleTime;           // 1.0 / sampleRate
 
+    // Perceptual mapping system parameters
+    bool mPerceptualMappingEnabled;      // Enable/disable perceptual mapping
+    float mImperceptibleThreshold;       // Velocity threshold for imperceptible changes
+    float mJustNoticeableThreshold;      // Velocity threshold for just noticeable changes
+    float mLargeChangeThreshold;         // Velocity threshold for large changes
+    float mFrequencyWeighting;           // Overall frequency content weighting
+
+    // Psychoacoustic time constants
+    float mImperceptibleTime;            // Time constant for imperceptible changes (0.5ms)
+    float mJustNoticeableTime;           // Time constant for just noticeable changes (2-5ms)
+    float mLargeChangeTime;              // Time constant for large changes (10-30ms)
+    float mTransitionSharpness;          // Sharpness of region transitions
+
+    // Frequency content analysis
+    float mLowFreqWeight;                // Weighting for low frequency content
+    float mMidFreqWeight;                // Weighting for mid frequency content
+    float mHighFreqWeight;               // Weighting for high frequency content
+    int mAnalysisWindow;                 // Window size for frequency analysis
+
+    // Perceptual state tracking
+    int mCurrentPerceptualRegion;        // Current perceptual region (0-2)
+    float mFrequencyWeightedVelocity;    // Frequency-weighted velocity estimate
+    float mPerceptualTimeConstant;       // Current perceptual time constant
+
+    // Frequency analysis state
+    std::array<float, 128> mInputHistory;  // Input history for frequency analysis
+    int mHistoryIndex;                     // Current index in input history
+    float mLowFreqEnergy;                  // Low frequency energy estimate
+    float mMidFreqEnergy;                  // Mid frequency energy estimate
+    float mHighFreqEnergy;                 // High frequency energy estimate
+
     /**
      * @brief Calculate velocity using first-order finite difference
      * @param input Current input sample
@@ -199,6 +286,8 @@ private:
 
     /**
      * @brief Calculate target stage count based on velocity
+     * Low velocity (stable) -> fewer stages (1-2) for faster response
+     * High velocity (changing) -> more stages (4-5) for better smoothing
      * @param velocity Current velocity estimate
      * @return Target stage count (1 to mMaxStages)
      */
@@ -216,6 +305,41 @@ private:
      * @return Effective time constant accounting for cascade stages
      */
     float getEffectiveTimeConstant(float baseTimeConstant) const;
+
+    /**
+     * @brief Map velocity to perceptual time constant using psychoacoustic principles
+     * @param velocity Frequency-weighted velocity magnitude
+     * @return Perceptual time constant in seconds
+     */
+    float velocityToPerceptualTimeConstant(float velocity);
+
+    /**
+     * @brief Analyze frequency content of input signal for perceptual weighting
+     * @param input Current input sample
+     */
+    void updateFrequencyAnalysis(float input);
+
+    /**
+     * @brief Calculate frequency-weighted velocity based on spectral content
+     * @param rawVelocity Raw velocity from finite difference
+     * @return Frequency-weighted velocity
+     */
+    float calculateFrequencyWeightedVelocity(float rawVelocity);
+
+    /**
+     * @brief Determine perceptual region based on velocity thresholds
+     * @param velocity Frequency-weighted velocity magnitude
+     * @return Perceptual region (0=imperceptible, 1=just noticeable, 2=large change)
+     */
+    int determinePerceptualRegion(float velocity);
+
+    /**
+     * @brief Apply smooth transitions between perceptual regions
+     * @param velocity Current velocity
+     * @param region Current perceptual region
+     * @return Smoothly interpolated time constant
+     */
+    float applyPerceptualTransitions(float velocity, int region);
 
     /**
      * @brief Clamp value to specified range (optimized inline)
@@ -306,9 +430,35 @@ public:
     void setCascadedEnabled(bool enabled, int maxStages = 3, float stageHysteresis = 0.2f);
 
     /**
+     * @brief Configure perceptual mapping for both parameters
+     * @param enabled True to enable perceptual mapping
+     * @param combSizeFreqWeighting Frequency weighting for comb size parameter
+     * @param pitchCVFreqWeighting Frequency weighting for pitch CV parameter
+     */
+    void setPerceptualMapping(bool enabled,
+                             float combSizeFreqWeighting = 1.2f,
+                             float pitchCVFreqWeighting = 1.0f);
+
+    /**
+     * @brief Configure perceptual time constants for both parameters
+     * @param combSizeImperceptible Imperceptible time for comb size (0.3ms)
+     * @param combSizeJustNoticeable Just noticeable time for comb size (2ms)
+     * @param combSizeLargeChange Large change time for comb size (15ms)
+     * @param pitchCVImperceptible Imperceptible time for pitch CV (0.5ms)
+     * @param pitchCVJustNoticeable Just noticeable time for pitch CV (3ms)
+     * @param pitchCVLargeChange Large change time for pitch CV (20ms)
+     */
+    void setPerceptualTimeConstants(float combSizeImperceptible = 0.0003f,
+                                   float combSizeJustNoticeable = 0.002f,
+                                   float combSizeLargeChange = 0.015f,
+                                   float pitchCVImperceptible = 0.0005f,
+                                   float pitchCVJustNoticeable = 0.003f,
+                                   float pitchCVLargeChange = 0.020f);
+
+    /**
      * @brief Configure velocity-to-stage mapping for both parameters
-     * @param lowVelocityThreshold Velocity threshold for maximum stages
-     * @param highVelocityThreshold Velocity threshold for minimum stages
+     * @param lowVelocityThreshold Velocity threshold for minimum stages (stable parameters)
+     * @param highVelocityThreshold Velocity threshold for maximum stages (changing parameters)
      * @param velocityScaling Velocity scaling factor for stage calculation
      */
     void setStageMapping(float lowVelocityThreshold = 0.1f,
