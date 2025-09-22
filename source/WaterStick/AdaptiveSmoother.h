@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include "CascadedSmoother.h"
+#include "EnhancedAdaptiveSmoother.h"
 
 namespace WaterStick {
 
@@ -485,11 +486,35 @@ public:
     void getExtendedDebugInfo(int& combSizeStages, int& pitchCVStages,
                              bool& combSizeCascaded, bool& pitchCVCascaded) const;
 
+    /**
+     * @brief Configure enhanced smoothing complexity modes
+     * @param complexityMode Complexity mode (0=basic, 1=balanced, 2=high-quality)
+     */
+    void setComplexityMode(int complexityMode);
+
+    /**
+     * @brief Enable/disable enhanced smoothing features (full integration mode)
+     * @param enabled True to use EnhancedAdaptiveSmoother, false for legacy AdaptiveSmoother
+     */
+    void setEnhancedMode(bool enabled);
+
+    /**
+     * @brief Get current enhanced mode status
+     * @return True if using EnhancedAdaptiveSmoother, false if using legacy AdaptiveSmoother
+     */
+    bool isEnhancedModeEnabled() const { return mEnhancedMode; }
+
 private:
-    AdaptiveSmoother mCombSizeSmoother;  // Smoother for comb size parameter
-    AdaptiveSmoother mPitchCVSmoother;   // Smoother for pitch CV parameter
+    // Enhanced smoothers for next-generation processing
+    EnhancedAdaptiveSmoother mCombSizeEnhancedSmoother;  // Enhanced smoother for comb size parameter
+    EnhancedAdaptiveSmoother mPitchCVEnhancedSmoother;   // Enhanced smoother for pitch CV parameter
+
+    // Legacy smoothers for backwards compatibility
+    AdaptiveSmoother mCombSizeSmoother;  // Legacy smoother for comb size parameter
+    AdaptiveSmoother mPitchCVSmoother;   // Legacy smoother for pitch CV parameter
 
     bool mInitialized;                   // Initialization state flag
+    bool mEnhancedMode;                  // True to use enhanced smoothers, false for legacy
 };
 
 } // namespace WaterStick

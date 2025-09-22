@@ -143,6 +143,11 @@ void CombProcessor::setAdaptiveSmoothingEnabled(bool enabled)
     mAdaptiveSmoother.setAdaptiveEnabled(enabled);
 }
 
+void CombProcessor::setCascadedSmoothingEnabled(bool enabled)
+{
+    mAdaptiveSmoother.setCascadedEnabled(enabled);
+}
+
 void CombProcessor::setAdaptiveSmoothingParameters(float combSizeSensitivity,
                                                    float pitchCVSensitivity,
                                                    float fastTimeConstant,
@@ -165,6 +170,21 @@ void CombProcessor::getAdaptiveSmoothingStatus(bool& enabled,
                                   pitchCVTimeConstant,
                                   combSizeVelocity,
                                   pitchCVVelocity);
+}
+
+void CombProcessor::setEnhancedSmoothingEnabled(bool enabled)
+{
+    mAdaptiveSmoother.setEnhancedMode(enabled);
+}
+
+void CombProcessor::setComplexityMode(int complexityMode)
+{
+    mAdaptiveSmoother.setComplexityMode(complexityMode);
+}
+
+bool CombProcessor::isEnhancedSmoothingEnabled() const
+{
+    return mAdaptiveSmoother.isEnhancedModeEnabled();
 }
 
 float CombProcessor::getSyncedCombSize() const

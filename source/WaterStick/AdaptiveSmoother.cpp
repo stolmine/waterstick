@@ -340,17 +340,28 @@ void AdaptiveSmoother::updateSmoothingMode(float velocity)
 // CombParameterSmoother Implementation
 
 CombParameterSmoother::CombParameterSmoother()
-    : mInitialized(false)
+    : mCombSizeEnhancedSmoother(44100.0, EnhancedAdaptiveSmoother::ParameterType::CombSize,
+                               EnhancedAdaptiveSmoother::SmoothingMode::Auto,
+                               EnhancedAdaptiveSmoother::PerformanceProfile::Balanced)
+    , mPitchCVEnhancedSmoother(44100.0, EnhancedAdaptiveSmoother::ParameterType::PitchCV,
+                              EnhancedAdaptiveSmoother::SmoothingMode::Auto,
+                              EnhancedAdaptiveSmoother::PerformanceProfile::Balanced)
+    , mInitialized(false)
+    , mEnhancedMode(true)  // Default to enhanced mode for new installations
 {
 }
 
 void CombParameterSmoother::initialize(double sampleRate)
 {
-    // Initialize both smoothers with parameter-specific settings
+    // Initialize enhanced smoothers
+    mCombSizeEnhancedSmoother.setSampleRate(sampleRate);
+    mPitchCVEnhancedSmoother.setSampleRate(sampleRate);
+
+    // Initialize legacy smoothers for backwards compatibility
     mCombSizeSmoother.setSampleRate(sampleRate);
     mPitchCVSmoother.setSampleRate(sampleRate);
 
-    // Set default adaptive parameters
+    // Set default adaptive parameters for both systems
     setAdaptiveParameters();
 
     mInitialized = true;
@@ -361,8 +372,41 @@ void CombParameterSmoother::setAdaptiveParameters(float combSizeSensitivity,
                                                   float fastTimeConstant,
                                                   float slowTimeConstant)
 {
-    // Configure comb size smoother with higher sensitivity
-    // Comb size changes are more audible and need faster response
+    // Configure enhanced smoothers with parameter-specific optimizations
+    if (mEnhancedMode) {
+        // Enhanced comb size smoother configuration
+        mCombSizeEnhancedSmoother.setAdaptiveParameters(
+            fastTimeConstant,                  // 0.5ms fast response
+            slowTimeConstant,                  // 8ms slow response
+            combSizeSensitivity,               // 2.0x sensitivity
+            0.05f                             // 5% hysteresis threshold
+        );
+
+        // Enhanced pitch CV smoother configuration
+        mPitchCVEnhancedSmoother.setAdaptiveParameters(
+            fastTimeConstant * 1.5f,          // 0.75ms fast response (slightly slower)
+            slowTimeConstant * 1.2f,          // 9.6ms slow response (slightly slower)
+            pitchCVSensitivity,               // 1.5x sensitivity
+            0.08f                             // 8% hysteresis threshold
+        );
+
+        // Configure parameter-specific perceptual calibration for enhanced mode
+        mCombSizeEnhancedSmoother.setPerceptualParameters(true,
+            20.0,      // Min frequency
+            20000.0,   // Max frequency
+            1.2f,      // Perceptual sensitivity - tighter for comb size
+            false      // Use full analysis
+        );
+
+        mPitchCVEnhancedSmoother.setPerceptualParameters(true,
+            20.0,      // Min frequency
+            20000.0,   // Max frequency
+            1.0f,      // Perceptual sensitivity - standard
+            false      // Use full analysis
+        );
+    }
+
+    // Configure legacy smoothers for backwards compatibility
     mCombSizeSmoother.setAdaptiveParameters(
         fastTimeConstant,                   // 0.5ms fast response
         slowTimeConstant,                   // 8ms slow response
@@ -370,8 +414,6 @@ void CombParameterSmoother::setAdaptiveParameters(float combSizeSensitivity,
         0.05f                              // 5% hysteresis threshold
     );
 
-    // Configure pitch CV smoother with moderate sensitivity
-    // Pitch changes are important but can tolerate slightly more smoothing
     mPitchCVSmoother.setAdaptiveParameters(
         fastTimeConstant * 1.5f,           // 0.75ms fast response (slightly slower)
         slowTimeConstant * 1.2f,           // 9.6ms slow response (slightly slower)
@@ -386,7 +428,11 @@ float CombParameterSmoother::processComSize(float combSize)
         return combSize; // Pass through if not initialized
     }
 
-    return mCombSizeSmoother.processSample(combSize);
+    if (mEnhancedMode) {
+        return mCombSizeEnhancedSmoother.processSample(combSize);
+    } else {
+        return mCombSizeSmoother.processSample(combSize);
+    }
 }
 
 float CombParameterSmoother::processPitchCV(float pitchCV)
@@ -395,23 +441,51 @@ float CombParameterSmoother::processPitchCV(float pitchCV)
         return pitchCV; // Pass through if not initialized
     }
 
-    return mPitchCVSmoother.processSample(pitchCV);
+    if (mEnhancedMode) {
+        return mPitchCVEnhancedSmoother.processSample(pitchCV);
+    } else {
+        return mPitchCVSmoother.processSample(pitchCV);
+    }
 }
 
 void CombParameterSmoother::reset()
 {
+    // Reset enhanced smoothers
+    mCombSizeEnhancedSmoother.reset();
+    mPitchCVEnhancedSmoother.reset();
+
+    // Reset legacy smoothers
     mCombSizeSmoother.reset();
     mPitchCVSmoother.reset();
 }
 
 void CombParameterSmoother::setAdaptiveEnabled(bool enabled)
 {
+    if (mEnhancedMode) {
+        if (enabled) {
+            // Configure enhanced adaptive parameters when enabled
+            mCombSizeEnhancedSmoother.setAdaptiveParameters(0.0005f, 0.008f, 2.0f, 0.05f);
+            mPitchCVEnhancedSmoother.setAdaptiveParameters(0.00075f, 0.0096f, 1.5f, 0.08f);
+        } else {
+            // Set fixed time constants when disabled
+            mCombSizeEnhancedSmoother.setAdaptiveParameters(0.008f, 0.008f, 0.1f, 0.5f);  // Fixed 8ms
+            mPitchCVEnhancedSmoother.setAdaptiveParameters(0.010f, 0.010f, 0.1f, 0.5f);   // Fixed 10ms
+        }
+    }
+
+    // Also configure legacy smoothers for compatibility
     mCombSizeSmoother.setAdaptiveEnabled(enabled, 0.008f);  // 8ms fixed for comb size
     mPitchCVSmoother.setAdaptiveEnabled(enabled, 0.010f);   // 10ms fixed for pitch CV
 }
 
 void CombParameterSmoother::setCascadedEnabled(bool enabled, int maxStages, float stageHysteresis)
 {
+    if (mEnhancedMode) {
+        mCombSizeEnhancedSmoother.setCascadedParameters(enabled, maxStages, stageHysteresis, true);
+        mPitchCVEnhancedSmoother.setCascadedParameters(enabled, maxStages, stageHysteresis, true);
+    }
+
+    // Also configure legacy smoothers for compatibility
     mCombSizeSmoother.setCascadedEnabled(enabled, maxStages, stageHysteresis);
     mPitchCVSmoother.setCascadedEnabled(enabled, maxStages, stageHysteresis);
 }
@@ -511,19 +585,75 @@ void CombParameterSmoother::getDebugInfo(float& combSizeTimeConstant,
                                         float& combSizeVelocity,
                                         float& pitchCVVelocity) const
 {
-    combSizeTimeConstant = mCombSizeSmoother.getCurrentTimeConstant();
-    pitchCVTimeConstant = mPitchCVSmoother.getCurrentTimeConstant();
-    combSizeVelocity = mCombSizeSmoother.getCurrentVelocity();
-    pitchCVVelocity = mPitchCVSmoother.getCurrentVelocity();
+    if (mEnhancedMode) {
+        // Get debug info from enhanced smoothers using detailed status
+        int stageCount;
+        float perceptualVelocity, decisionConfidence;
+        mCombSizeEnhancedSmoother.getDetailedStatus(combSizeVelocity, combSizeTimeConstant, stageCount, perceptualVelocity, decisionConfidence);
+        mPitchCVEnhancedSmoother.getDetailedStatus(pitchCVVelocity, pitchCVTimeConstant, stageCount, perceptualVelocity, decisionConfidence);
+    } else {
+        combSizeTimeConstant = mCombSizeSmoother.getCurrentTimeConstant();
+        pitchCVTimeConstant = mPitchCVSmoother.getCurrentTimeConstant();
+        combSizeVelocity = mCombSizeSmoother.getCurrentVelocity();
+        pitchCVVelocity = mPitchCVSmoother.getCurrentVelocity();
+    }
 }
 
 void CombParameterSmoother::getExtendedDebugInfo(int& combSizeStages, int& pitchCVStages,
                                                  bool& combSizeCascaded, bool& pitchCVCascaded) const
 {
-    combSizeStages = mCombSizeSmoother.getCurrentStageCount();
-    pitchCVStages = mPitchCVSmoother.getCurrentStageCount();
-    combSizeCascaded = mCombSizeSmoother.isCascadedEnabled();
-    pitchCVCascaded = mPitchCVSmoother.isCascadedEnabled();
+    if (mEnhancedMode) {
+        // Get stage count from detailed status
+        float velocity, timeConstant, perceptualVelocity, decisionConfidence;
+        mCombSizeEnhancedSmoother.getDetailedStatus(velocity, timeConstant, combSizeStages, perceptualVelocity, decisionConfidence);
+        mPitchCVEnhancedSmoother.getDetailedStatus(velocity, timeConstant, pitchCVStages, perceptualVelocity, decisionConfidence);
+
+        // For cascaded status, we assume it's enabled if stage count > 1
+        combSizeCascaded = (combSizeStages > 1);
+        pitchCVCascaded = (pitchCVStages > 1);
+    } else {
+        combSizeStages = mCombSizeSmoother.getCurrentStageCount();
+        pitchCVStages = mPitchCVSmoother.getCurrentStageCount();
+        combSizeCascaded = mCombSizeSmoother.isCascadedEnabled();
+        pitchCVCascaded = mPitchCVSmoother.isCascadedEnabled();
+    }
+}
+
+void CombParameterSmoother::setComplexityMode(int complexityMode)
+{
+    if (!mEnhancedMode) return; // Only applicable in enhanced mode
+
+    EnhancedAdaptiveSmoother::PerformanceProfile profile;
+    switch (complexityMode) {
+        case 0: // Basic mode - minimal CPU usage
+            profile = EnhancedAdaptiveSmoother::PerformanceProfile::PowerSaver;
+            break;
+        case 1: // Balanced mode - balance between quality and performance
+            profile = EnhancedAdaptiveSmoother::PerformanceProfile::Balanced;
+            break;
+        case 2: // High-quality mode - maximum quality
+            profile = EnhancedAdaptiveSmoother::PerformanceProfile::HighQuality;
+            break;
+        default:
+            profile = EnhancedAdaptiveSmoother::PerformanceProfile::Balanced;
+            break;
+    }
+
+    mCombSizeEnhancedSmoother.setPerformanceProfile(profile);
+    mPitchCVEnhancedSmoother.setPerformanceProfile(profile);
+}
+
+void CombParameterSmoother::setEnhancedMode(bool enabled)
+{
+    if (mEnhancedMode == enabled) return; // No change needed
+
+    mEnhancedMode = enabled;
+
+    // If switching to enhanced mode, configure with current parameters
+    if (enabled && mInitialized) {
+        // Re-apply current adaptive parameters to enhanced smoothers
+        setAdaptiveParameters();
+    }
 }
 
 void AdaptiveSmoother::setCascadedEnabled(bool enabled, int maxStages, float stageHysteresis)
