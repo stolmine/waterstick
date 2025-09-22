@@ -202,6 +202,11 @@ public:
                                        float fastTimeConstant = 0.0005f,
                                        float slowTimeConstant = 0.008f);
 
+    // Enhanced smoothing configuration
+    void setEnhancedSmoothingEnabled(bool enabled);
+    void setComplexityMode(int complexityMode);  // 0=basic, 1=balanced, 2=high-quality
+    bool isEnhancedSmoothingEnabled() const;
+
     // Debugging and monitoring
     void getAdaptiveSmoothingStatus(bool& enabled,
                                    float& combSizeTimeConstant,

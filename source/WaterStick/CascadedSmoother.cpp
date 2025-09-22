@@ -4,6 +4,12 @@
 
 namespace WaterStick {
 
+// Static constexpr definitions
+constexpr int CascadedSmoother::MAX_STAGES;
+constexpr int CascadedSmoother::MIN_STAGES;
+constexpr int CascadedSmoother::DEFAULT_STAGES;
+constexpr int MultiParameterCascadedSmoother::MAX_PARAMETERS;
+
 // CascadedSmoother Implementation
 
 CascadedSmoother::CascadedSmoother(double sampleRate,

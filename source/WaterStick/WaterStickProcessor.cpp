@@ -1465,6 +1465,13 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                                 mCombProcessor.setSmoothingTimeConstant(mCombSmoothingTime);
                             }
                             break;
+                        case kCascadedSmoothingEnabled:
+                            {
+                                // Toggle cascaded smoothing (0=disabled, 1=enabled)
+                                bool enabled = value > 0.5f;
+                                mCombProcessor.setCascadedSmoothingEnabled(enabled);
+                            }
+                            break;
                         default:
                             TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);
                             break;

@@ -271,6 +271,10 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate, kCombSmoothingTime, 0,
                            STR16("Comb"));
 
+    parameters.addParameter(STR16("Cascaded Smoothing"), nullptr, 1, 0.0,  // Default disabled (0.0)
+                           Vst::ParameterInfo::kCanAutomate, kCascadedSmoothingEnabled, 0,
+                           STR16("Comb"));
+
     // Initialize all parameters to their default values
     // This ensures proper display even if setComponentState is never called
     setDefaultParameters();
@@ -319,6 +323,7 @@ void WaterStickController::setDefaultParameters()
     setParamNormalized(kCombSlope, 0.0);         // Flat
     setParamNormalized(kCombGain, 0.769231);     // 0dB (40/52 range for -40dB to +12dB)
     setParamNormalized(kCombSmoothingTime, 0.2); // 10ms (0.2 normalized for 0.1-50ms range)
+    setParamNormalized(kCascadedSmoothingEnabled, 0.0); // Disabled by default
 
     // Set routing and mix parameters to defaults
     setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
@@ -424,6 +429,7 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kCombSlope) return 0.0f;
     if (id == kCombGain) return 0.769231f;  // 0dB (40/52 range for -40dB to +12dB)
     if (id == kCombSmoothingTime) return 0.2f;  // 10ms (0.2 normalized for 0.1-50ms range)
+    if (id == kCascadedSmoothingEnabled) return 0.0f;  // Disabled by default
 
     return 0.0f;  // Safe default
 }
