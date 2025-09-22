@@ -267,6 +267,10 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate, kCombGain, 0,
                            STR16("Comb"));
 
+    parameters.addParameter(STR16("Comb Smoothing Time"), STR16("ms"), 0, 0.2,  // Default 10ms (0.2 normalized for 0.1-50ms range)
+                           Vst::ParameterInfo::kCanAutomate, kCombSmoothingTime, 0,
+                           STR16("Comb"));
+
     // Initialize all parameters to their default values
     // This ensures proper display even if setComponentState is never called
     setDefaultParameters();
@@ -314,6 +318,7 @@ void WaterStickController::setDefaultParameters()
     setParamNormalized(kCombPattern, 0.0);       // Pattern 1
     setParamNormalized(kCombSlope, 0.0);         // Flat
     setParamNormalized(kCombGain, 0.769231);     // 0dB (40/52 range for -40dB to +12dB)
+    setParamNormalized(kCombSmoothingTime, 0.2); // 10ms (0.2 normalized for 0.1-50ms range)
 
     // Set routing and mix parameters to defaults
     setParamNormalized(kRouteMode, 0.0);         // Delay>Comb
@@ -418,6 +423,7 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kCombPattern) return 0.0f;
     if (id == kCombSlope) return 0.0f;
     if (id == kCombGain) return 0.769231f;  // 0dB (40/52 range for -40dB to +12dB)
+    if (id == kCombSmoothingTime) return 0.2f;  // 10ms (0.2 normalized for 0.1-50ms range)
 
     return 0.0f;  // Safe default
 }
@@ -1245,6 +1251,15 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             char gainStr[32];
             snprintf(gainStr, sizeof(gainStr), "%.1f dB", gain_dB);
             Steinberg::UString(string, 128).fromAscii(gainStr);
+            return kResultTrue;
+        }
+        case kCombSmoothingTime:
+        {
+            // Convert normalized value to time range (0.1ms to 50ms)
+            float timeMs = 0.1f + (valueNormalized * 49.9f);
+            char timeStr[32];
+            snprintf(timeStr, sizeof(timeStr), "%.1f ms", timeMs);
+            Steinberg::UString(string, 128).fromAscii(timeStr);
             return kResultTrue;
         }
         case kDelayBypass:

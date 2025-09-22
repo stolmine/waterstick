@@ -44,6 +44,10 @@ smtg_add_vst3plugin(${target}
     source/WaterStick/ThreeSistersFilter.cpp
     source/WaterStick/ThreeSistersFilter.h
     source/WaterStick/CombProcessor.cpp
+    source/WaterStick/AdaptiveSmoother.cpp
+    source/WaterStick/AdaptiveSmoother.h
+    source/WaterStick/CascadedSmoother.cpp
+    source/WaterStick/CascadedSmoother.h
     source/WaterStick/ControlFactory.cpp
     source/WaterStick/ControlFactory.h
     source/WaterStick/version.h
