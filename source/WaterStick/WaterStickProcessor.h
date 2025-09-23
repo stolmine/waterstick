@@ -49,7 +49,7 @@ public:
     void processSample(float input, float& output);
     void reset();
 
-private:
+protected:
     // Dual delay lines for crossfading
     std::vector<float> mBufferA;
     std::vector<float> mBufferB;
@@ -96,6 +96,50 @@ private:
     void startCrossfade();
     void updateCrossfade();
     int calculateCrossfadeLength(float delayTime);
+};
+
+class PitchShiftingDelayLine : public DualDelayLine {
+public:
+    PitchShiftingDelayLine();
+    ~PitchShiftingDelayLine();
+
+    void initialize(double sampleRate, double maxDelaySeconds);
+    void processSample(float input, float& output);
+    void reset();
+
+    void setPitchShift(int semitones);
+    bool isPitchShiftActive() const { return mPitchSemitones != 0; }
+
+private:
+    struct Grain {
+        bool active;
+        int position;           // Current read position in grain
+        float phase;           // 0.0 to 1.0 for windowing
+        float pitchRatio;      // Playback speed ratio for this grain
+        int grainStart;        // Start position in delay buffer
+    };
+
+    static const int NUM_GRAINS = 4;
+    static const int GRAIN_SIZE = 2048;  // ~46ms at 44.1kHz
+    static const int GRAIN_OVERLAP = GRAIN_SIZE * 3 / 4;  // 75% overlap
+
+    Grain mGrains[NUM_GRAINS];
+    int mPitchSemitones;      // -12 to +12
+    float mPitchRatio;        // Calculated from semitones
+    int mGrainSpacing;        // Samples between grain starts
+    int mNextGrainSample;     // When to start next grain
+    int mSampleCount;         // Running sample counter
+
+    // Pitch shifting buffers (separate from delay buffers)
+    std::vector<float> mPitchBufferA;
+    std::vector<float> mPitchBufferB;
+
+    void initializeGrains();
+    void updateGrains();
+    void startNewGrain();
+    float calculateHannWindow(float phase);
+    float processPitchShifting(float input);
+    void updatePitchRatio();
 };
 
 class STKDelayLine {
@@ -244,6 +288,9 @@ private:
     float mTapFilterResonance[16];
     int mTapFilterType[16];
 
+    // Per-tap pitch shift parameters
+    int mTapPitchShift[16];
+
     // Fade-out state for smooth tap disengagement
     bool mTapFadingOut[16];        // True when tap is fading out
     int mTapFadeOutRemaining[16];  // Samples remaining in fade-out
@@ -262,8 +309,8 @@ private:
 
     // Multi-tap delay lines (16 taps, stereo)
     static const int NUM_TAPS = 16;
-    DualDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
-    DualDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
+    PitchShiftingDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
+    PitchShiftingDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
 
     TempoSync mTempoSync;
     TapDistribution mTapDistribution;
@@ -289,6 +336,7 @@ private:
         float filterCutoff;
         float filterResonance;
         int filterType;
+        int pitchShift;
         bool enabled;
     };
 

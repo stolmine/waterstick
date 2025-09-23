@@ -44,6 +44,11 @@ struct ParameterConverter {
         return normalizedValue * normalizedValue * normalizedValue;
     }
 
+    static int convertPitchShift(double value) {
+        // Convert 0.0-1.0 range to -12 to +12 semitones
+        return static_cast<int>(round((value * 24.0) - 12.0));
+    }
+
 };
 
 struct TapParameterRange {
@@ -65,6 +70,7 @@ struct TapParameterRange {
 struct TapParameterProcessor {
     static const TapParameterRange kTapBasicRange;
     static const TapParameterRange kTapFilterRange;
+    static const TapParameterRange kTapPitchRange;
 
     static void processTapParameter(Vst::ParamID paramId, Vst::ParamValue value, WaterStickProcessor* processor) {
         if (kTapBasicRange.contains(paramId)) {
@@ -92,12 +98,23 @@ struct TapParameterProcessor {
                     case 2: processor->mTapFilterType[tapIndex] = ParameterConverter::convertFilterType(value); break;
                 }
             }
+            return;
+        }
+
+        if (kTapPitchRange.contains(paramId)) {
+            int tapIndex, paramType;
+            kTapPitchRange.getIndices(paramId, tapIndex, paramType);
+
+            if (tapIndex < 16) {
+                processor->mTapPitchShift[tapIndex] = ParameterConverter::convertPitchShift(value);
+            }
         }
     }
 };
 
 const TapParameterRange TapParameterProcessor::kTapBasicRange = {kTap1Enable, kTap16Pan, 3};
 const TapParameterRange TapParameterProcessor::kTapFilterRange = {kTap1FilterCutoff, kTap16FilterType, 3};
+const TapParameterRange TapParameterProcessor::kTapPitchRange = {kTap1PitchShift, kTap16PitchShift, 1};
 
 const char* TempoSync::sDivisionTexts[kNumSyncDivisions] = {
     "1/64", "1/32T", "1/64.", "1/32", "1/16T", "1/32.", "1/16",
@@ -634,6 +651,166 @@ void STKDelayLine::reset()
     mNextOutput = 0.0f;
 }
 
+PitchShiftingDelayLine::PitchShiftingDelayLine()
+: DualDelayLine()
+, mPitchSemitones(0)
+, mPitchRatio(1.0f)
+, mGrainSpacing(GRAIN_SIZE - GRAIN_OVERLAP)
+, mNextGrainSample(0)
+, mSampleCount(0)
+{
+    initializeGrains();
+}
+
+PitchShiftingDelayLine::~PitchShiftingDelayLine()
+{
+}
+
+void PitchShiftingDelayLine::initialize(double sampleRate, double maxDelaySeconds)
+{
+    DualDelayLine::initialize(sampleRate, maxDelaySeconds);
+
+    int pitchBufferSize = mBufferSize + GRAIN_SIZE;
+    mPitchBufferA.resize(pitchBufferSize, 0.0f);
+    mPitchBufferB.resize(pitchBufferSize, 0.0f);
+
+    initializeGrains();
+    mSampleCount = 0;
+    mNextGrainSample = 0;
+}
+
+void PitchShiftingDelayLine::setPitchShift(int semitones)
+{
+    if (mPitchSemitones != semitones) {
+        mPitchSemitones = std::max(-12, std::min(12, semitones));
+        updatePitchRatio();
+
+        if (mPitchSemitones == 0) {
+            for (int i = 0; i < NUM_GRAINS; i++) {
+                mGrains[i].active = false;
+            }
+        } else {
+            initializeGrains();
+        }
+    }
+}
+
+void PitchShiftingDelayLine::updatePitchRatio()
+{
+    if (mPitchSemitones == 0) {
+        mPitchRatio = 1.0f;
+    } else {
+        mPitchRatio = powf(2.0f, static_cast<float>(mPitchSemitones) / 12.0f);
+    }
+}
+
+void PitchShiftingDelayLine::initializeGrains()
+{
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        mGrains[i].active = false;
+        mGrains[i].position = 0;
+        mGrains[i].phase = 0.0f;
+        mGrains[i].pitchRatio = mPitchRatio;
+        mGrains[i].grainStart = 0;
+    }
+}
+
+float PitchShiftingDelayLine::calculateHannWindow(float phase)
+{
+    return 0.5f * (1.0f - cosf(2.0f * 3.14159265f * phase));
+}
+
+void PitchShiftingDelayLine::startNewGrain()
+{
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        if (!mGrains[i].active) {
+            mGrains[i].active = true;
+            mGrains[i].position = 0;
+            mGrains[i].phase = 0.0f;
+            mGrains[i].pitchRatio = mPitchRatio;
+            mGrains[i].grainStart = mSampleCount;
+            break;
+        }
+    }
+}
+
+void PitchShiftingDelayLine::updateGrains()
+{
+    if (mPitchSemitones == 0) return;
+
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        if (mGrains[i].active) {
+            mGrains[i].position += static_cast<int>(mGrains[i].pitchRatio * 1000.0f);
+            mGrains[i].phase = static_cast<float>(mGrains[i].position) / static_cast<float>(GRAIN_SIZE * 1000);
+
+            if (mGrains[i].phase >= 1.0f) {
+                mGrains[i].active = false;
+            }
+        }
+    }
+}
+
+float PitchShiftingDelayLine::processPitchShifting(float input)
+{
+    if (mPitchSemitones == 0) {
+        return input;
+    }
+
+    if (mSampleCount >= mNextGrainSample) {
+        startNewGrain();
+        mNextGrainSample = mSampleCount + mGrainSpacing;
+    }
+
+    float output = 0.0f;
+    int activeGrains = 0;
+
+    std::vector<float>& currentPitchBuffer = mUsingLineA ? mPitchBufferA : mPitchBufferB;
+    currentPitchBuffer[mSampleCount % currentPitchBuffer.size()] = input;
+
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        if (mGrains[i].active) {
+            float readPosition = static_cast<float>(mGrains[i].position) / 1000.0f;
+            int readIndex = static_cast<int>(readPosition) + mGrains[i].grainStart;
+            readIndex = readIndex % static_cast<int>(currentPitchBuffer.size());
+
+            if (readIndex >= 0 && readIndex < static_cast<int>(currentPitchBuffer.size())) {
+                float sample = currentPitchBuffer[readIndex];
+                float window = calculateHannWindow(mGrains[i].phase);
+                output += sample * window;
+                activeGrains++;
+            }
+        }
+    }
+
+    updateGrains();
+    mSampleCount++;
+
+    return activeGrains > 0 ? output / static_cast<float>(activeGrains) : input;
+}
+
+void PitchShiftingDelayLine::processSample(float input, float& output)
+{
+    if (mPitchSemitones == 0) {
+        DualDelayLine::processSample(input, output);
+    } else {
+        float delayedInput;
+        DualDelayLine::processSample(input, delayedInput);
+        output = processPitchShifting(delayedInput);
+    }
+}
+
+void PitchShiftingDelayLine::reset()
+{
+    DualDelayLine::reset();
+
+    std::fill(mPitchBufferA.begin(), mPitchBufferA.end(), 0.0f);
+    std::fill(mPitchBufferB.begin(), mPitchBufferB.end(), 0.0f);
+
+    mSampleCount = 0;
+    mNextGrainSample = 0;
+    initializeGrains();
+}
+
 
 
 WaterStickProcessor::WaterStickProcessor()
@@ -667,6 +844,8 @@ WaterStickProcessor::WaterStickProcessor()
         mTapFilterResonance[i] = 0.0f;
         mTapFilterType[i] = kFilterType_Bypass;
 
+        mTapPitchShift[i] = 0;  // Default to no pitch shift
+
         mTapFadingOut[i] = false;
         mTapFadeOutRemaining[i] = 0;
         mTapFadeOutTotalLength[i] = 0;
@@ -689,6 +868,7 @@ WaterStickProcessor::WaterStickProcessor()
             mTapParameterHistory[i][j].filterCutoff = mTapFilterCutoff[i];
             mTapParameterHistory[i][j].filterResonance = mTapFilterResonance[i];
             mTapParameterHistory[i][j].filterType = mTapFilterType[i];
+            mTapParameterHistory[i][j].pitchShift = mTapPitchShift[i];
             mTapParameterHistory[i][j].enabled = mTapEnabled[i];
         }
     }
@@ -784,12 +964,16 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
         bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
         if (processTap) {
+            float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
+            ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
+
+            // Set pitch shift parameters for the delay lines
+            mTapDelayLinesL[tap].setPitchShift(historicParams.pitchShift);
+            mTapDelayLinesR[tap].setPitchShift(historicParams.pitchShift);
+
             float tapOutputL, tapOutputR;
             mTapDelayLinesL[tap].processSample(inputL, tapOutputL);
             mTapDelayLinesR[tap].processSample(inputR, tapOutputR);
-
-            float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
-            ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
 
             tapOutputL *= historicParams.level;
             tapOutputR *= historicParams.level;
@@ -938,6 +1122,7 @@ void WaterStickProcessor::captureCurrentParameters()
         snapshot.filterCutoff = mTapFilterCutoff[i];
         snapshot.filterResonance = mTapFilterResonance[i];
         snapshot.filterType = mTapFilterType[i];
+        snapshot.pitchShift = mTapPitchShift[i];
         snapshot.enabled = mTapEnabled[i];
     }
 

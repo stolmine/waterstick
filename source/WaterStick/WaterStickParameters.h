@@ -111,6 +111,23 @@ enum {
     kTap16FilterCutoff,  // Tap 16 filter cutoff frequency
     kTap16FilterResonance, // Tap 16 filter resonance (-1.0 to +1.0)
     kTap16FilterType,    // Tap 16 filter type (0=LP, 1=HP, 2=BP, 3=Notch)
+    // Per-tap pitch shift parameters (16 taps)
+    kTap1PitchShift,     // Tap 1 pitch shift in semitones (-12 to +12)
+    kTap2PitchShift,     // Tap 2 pitch shift in semitones (-12 to +12)
+    kTap3PitchShift,     // Tap 3 pitch shift in semitones (-12 to +12)
+    kTap4PitchShift,     // Tap 4 pitch shift in semitones (-12 to +12)
+    kTap5PitchShift,     // Tap 5 pitch shift in semitones (-12 to +12)
+    kTap6PitchShift,     // Tap 6 pitch shift in semitones (-12 to +12)
+    kTap7PitchShift,     // Tap 7 pitch shift in semitones (-12 to +12)
+    kTap8PitchShift,     // Tap 8 pitch shift in semitones (-12 to +12)
+    kTap9PitchShift,     // Tap 9 pitch shift in semitones (-12 to +12)
+    kTap10PitchShift,    // Tap 10 pitch shift in semitones (-12 to +12)
+    kTap11PitchShift,    // Tap 11 pitch shift in semitones (-12 to +12)
+    kTap12PitchShift,    // Tap 12 pitch shift in semitones (-12 to +12)
+    kTap13PitchShift,    // Tap 13 pitch shift in semitones (-12 to +12)
+    kTap14PitchShift,    // Tap 14 pitch shift in semitones (-12 to +12)
+    kTap15PitchShift,    // Tap 15 pitch shift in semitones (-12 to +12)
+    kTap16PitchShift,    // Tap 16 pitch shift in semitones (-12 to +12)
     // Global controls
     kGlobalDryWet,       // Global Dry/Wet mix (affects final output)
     kDelayBypass,        // Delay section bypass toggle
