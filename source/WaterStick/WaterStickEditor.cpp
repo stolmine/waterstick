@@ -633,6 +633,13 @@ void WaterStickEditor::switchToContext(TapContext newContext)
             }
         }
     }
+
+    // Force minimap redraw for context change
+    for (int i = 0; i < 16; i++) {
+        if (minimapButtons[i]) {
+            minimapButtons[i]->invalid();
+        }
+    }
 }
 
 int WaterStickEditor::getSelectedModeButtonIndex() const
@@ -1452,9 +1459,25 @@ VSTGUI::CMouseEventResult KnobControl::onMouseUp(VSTGUI::CPoint& where, const VS
 // MinimapTapButton Implementation
 //========================================================================
 
-MinimapTapButton::MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
-: VSTGUI::CControl(size, listener, tag)
+MinimapTapButton::MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, WaterStickEditor* editor, int tapIndex)
+: VSTGUI::CControl(size, listener, tag), editor(editor), tapIndex(tapIndex)
 {
+}
+
+char MinimapTapButton::getFilterTypeChar(float filterTypeValue) const
+{
+    // Match the exact mapping from TapButton implementation
+    if (filterTypeValue < 0.2) {
+        return 'X';  // Bypass (no filtering)
+    } else if (filterTypeValue < 0.4) {
+        return 'L';  // Low Pass
+    } else if (filterTypeValue < 0.6) {
+        return 'H';  // High Pass
+    } else if (filterTypeValue < 0.8) {
+        return 'B';  // Band Pass
+    } else {
+        return 'N';  // Notch
+    }
 }
 
 void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
@@ -1475,21 +1498,51 @@ void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
         center.y + radius
     );
 
-    // Determine if tap is enabled (getValue > 0.5 means enabled)
-    bool isEnabled = (getValue() > 0.5);
-
-    // Draw circle stroke (1px width for minimap)
     context->setLineWidth(1.0);
     context->setDrawMode(VSTGUI::kAntiAliasing);
     context->setFrameColor(VSTGUI::kBlackCColor);
 
-    // Fill based on enabled state
-    if (isEnabled) {
-        context->setFillColor(VSTGUI::kBlackCColor);
-        context->drawEllipse(circleRect, VSTGUI::kDrawFilledAndStroked);
+    // Check if we're in tap mutes context (Enable context) and should show filter types
+    if (editor && editor->getCurrentContext() == TapContext::Enable) {
+        // Get filter type value from the corresponding tap button
+        auto controller = editor->getController();
+        if (controller) {
+            int filterTypeParamId = editor->getTapParameterIdForContext(tapIndex, TapContext::FilterType);
+            float filterTypeValue = controller->getParamNormalized(filterTypeParamId);
+            char filterChar = getFilterTypeChar(filterTypeValue);
+
+            // Draw filter type letter without background circle
+            auto customFont = editor->getWorkSansFont(8.0f);
+            if (customFont) {
+                context->setFont(customFont);
+                context->setFontColor(VSTGUI::kBlackCColor);
+
+                // Create string and measure it for centering
+                std::string letterStr(1, filterChar);
+                auto textSize = context->getStringWidth(letterStr.c_str());
+
+                // Center text with proper baseline positioning
+                VSTGUI::CPoint textPos(
+                    center.x - textSize / 2.0,
+                    center.y + (customFont->getSize() * 0.3f)
+                );
+
+                context->drawString(letterStr.c_str(), textPos);
+            }
+        }
     } else {
-        context->setFillColor(VSTGUI::kWhiteCColor);
-        context->drawEllipse(circleRect, VSTGUI::kDrawFilledAndStroked);
+        // Standard circle display for other contexts
+        // Determine if tap is enabled (getValue > 0.5 means enabled)
+        bool isEnabled = (getValue() > 0.5);
+
+        // Fill based on enabled state
+        if (isEnabled) {
+            context->setFillColor(VSTGUI::kBlackCColor);
+            context->drawEllipse(circleRect, VSTGUI::kDrawFilledAndStroked);
+        } else {
+            context->setFillColor(VSTGUI::kWhiteCColor);
+            context->drawEllipse(circleRect, VSTGUI::kDrawFilledAndStroked);
+        }
     }
 
     setDirty(false);
@@ -1541,7 +1594,7 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
         );
 
         // Create minimap button (non-interactive, display only)
-        minimapButtons[i] = new MinimapTapButton(buttonRect, nullptr, -1);
+        minimapButtons[i] = new MinimapTapButton(buttonRect, nullptr, -1, this, i);
 
         // Initialize with current tap enable state
         auto controller = getController();

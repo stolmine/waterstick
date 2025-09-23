@@ -8,6 +8,9 @@
 
 namespace WaterStick {
 
+// Forward declaration
+class WaterStickEditor;
+
 // Enum for different tap contexts
 enum class TapContext {
     Enable = 0,        // Enable/disable context (mode button 1)
@@ -23,9 +26,15 @@ enum class TapContext {
 class MinimapTapButton : public VSTGUI::CControl
 {
 public:
-    MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+    MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, WaterStickEditor* editor, int tapIndex);
 
     void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+
+private:
+    char getFilterTypeChar(float filterTypeValue) const;
+
+    WaterStickEditor* editor;
+    int tapIndex;
 
     CLASS_METHODS(MinimapTapButton, VSTGUI::CControl)
 };
