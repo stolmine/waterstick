@@ -159,6 +159,10 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
             auto filterTypeValue = controller->getParamNormalized(filterTypeParamId);
             button->setContextValue(TapContext::FilterType, filterTypeValue);
 
+            int pitchShiftParamId = getTapParameterIdForContext(i, TapContext::PitchShift);
+            auto pitchShiftValue = controller->getParamNormalized(pitchShiftParamId);
+            button->setContextValue(TapContext::PitchShift, pitchShiftValue);
+
             button->setValue(enableValue);
         }
 
@@ -220,7 +224,7 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     }
 
     // Add labels below mode buttons
-    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "X", "X"};
+    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "PITCH", "X"};
     const int labelHeight = 20; // Match global control labels
     const int labelY = modeButtonY + buttonSize + 15; // Increased gap to clear selection rectangle
 
@@ -578,7 +582,7 @@ void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
 
 void WaterStickEditor::switchToContext(TapContext newContext)
 {
-    std::string contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType"};
+    std::string contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift"};
     std::string oldContextName = (currentContext < TapContext::COUNT) ? contextNames[static_cast<int>(currentContext)] : "Unknown";
     std::string newContextName = (newContext < TapContext::COUNT) ? contextNames[static_cast<int>(newContext)] : "Unknown";
 
@@ -701,6 +705,11 @@ int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext
             // Calculate base parameter offset for filter control (each tap has 3 filter params: Cutoff, Resonance, Type)
             int filterBaseOffset = (tapNumber - 1) * 3;
             return kTap1FilterType + filterBaseOffset;  // Filter type parameter
+        }
+        case TapContext::PitchShift:
+        {
+            // Pitch shift parameters are sequential: kTap1PitchShift to kTap16PitchShift
+            return kTap1PitchShift + (tapNumber - 1);  // Pitch shift parameter
         }
         default:
             // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
@@ -1045,6 +1054,60 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             break;
         }
 
+        case TapContext::PitchShift:
+        {
+            // Pitch Shift context: display numerical semitone value as text (similar to FilterType)
+            // Parameter range: 0.0 = -12 semitones, 0.5 = 0 semitones, 1.0 = +12 semitones
+
+            // Convert normalized value to semitones (-12 to +12) with proper rounding
+            int semitones = static_cast<int>(std::round((currentValue - 0.5) * 24.0));
+
+            // Create semitone text with appropriate formatting
+            std::string semitoneText;
+            if (semitones == 0) {
+                semitoneText = "0";
+            } else if (semitones > 0) {
+                semitoneText = "+" + std::to_string(semitones);
+            } else {
+                semitoneText = std::to_string(semitones);
+            }
+
+            // Use WorkSans-Regular custom font sized to fill the circle area
+            // Circle diameter is 48px, make font large enough so ascenders/descenders reach edges
+            auto editor = dynamic_cast<WaterStickEditor*>(listener);
+            auto customFont = editor ? editor->getWorkSansFont(48.0f) : nullptr;
+
+            if (customFont) {
+                // Set custom font in context
+                context->setFont(customFont);
+                context->setFontColor(VSTGUI::kBlackCColor);
+            } else {
+                // Fallback to system font if custom font fails
+                auto systemFont = VSTGUI::kSystemFont;
+                systemFont->setSize(48);
+                context->setFont(systemFont);
+                context->setFontColor(VSTGUI::kBlackCColor);
+            }
+
+            // Calculate text position to center the semitone value properly
+            VSTGUI::CPoint center = drawRect.getCenter();
+
+            // Get text dimensions for precise centering
+            auto textWidth = context->getStringWidth(semitoneText.c_str());
+
+            // For proper vertical centering, we need to account for the baseline
+            // Use a more accurate method to center the text
+            float fontSize = customFont ? customFont->getSize() : 48.0f;
+            VSTGUI::CPoint textPos(
+                center.x - textWidth / 2.0,
+                center.y + fontSize / 3.0  // Baseline adjustment for visual centering
+            );
+
+            // Draw the semitone value (no circle stroke in PitchShift context)
+            context->drawString(semitoneText.c_str(), textPos);
+            break;
+        }
+
         default:
         {
             // Future contexts: for now, just draw outline
@@ -1073,8 +1136,8 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
 
         if (currentContext == TapContext::Volume || currentContext == TapContext::Pan ||
             currentContext == TapContext::FilterCutoff || currentContext == TapContext::FilterResonance ||
-            currentContext == TapContext::FilterType) {
-            // Volume, Pan, Filter Cutoff, Filter Resonance, and Filter Type contexts: Handle continuous control
+            currentContext == TapContext::FilterType || currentContext == TapContext::PitchShift) {
+            // Volume, Pan, Filter Cutoff, Filter Resonance, Filter Type, and Pitch Shift contexts: Handle continuous control
             isVolumeInteracting = true;
             initialClickPoint = where;
             initialVolumeValue = getValue();
@@ -1145,11 +1208,11 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
                     double newValue;
                     if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff ||
                         currentContext == TapContext::FilterType) {
-                        // Volume, Filter Cutoff, and Filter Type: bottom = 0.0, top = 1.0
+                        // Volume, Filter Cutoff, Filter Type: bottom = 0.0, top = 1.0
                         double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
                         newValue = std::max(0.0, std::min(1.0, relativeY));
-                    } else { // TapContext::Pan or TapContext::FilterResonance
-                        // Pan and Filter Resonance: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
+                    } else { // TapContext::Pan, TapContext::FilterResonance, or TapContext::PitchShift
+                        // Pan, Filter Resonance, and Pitch Shift: bottom = 0.0, center = 0.5, top = 1.0 (bidirectional)
                         double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
                         newValue = std::max(0.0, std::min(1.0, relativeY));
                     }
@@ -1215,11 +1278,11 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
             double newValue;
             if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff ||
                 currentContext == TapContext::FilterType) {
-                // Volume, Filter Cutoff, and Filter Type: bottom = 0.0, top = 1.0
+                // Volume, Filter Cutoff, Filter Type: bottom = 0.0, top = 1.0
                 double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
                 newValue = std::max(0.0, std::min(1.0, relativeY));
-            } else { // TapContext::Pan or TapContext::FilterResonance
-                // Pan and Filter Resonance: bottom = 0.0 (left), center = 0.5, top = 1.0 (right)
+            } else { // TapContext::Pan, TapContext::FilterResonance, or TapContext::PitchShift
+                // Pan, Filter Resonance, and Pitch Shift: bottom = 0.0, center = 0.5, top = 1.0 (bidirectional)
                 double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
                 newValue = std::max(0.0, std::min(1.0, relativeY));
             }
@@ -1288,6 +1351,8 @@ float TapButton::getContextDefaultValue() const
             return 0.5f; // Moderate resonance
         case TapContext::FilterType:
             return 0.0f; // Bypass filter
+        case TapContext::PitchShift:
+            return 0.5f; // 0 semitones (no pitch shift)
         case TapContext::Enable:
         default:
             return 0.0f; // Not used for Enable context
