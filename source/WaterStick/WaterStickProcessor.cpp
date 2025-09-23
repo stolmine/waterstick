@@ -682,7 +682,7 @@ void PitchShiftingDelayLine::initialize(double sampleRate, double maxDelaySecond
 
     // Initialize buffer readiness tracking
     mBufferReadinessSamples = 0.0f;
-    mMinBufferForUpward = static_cast<float>(GRAIN_SIZE * 2);  // Need 2 full grains of content
+    mMinBufferForUpward = static_cast<float>(GRAIN_SIZE);  // Need 1 full grain of content
     mUpwardPitchReady = false;
     mUpwardFadeInGain = 0.0f;
     mUpwardFadeInSamples = 0;
@@ -819,7 +819,7 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
         if (!mUpwardPitchReady) {
             // Buffer not ready yet for upward pitch shifting
             mSampleCount += 1.0f;
-            return input;  // Pass through unprocessed
+            return 0.0f;  // Return silence instead of passthrough
         }
 
         // Update fade-in state
@@ -947,10 +947,8 @@ bool PitchShiftingDelayLine::isBufferPositionValid(const std::vector<float>& buf
 
 void PitchShiftingDelayLine::updateBufferReadiness(float input)
 {
-    // Track accumulation of real (non-zero) audio content
-    if (std::abs(input) > 1e-8f) {  // Consider anything above noise floor as real content
-        mBufferReadinessSamples += 1.0f;
-    }
+    // Track accumulation of all audio samples for buffer readiness
+    mBufferReadinessSamples += 1.0f;
 
     // Check if we have enough content for upward pitch shifting
     bool wasReady = mUpwardPitchReady;
