@@ -217,7 +217,6 @@ private:
     VSTGUI::CTextLabel* delayBypassLabel;
 
     // Minimap components
-    VSTGUI::CViewContainer* minimapContainer;
     MinimapTapButton* minimapButtons[16];
 
     // Context state management

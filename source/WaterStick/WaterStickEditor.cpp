@@ -33,7 +33,6 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     }
 
 
-    minimapContainer = nullptr;
     for (int i = 0; i < 16; i++) {
         minimapButtons[i] = nullptr;
     }
@@ -1502,75 +1501,69 @@ void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
 
 void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
 {
-    // Minimap dimensions - height = 1 tap button, width = 2 tap buttons
-    const int minimapButtonSize = 13; // Scaled down from 53px (about 1/4 scale)
-    const int minimapButtonSpacing = minimapButtonSize / 2; // Proportional spacing
-    const int minimapGridWidth = 8;
-    const int minimapGridHeight = 2;
+    // Integrated minimap positioning: Place minimap circles directly above corresponding tap buttons
+    const int minimapCircleSize = 13; // Keep existing size
 
-    // Calculate minimap total dimensions
-    const int minimapTotalWidth = (minimapGridWidth * minimapButtonSize) + ((minimapGridWidth - 1) * minimapButtonSpacing);
-    const int minimapTotalHeight = (minimapGridHeight * minimapButtonSize) + ((minimapGridHeight - 1) * minimapButtonSpacing);
-
-    // Target dimensions: height = 1 tap element (53px), width = 2 tap elements (53+26.5+53 = 132.5px)
-    const int targetHeight = 53;
-    const int targetWidth = 150; // Increased to prevent clipping
-
-    // Calculate actual tap grid positioning (matches repositioned tap buttons)
+    // Get tap array positioning constants (must match createTapButtons exactly)
     const int buttonSize = 53;
-    const int buttonSpacing = buttonSize / 2;
+    const int buttonSpacing = buttonSize / 2; // 26.5px spacing
     const int gridWidth = 8;
     const int gridHeight = 2;
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
+    const int gridLeft = delayMargin;
+    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
-    // Position in upper right area of delay section (left 2/3)
-    const int delaySection = (kEditorWidth * 2) / 3;  // 667px delay section
-    const int margin = 30;
-    const int minimapTop = margin;
-    const int minimapLeft = delaySection - margin - targetWidth;  // Position within delay section
-
-    // Create minimap container
-    VSTGUI::CRect minimapRect(minimapLeft, minimapTop, minimapLeft + targetWidth, minimapTop + targetHeight);
-    minimapContainer = new VSTGUI::CViewContainer(minimapRect);
-    minimapContainer->setBackgroundColor(VSTGUI::kTransparentCColor);
-
-    // Center the minimap grid within the container
-    const int gridStartX = (targetWidth - minimapTotalWidth) / 2;
-    const int gridStartY = (targetHeight - minimapTotalHeight) / 2;
-
-    // Create minimap buttons in 2x8 grid
+    // Create minimap buttons positioned relative to their corresponding tap buttons
     for (int i = 0; i < 16; i++) {
         int row = i / 8;        // 0 for taps 1-8, 1 for taps 9-16
         int col = i % 8;        // 0-7 for column position
 
-        // Calculate button position within minimap container
-        int x = gridStartX + col * (minimapButtonSize + minimapButtonSpacing);
-        int y = gridStartY + row * (minimapButtonSize + minimapButtonSpacing);
+        // Calculate position using the specified positioning logic
+        double minimapX = gridLeft + col * (buttonSize + buttonSpacing) + (buttonSize / 2.0) - 6.5;
+        double minimapY;
 
-        VSTGUI::CRect buttonRect(x, y, x + minimapButtonSize, y + minimapButtonSize);
+        if (row == 0) {
+            // Row 1 circles: Position 13.5px above tap buttons (7px clearance + 6.5px radius)
+            minimapY = gridTop - 13.5;
+        } else {
+            // Row 2 circles: Position at center of 26.5px gap between rows
+            minimapY = gridTop + 53 + 6.75;
+        }
+
+        // Create minimap button rect
+        VSTGUI::CRect buttonRect(
+            static_cast<int>(minimapX),
+            static_cast<int>(minimapY),
+            static_cast<int>(minimapX + minimapCircleSize),
+            static_cast<int>(minimapY + minimapCircleSize)
+        );
 
         // Create minimap button (non-interactive, display only)
         minimapButtons[i] = new MinimapTapButton(buttonRect, nullptr, -1);
 
         // Initialize with current tap enable state
-        // Use proper parameter ID mapping (each tap has 3 params: Enable, Level, Pan)
-        Steinberg::Vst::ParamID paramId = kTap1Enable + (i * 3);
-        Steinberg::Vst::ParamValue paramValue = controller->getParamNormalized(paramId);
-        minimapButtons[i]->setValue(static_cast<float>(paramValue));
+        auto controller = getController();
+        if (controller) {
+            Steinberg::Vst::ParamID paramId = kTap1Enable + (i * 3);
+            Steinberg::Vst::ParamValue paramValue = controller->getParamNormalized(paramId);
+            minimapButtons[i]->setValue(static_cast<float>(paramValue));
+        }
 
-        minimapContainer->addView(minimapButtons[i]);
+        // Add directly to main container (not a separate minimap container)
+        container->addView(minimapButtons[i]);
     }
 
-    container->addView(minimapContainer);
+    // No separate minimap container needed - circles are positioned individually
 }
 
 void WaterStickEditor::updateMinimapState()
 {
-    if (!minimapContainer) return;
-
     // Update minimap buttons to reflect current tap enable states
+    auto controller = getController();
+    if (!controller) return;
+
     for (int i = 0; i < 16; i++) {
         if (minimapButtons[i]) {
             // Use proper parameter ID mapping (each tap has 3 params: Enable, Level, Pan)
