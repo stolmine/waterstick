@@ -644,7 +644,6 @@ WaterStickProcessor::WaterStickProcessor()
 , mTempoSyncMode(false)
 , mSyncDivision(kSync_1_4)
 , mGrid(kGrid_4)
-, mDelayGain(1.0f)
 , mGlobalDryWet(0.5f)
 , mDelayBypass(false)
 , mDelayBypassPrevious(false)
@@ -844,7 +843,7 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     // Delay section is always 100% wet now
     float dryGain = 0.0f;
     float wetGain = 1.0f;
-    float delayWetGain = wetGain * mDelayGain;
+    float delayWetGain = wetGain;
 
     outputL = (inputL * dryGain) + (sumL * delayWetGain);
     outputR = (inputR * dryGain) + (sumR * delayWetGain);
@@ -1074,9 +1073,6 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             break;
                         case kGrid:
                             mGrid = static_cast<int>(value * (kNumGridValues - 1) + 0.5);
-                            break;
-                        case kDelayGain:
-                            mDelayGain = ParameterConverter::convertGain(value);
                             break;
                         case kGlobalDryWet:
                             mGlobalDryWet = static_cast<float>(value);

@@ -222,7 +222,6 @@ private:
     bool mTempoSyncMode;
     int mSyncDivision;
     int mGrid;
-    float mDelayGain;
 
     float mGlobalDryWet;
     bool mDelayBypass;

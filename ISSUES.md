@@ -55,96 +55,38 @@
 - Phase 4: Hierarchical Dry/Wet Controls ✅
 - Phase 4.5: Delay Parameter Propagation ✅
 
-### 🔄 Phase 2: Intelligent Comb SIZE/DIV Knob
+### 🎯 Primary Focus: GUI Finalization
 **Priority**: High
-**Component**: GUI/DSP
-**Estimated Time**: 6-8 hours
+**Component**: GUI/UX
 
 **Tasks:**
-1. Remove kCombDivision parameter from WaterStickParameters.h
-2. Enhance CombProcessor with intelligent parameter handling:
-   - Add backup value storage (mStoredTimeValue, mStoredDivisionValue)
-   - Implement setCombSizeParameter() with mode-aware conversion
-   - Add logarithmic time scaling (100μs-2.0s) and division mapping
-3. Update GUI logic for intelligent knob behavior:
-   - Modify valueChanged() handler for context-sensitive display
-   - Implement time/division format switching
-4. Reduce comb layout back to 3×3 grid (9 parameters)
+1. Complete delay parameter visualization improvements
+2. Enhance user interaction paradigms for advanced tap control
+3. Implement dynamic tap distribution pattern selection
+4. Refine global control spacing and visual hierarchy
+5. Optimize mouse interaction zones for precise control
 
-**Expected Outcome**: Single SIZE/DIV knob that adapts behavior based on SYNC mode, matching delay section pattern
+**Expected Outcome**: Professional-grade GUI with intuitive, high-precision tap management
 
-### 🔄 Phase 3: Section-Specific Feedback Routing
-**Priority**: High
-**Component**: DSP/Audio Processing
-**Estimated Time**: 8-10 hours
-
-**Tasks:**
-1. Add separate feedback parameters: kDelayFeedback, enhance kCombFeedback routing
-2. Implement independent feedback buffers in WaterStickProcessor
-3. Add feedback routing logic based on routing mode (DelayToComb, CombToDelay, DelayPlusComb)
-4. Apply tanh limiting to prevent runaway feedback
-5. Update parameter system and GUI controls
-
-**Expected Outcome**: Independent feedback control for delay and comb sections with proper routing
-
-
-### 🔄 Phase 5: Dynamic Parallel Processing
+### 📊 Global DSP Enhancement
 **Priority**: Medium
-**Component**: DSP/GUI
-**Estimated Time**: 4-6 hours
+**Component**: Audio Processing/Performance
 
 **Tasks:**
-1. Add kParallelBalance parameter (0-100%)
-2. Implement equal-power crossfading in DelayPlusComb mode
-3. Add BALANCE knob with contextual activation (only active in D+C mode)
-4. Update routing manager for user-controllable mixing
-5. Replace fixed 0.5f scaling with dynamic user control
+1. Investigate advanced tap distribution algorithms
+2. Implement intelligent time scaling with multiple division strategies
+3. Optimize parameter smoothing across all global controls
+4. Add enhanced modulation capabilities for tap parameters
+5. Develop CPU-efficient processing techniques
 
-**Expected Outcome**: User-controllable balance between delay and comb in parallel mode
+**Expected Outcome**: Advanced delay processing with minimal computational overhead
 
-### 🔄 Phase 6: Buffer Clearing & Transition Optimization
-**Priority**: Low
-**Component**: DSP/Performance
-**Estimated Time**: 4-6 hours
-
-**Tasks:**
-1. Implement 64-sample buffer clearing during routing transitions
-2. Add adaptive transition timing (5-50ms based on delay lengths)
-3. Update RoutingManager with enhanced transition logic
-4. Add kTransitionTime parameter for user control
-5. Comprehensive buffer state management
-
-**Expected Outcome**: Artifact-free routing transitions with optimized timing
-
-
-### 🔄 Phase 4.6: Comb Parameter Smoothing (HIGH PRIORITY)
-**Priority**: High
-**Component**: DSP/Audio Processing
-**Estimated Time**: 4-6 hours
-
-**Issues Identified:**
-1. **Abrupt Parameter Updates**: Comb parameters change instantly without smoothing, causing clicks/pops
-2. **Control Rate Updates**: Parameters only updated when VST changes occur, not at audio rate
-3. **Missing Professional Standards**: No 5-10ms parameter smoothing for real-time automation
-4. **Separate from Delay Issue**: Comb section needs its own parameter smoothing implementation
-
-**Tasks:**
-1. Implement sample-rate parameter smoothing for all comb controls (SIZE, PITCH, FEEDBACK, TAPS)
-2. Add exponential interpolation with 5-10ms time constants
-3. Update parameters at audio rate in processStereo() method
-4. Add crossfading for large parameter changes to prevent buffer index jumps
-5. Enhanced tanh limiting for parameter change transients
-
-**Expected Outcome**: Smooth, click-free comb parameter automation with professional audio standards
-
-### 📊 Active Implementation Summary
-**Remaining Estimated Time**: 16-26 hours
-**Current Progress**: 4 major phases completed, moved to PROGRESS.md
-**Risk Level**: Medium (DSP architecture changes require careful testing)
-**Testing Strategy**: VST3 validation + professional audio testing after each phase
-
-**Current Priority**: Phase 4.6 - Comb Parameter Smoothing (4-6 hours estimated)
-**Next Priority**: Phase 2 - Intelligent Comb SIZE/DIV Knob (6-8 hours estimated)
+### 🌟 Next Development Priorities
+1. Advanced tap distribution pattern implementation
+2. Enhanced visual feedback for delay parameters
+3. Performance optimization for high tap count scenarios
+4. Develop advanced parameter automation features
+5. Implement professional preset management system
 
 ### 🎛️ GUI & User Experience Issues
 *Additional UX issues to be added as discovered*

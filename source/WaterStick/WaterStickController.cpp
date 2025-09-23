@@ -69,11 +69,6 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kGrid, 0,
                            STR16("Tap"));
 
-    // Delay Gain parameter
-    parameters.addParameter(STR16("Delay Gain"), STR16("dB"), 0, 40.0/52.0,
-                           Vst::ParameterInfo::kCanAutomate, kDelayGain, 0,
-                           STR16("Delay"));
-
     // Tap parameters (16 taps) - need to use individual strings for STR16 macro
     parameters.addParameter(STR16("Tap 1 Enable"), nullptr, 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap1Enable, 0, STR16("Tap"));
     parameters.addParameter(STR16("Tap 1 Level"), STR16("%"), 0, 0.8, Vst::ParameterInfo::kCanAutomate, kTap1Level, 0, STR16("Tap"));

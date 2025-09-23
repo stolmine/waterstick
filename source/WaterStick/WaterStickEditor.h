@@ -164,8 +164,8 @@ public:
     void forceParameterSynchronization();
 
 private:
-    static constexpr int kEditorWidth = 1000;  // Expanded for comb controls
-    static constexpr int kEditorHeight = 600;  // Increased to prevent comb control clipping
+    static constexpr int kEditorWidth = 700;   // Optimized for delay-only layout
+    static constexpr int kEditorHeight = 500;  // Compact height for delay controls
 
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];
@@ -184,7 +184,6 @@ private:
     KnobControl* outputGainKnob;
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
-    KnobControl* delayGainKnob;
     KnobControl* globalDryWetKnob;  // G-MIX: Global dry/wet control (larger, in delay section upper-right)
 
 
@@ -196,7 +195,6 @@ private:
     VSTGUI::CTextLabel* outputGainLabel;
     VSTGUI::CTextLabel* dryWetLabel;
     VSTGUI::CTextLabel* gridLabel;
-    VSTGUI::CTextLabel* delayGainLabel;
     VSTGUI::CTextLabel* globalDryWetLabel;
 
 
@@ -208,7 +206,6 @@ private:
     VSTGUI::CTextLabel* outputGainValue;
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
-    VSTGUI::CTextLabel* delayGainValue;
     VSTGUI::CTextLabel* globalDryWetValue;
 
 

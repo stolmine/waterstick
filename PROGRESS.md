@@ -827,7 +827,7 @@ Merged routing research findings from V3.5.0_routingResearch, providing comprehe
 
 ## Current Status
 
-The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, enhanced GUI with dynamic layout capabilities, and clear mode button labeling. Following an extensive codebase cleanup and optimization effort, the project now features a significantly reduced, more maintainable code structure while preserving 100% functional compatibility. All core functionality is implemented with full automation support, professional audio quality, and modular, extensible design.
+The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, enhanced GUI with dynamic layout capabilities, and clear mode button labeling. Following the architectural simplification to delay-only processing, the project maintains its professional audio quality and advanced delay capabilities while significantly reducing complexity.
 
 ## Feature Overview
 
@@ -836,15 +836,18 @@ The WaterStick VST3 plugin now provides a professional, production-ready delay e
 - High-quality, sample-accurate processing
 - Full VST3 parameter automation support
 - Professional audio quality with low-latency performance
+- Simplified single-section signal path
 
 ### Current Features
 - Per-tap enable, volume, pan, and filter controls
 - Multiple parameter navigation modes
 - Global controls for sync, timing, input/output levels, and feedback
 - Sophisticated DSP with Three Sisters-quality filtering
+- 106 total parameters (reduced from previous architecture)
+- 47/47 VST3 validation tests passed
 
 ### Planned Future Developments
-- 64-tap Comb Resonator section
-- Granular pitch shifting per tap
 - Enhanced visual feedback and performance optimizations
+- Advanced delay tap distribution patterns
+- Additional global modulation options
 - Preset system with morphing capabilities
