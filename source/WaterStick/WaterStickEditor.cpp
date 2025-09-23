@@ -738,15 +738,6 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
     const VSTGUI::CRect& rect = getViewSize();
     float currentValue = getValue();
 
-    // Check if flash effect is active and should be stopped
-    if (isFlashing) {
-        auto currentTime = std::chrono::steady_clock::now();
-        auto flashDuration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - flashStartTime);
-        if (flashDuration >= FLASH_DURATION) {
-            isFlashing = false;
-        }
-    }
-
     // Set stroke width to 5px
     context->setLineWidth(5.0);
     context->setFrameColor(VSTGUI::kBlackCColor);
@@ -1062,15 +1053,6 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
         }
     }
 
-    // Apply flash effect overlay if active
-    if (isFlashing) {
-        context->setFillColor(VSTGUI::CColor(255, 255, 255, 180)); // Semi-transparent white
-        context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
-
-        // Schedule redraw to update flash effect
-        invalid();
-    }
-
     setDirty(false);
 }
 
@@ -1286,10 +1268,6 @@ void TapButton::resetToDefaultValue()
     float defaultValue = getContextDefaultValue();
     setValue(defaultValue);
 
-    // Start flash effect
-    isFlashing = true;
-    flashStartTime = std::chrono::steady_clock::now();
-
     invalid(); // Trigger visual update
 
     if (listener) {
@@ -1446,14 +1424,6 @@ KnobControl::KnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* li
 
 void KnobControl::draw(VSTGUI::CDrawContext* context)
 {
-    // Check if flash effect is active and should be stopped
-    if (isFlashing) {
-        auto currentTime = std::chrono::steady_clock::now();
-        auto flashDuration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - flashStartTime);
-        if (flashDuration >= FLASH_DURATION) {
-            isFlashing = false;
-        }
-    }
 
     VSTGUI::CRect drawRect = getViewSize();
     drawRect.makeIntegral();
@@ -1498,15 +1468,6 @@ void KnobControl::draw(VSTGUI::CDrawContext* context)
 
     context->setFillColor(VSTGUI::kBlackCColor);
     context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
-
-    // Apply flash effect overlay if active
-    if (isFlashing) {
-        context->setFillColor(VSTGUI::CColor(255, 255, 255, 180)); // Semi-transparent white
-        context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
-
-        // Schedule redraw to update flash effect
-        invalid();
-    }
 
     setDirty(false);
 }
@@ -1613,10 +1574,6 @@ void KnobControl::resetToDefaultValue()
     }
 
     setValue(defaultValue);
-
-    // Start flash effect
-    isFlashing = true;
-    flashStartTime = std::chrono::steady_clock::now();
 
     invalid(); // Trigger visual update
 

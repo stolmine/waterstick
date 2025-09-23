@@ -93,9 +93,6 @@ private:
     // Double-click detection state
     std::chrono::steady_clock::time_point lastClickTime;
     static constexpr std::chrono::milliseconds DOUBLE_CLICK_TIMEOUT{400};
-    bool isFlashing = false;
-    std::chrono::steady_clock::time_point flashStartTime;
-    static constexpr std::chrono::milliseconds FLASH_DURATION{100};
 
     // Double-click helper methods
     bool isDoubleClick(const std::chrono::steady_clock::time_point& currentTime);
@@ -140,9 +137,6 @@ private:
     // Double-click detection state
     std::chrono::steady_clock::time_point lastClickTime;
     static constexpr std::chrono::milliseconds DOUBLE_CLICK_TIMEOUT{400};
-    bool isFlashing = false;
-    std::chrono::steady_clock::time_point flashStartTime;
-    static constexpr std::chrono::milliseconds FLASH_DURATION{100};
 
     // Double-click helper methods
     bool isDoubleClick(const std::chrono::steady_clock::time_point& currentTime);
