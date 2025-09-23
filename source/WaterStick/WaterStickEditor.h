@@ -61,6 +61,9 @@ public:
     float getContextValue(TapContext context) const { return contextValues[static_cast<int>(context)]; }
     float getCurrentContextValue() const { return contextValues[static_cast<int>(currentContext)]; }
 
+    // Dynamic sizing support
+    void updateViewBoundsForContext(TapContext context, WaterStickEditor* editor);
+
     // Helper methods for drag functionality
     bool isDragOperation() const { return dragMode; }
     void resetDragAffectedSet() { dragAffectedButtons.clear(); }
@@ -180,6 +183,9 @@ public:
 
     // Parameter mapping helpers
     int getTapParameterIdForContext(int tapButtonIndex, TapContext context) const;
+
+    // TapButton sizing helpers
+    int getTapButtonSizeForContext(TapContext context) const;
 
     // Font management
     VSTGUI::SharedPointer<VSTGUI::CFontDesc> getWorkSansFont(float size) const;

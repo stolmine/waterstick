@@ -621,6 +621,9 @@ void WaterStickEditor::switchToContext(TapContext newContext)
                 // Set the context for the button
                 tapButton->setContext(newContext);
 
+                // Update view bounds for the new context (architectural fix for text clipping)
+                tapButton->updateViewBoundsForContext(newContext, this);
+
                 // Get the parameter ID for the new context
                 int newParamId = getTapParameterIdForContext(i, newContext);
 
@@ -715,6 +718,19 @@ int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext
             // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
             int baseOffset = (tapNumber - 1) * 3;
             return kTap1Enable + baseOffset;  // Default to Enable
+    }
+}
+
+int WaterStickEditor::getTapButtonSizeForContext(TapContext context) const
+{
+    switch (context) {
+        case TapContext::PitchShift:
+            // PitchShift context needs enlarged bounds to accommodate 3-character text ("+12")
+            // Expand from 53px to 73px to provide adequate text space
+            return 73;
+        default:
+            // All other contexts use standard 53px button size
+            return 53;
     }
 }
 
@@ -1067,29 +1083,10 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             if (semitones == 0) {
                 semitoneText = "0";
             } else if (semitones > 0) {
-                semitoneText = "+" + std::to_string(semitones);
+                semitoneText = std::to_string(semitones);
             } else {
                 semitoneText = std::to_string(semitones);
             }
-
-            // Use enlarged bounds for PitchShift context to accommodate 3-character text
-            // Calculate enlarged drawing area: increase circle diameter from 48px to 72px
-            VSTGUI::CRect enlargedDrawRect = rect;
-            const double pitchShiftStrokeInset = 2.5; // Keep same stroke compensation
-            enlargedDrawRect.inset(pitchShiftStrokeInset, pitchShiftStrokeInset);
-
-            // Scale up the usable area by 1.5x (72/48) to accommodate wider text
-            VSTGUI::CPoint originalCenter = enlargedDrawRect.getCenter();
-            double scaleFactor = 1.5; // 72px / 48px = 1.5
-            double newWidth = enlargedDrawRect.getWidth() * scaleFactor;
-            double newHeight = enlargedDrawRect.getHeight() * scaleFactor;
-
-            enlargedDrawRect = VSTGUI::CRect(
-                originalCenter.x - newWidth / 2.0,
-                originalCenter.y - newHeight / 2.0,
-                originalCenter.x + newWidth / 2.0,
-                originalCenter.y + newHeight / 2.0
-            );
 
             // Use WorkSans-Regular custom font sized consistently at 48.0f
             auto editor = dynamic_cast<WaterStickEditor*>(listener);
@@ -1107,8 +1104,9 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
                 context->setFontColor(VSTGUI::kBlackCColor);
             }
 
-            // Calculate text position to center the semitone value properly using enlarged area
-            VSTGUI::CPoint center = enlargedDrawRect.getCenter();
+            // Calculate text position to center the semitone value properly
+            // With enlarged view bounds, we can now use the full drawing rect
+            VSTGUI::CPoint center = drawRect.getCenter();
 
             // Get text dimensions for precise centering
             auto textWidth = context->getStringWidth(semitoneText.c_str());
@@ -1353,6 +1351,36 @@ void TapButton::resetToDefaultValue()
 
     if (listener) {
         listener->valueChanged(this);
+    }
+}
+
+void TapButton::updateViewBoundsForContext(TapContext context, WaterStickEditor* editor)
+{
+    if (!editor) return;
+
+    // Get the required size for this context
+    int requiredSize = editor->getTapButtonSizeForContext(context);
+    int currentSize = static_cast<int>(getViewSize().getWidth());
+
+    // Only update if the size actually needs to change
+    if (requiredSize != currentSize) {
+        // Get current view bounds
+        VSTGUI::CRect currentBounds = getViewSize();
+        VSTGUI::CPoint center = currentBounds.getCenter();
+
+        // Calculate new bounds centered at the same position
+        double halfSize = requiredSize / 2.0;
+        VSTGUI::CRect newBounds(
+            center.x - halfSize,
+            center.y - halfSize,
+            center.x + halfSize,
+            center.y + halfSize
+        );
+
+        // Update view size
+        setViewSize(newBounds);
+        setMouseableArea(newBounds);
+        invalid(); // Trigger redraw with new bounds
     }
 }
 

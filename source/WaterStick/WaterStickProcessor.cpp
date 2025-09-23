@@ -698,9 +698,11 @@ void PitchShiftingDelayLine::initialize(double sampleRate, double maxDelaySecond
 void PitchShiftingDelayLine::setPitchShift(int semitones)
 {
     if (mPitchSemitones != semitones) {
+        int oldSemitones = mPitchSemitones;
         mPitchSemitones = std::max(-12, std::min(12, semitones));
         updatePitchRatio();
         calculateAdaptiveSpacing();
+
 
         if (mPitchSemitones == 0) {
             // Disable pitch shifting
@@ -761,14 +763,16 @@ void PitchShiftingDelayLine::startNewGrain()
             mGrains[i].position = 0.0f;
             mGrains[i].phase = 0.0f;
             mGrains[i].pitchRatio = mPitchRatio;
-            mGrains[i].grainStart = mSampleCount;
 
-            // For upward pitch shifting, ensure safe read position
+            // Set grain start position correctly for pitch shifting
             if (mPitchRatio > 1.0f) {
-                // Conservative read offset during warmup
-                float safeOffset = mUpwardPitchReady ? (GRAIN_SIZE / mPitchRatio) : (WARMUP_BUFFER_SIZE / 4.0f);
-                mGrains[i].readPosition = std::max(0.0f, mSampleCount - safeOffset);
+                // For upward pitch shifting, start grain behind current position
+                float startOffset = mUpwardPitchReady ? (GRAIN_SIZE / (mPitchRatio * 2.0f)) : (WARMUP_BUFFER_SIZE / 4.0f);
+                mGrains[i].grainStart = std::max(0.0f, mSampleCount - startOffset);
+                mGrains[i].readPosition = mGrains[i].grainStart;  // Initialize read position to grain start
             } else {
+                // For downward pitch shifting or no shift, start at current position
+                mGrains[i].grainStart = mSampleCount;
                 mGrains[i].readPosition = mSampleCount;
             }
             break;
@@ -802,6 +806,7 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
         return input;
     }
 
+
     // Update buffer readiness tracking
     updateBufferReadiness(input);
 
@@ -810,12 +815,8 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
     int bufferIndex = static_cast<int>(mSampleCount) % static_cast<int>(currentPitchBuffer.size());
     currentPitchBuffer[bufferIndex] = input;
 
-    // For upward pitch shifting, return passthrough during warmup instead of silence
-    if (mPitchRatio > 1.0f && !mUpwardPitchReady) {
-        mSampleCount += 1.0f;
-        // Return passthrough during warmup to provide immediate response
-        return input * 0.8f;  // Slightly attenuated to indicate processing will start
-    }
+    // Track if we're in warmup phase for upward pitch shifting
+    bool isUpwardWarmup = (mPitchRatio > 1.0f && !mUpwardPitchReady);
 
     // Update fade-in state for upward pitch shifting
     if (mPitchRatio > 1.0f) {
@@ -833,21 +834,24 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
 
     float output = 0.0f;
     int activeGrains = 0;
+    int validGrains = 0;
 
     for (int i = 0; i < NUM_GRAINS; i++) {
         if (mGrains[i].active) {
+            activeGrains++;
             // Calculate floating-point read position with bounds checking
             float absoluteReadPos = mGrains[i].grainStart + mGrains[i].position;
 
             // Ensure we don't read beyond buffer bounds
             if (isBufferPositionValid(currentPitchBuffer, absoluteReadPos)) {
+                validGrains++;
                 float sample = interpolateBuffer(currentPitchBuffer, absoluteReadPos);
                 float window = calculateHannWindow(mGrains[i].phase);
                 output += sample * window;
-                activeGrains++;
             }
         }
     }
+
 
     updateGrains();
     mSampleCount += 1.0f;
@@ -863,11 +867,17 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
             output *= mUpwardFadeInGain;
         }
 
+        // During warmup phase, blend grain output with passthrough for smooth transition
+        if (isUpwardWarmup) {
+            float passthroughGain = 0.3f;  // Reduced passthrough during grain processing
+            return output + (input * passthroughGain);
+        }
+
         return output;
     }
 
-    // Fallback: return passthrough for immediate response
-    if (mPitchRatio > 1.0f && !mUpwardPitchReady) {
+    // Fallback: return attenuated passthrough when no grains are active
+    if (isUpwardWarmup) {
         return input * 0.6f;  // Attenuated passthrough during warmup
     }
 
@@ -923,22 +933,22 @@ bool PitchShiftingDelayLine::isBufferPositionValid(const std::vector<float>& buf
     // Check if the position is within reasonable bounds for reading
     float currentWritePos = mSampleCount;
 
-    // For upward pitch shifting, use more permissive bounds during warmup
+    // For upward pitch shifting, grains need to read ahead in the buffer
     if (mPitchRatio > 1.0f) {
         if (!mUpwardPitchReady) {
-            // During warmup, allow reading recent content with conservative bounds
-            float warmupReadRange = static_cast<float>(WARMUP_BUFFER_SIZE);
-            float maxValidPos = currentWritePos - 1.0f;  // Stay just behind write position
+            // During warmup, allow reading with sufficient lookahead for upward pitch
+            float warmupReadRange = static_cast<float>(WARMUP_BUFFER_SIZE * 2);  // More generous range
+            float maxValidPos = currentWritePos + static_cast<float>(LOOKAHEAD_BUFFER / 2);  // Allow reading ahead
             float minValidPos = std::max(0.0f, currentWritePos - warmupReadRange);
             return (position >= minValidPos && position <= maxValidPos);
         } else {
-            // After warmup, use full range but stay conservative
-            float maxValidPos = currentWritePos - 1.0f;
+            // After warmup, allow full range with generous lookahead for upward pitch
+            float maxValidPos = currentWritePos + static_cast<float>(LOOKAHEAD_BUFFER);  // Full lookahead buffer
             float minValidPos = std::max(0.0f, currentWritePos - static_cast<float>(buffer.size()) + static_cast<float>(LOOKAHEAD_BUFFER));
             return (position >= minValidPos && position <= maxValidPos);
         }
     } else {
-        // For downward pitch shifting, use more permissive bounds
+        // For downward pitch shifting, use moderate lookahead
         float maxReadAhead = static_cast<float>(LOOKAHEAD_BUFFER / 4);
         float maxValidPos = currentWritePos + maxReadAhead;
         float minValidPos = currentWritePos - static_cast<float>(buffer.size()) + maxReadAhead;
@@ -1594,6 +1604,8 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
         streamer.writeFloat(mTapFilterCutoff[i]);
         streamer.writeFloat(mTapFilterResonance[i]);
         streamer.writeInt32(mTapFilterType[i]);
+        // Save pitch shift parameter
+        streamer.writeInt32(mTapPitchShift[i]);
     }
 
     return kResultOk;
@@ -1650,6 +1662,8 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
         streamer.readFloat(mTapFilterCutoff[i]);
         streamer.readFloat(mTapFilterResonance[i]);
         streamer.readInt32(mTapFilterType[i]);
+        // Load pitch shift parameter
+        streamer.readInt32(mTapPitchShift[i]);
 
         // Initialize previous state to current state to prevent unwanted buffer clears
         mTapEnabledPrevious[i] = mTapEnabled[i];
