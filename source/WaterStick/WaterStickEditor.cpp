@@ -1485,8 +1485,10 @@ void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
     // Get the actual drawing rectangle
     VSTGUI::CRect rect = getViewSize();
 
-    // Define circle parameters - scaled down from original 53px to ~13px
-    const double circleSize = 13.0; // About 1/4 scale of original 53px
+    // Define circle parameters - conditional sizing based on context
+    // Enable context (filter type text): 16px circles for 11.0f font
+    // Other contexts (enable/disable): 13px circles for traditional sizing
+    const double circleSize = (editor && editor->getCurrentContext() == TapContext::Enable) ? 16.0 : 13.0;
     VSTGUI::CPoint center = rect.getCenter();
     const double radius = circleSize / 2.0;
 
@@ -1512,7 +1514,7 @@ void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
             char filterChar = getFilterTypeChar(filterTypeValue);
 
             // Draw filter type letter without background circle
-            auto customFont = editor->getWorkSansFont(8.0f);
+            auto customFont = editor->getWorkSansFont(11.0f);
             if (customFont) {
                 context->setFont(customFont);
                 context->setFontColor(VSTGUI::kBlackCColor);
