@@ -693,6 +693,10 @@ void PitchShiftingDelayLine::setPitchShift(int semitones)
                 mGrains[i].active = false;
             }
         } else {
+            // Ensure sufficient sample count for upward pitch shifting
+            if (mPitchRatio > 1.0f && mSampleCount < (GRAIN_SIZE / mPitchRatio + 1.0f)) {
+                mSampleCount = GRAIN_SIZE / mPitchRatio + 1.0f;
+            }
             initializeGrains();
         }
     }
@@ -737,7 +741,8 @@ void PitchShiftingDelayLine::startNewGrain()
             // For upward pitch shifting, start reading from appropriate position
             if (mPitchRatio > 1.0f) {
                 // Start reading from a position that accounts for the faster playback
-                mGrains[i].readPosition = mSampleCount - (GRAIN_SIZE / mPitchRatio);
+                float readOffset = GRAIN_SIZE / mPitchRatio;
+                mGrains[i].readPosition = std::max(0.0f, mSampleCount - readOffset);
             } else {
                 mGrains[i].readPosition = mSampleCount;
             }
@@ -871,6 +876,12 @@ bool PitchShiftingDelayLine::isBufferPositionValid(const std::vector<float>& buf
     // For upward pitch shifting, we can read ahead a bit
     float maxValidPos = currentWritePos + maxReadAhead;
     float minValidPos = currentWritePos - static_cast<float>(buffer.size()) + maxReadAhead;
+
+    // Special case for early initialization: allow reading from position 0 onwards
+    // This handles the case where pitch shifting is activated before sufficient samples accumulate
+    if (currentWritePos < static_cast<float>(GRAIN_SIZE)) {
+        minValidPos = std::min(minValidPos, 0.0f);
+    }
 
     return (position >= minValidPos && position <= maxValidPos);
 }

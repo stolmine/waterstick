@@ -1072,8 +1072,26 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
                 semitoneText = std::to_string(semitones);
             }
 
-            // Use WorkSans-Regular custom font sized to fill the circle area
-            // Circle diameter is 48px, make font large enough so ascenders/descenders reach edges
+            // Use enlarged bounds for PitchShift context to accommodate 3-character text
+            // Calculate enlarged drawing area: increase circle diameter from 48px to 72px
+            VSTGUI::CRect enlargedDrawRect = rect;
+            const double pitchShiftStrokeInset = 2.5; // Keep same stroke compensation
+            enlargedDrawRect.inset(pitchShiftStrokeInset, pitchShiftStrokeInset);
+
+            // Scale up the usable area by 1.5x (72/48) to accommodate wider text
+            VSTGUI::CPoint originalCenter = enlargedDrawRect.getCenter();
+            double scaleFactor = 1.5; // 72px / 48px = 1.5
+            double newWidth = enlargedDrawRect.getWidth() * scaleFactor;
+            double newHeight = enlargedDrawRect.getHeight() * scaleFactor;
+
+            enlargedDrawRect = VSTGUI::CRect(
+                originalCenter.x - newWidth / 2.0,
+                originalCenter.y - newHeight / 2.0,
+                originalCenter.x + newWidth / 2.0,
+                originalCenter.y + newHeight / 2.0
+            );
+
+            // Use WorkSans-Regular custom font sized consistently at 48.0f
             auto editor = dynamic_cast<WaterStickEditor*>(listener);
             auto customFont = editor ? editor->getWorkSansFont(48.0f) : nullptr;
 
@@ -1089,8 +1107,8 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
                 context->setFontColor(VSTGUI::kBlackCColor);
             }
 
-            // Calculate text position to center the semitone value properly
-            VSTGUI::CPoint center = drawRect.getCenter();
+            // Calculate text position to center the semitone value properly using enlarged area
+            VSTGUI::CPoint center = enlargedDrawRect.getCenter();
 
             // Get text dimensions for precise centering
             auto textWidth = context->getStringWidth(semitoneText.c_str());
