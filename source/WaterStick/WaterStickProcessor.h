@@ -136,6 +136,14 @@ private:
     std::vector<float> mPitchBufferA;
     std::vector<float> mPitchBufferB;
 
+    // Buffer readiness tracking for upward pitch shifting
+    float mBufferReadinessSamples;     // Samples of real content accumulated
+    float mMinBufferForUpward;         // Minimum buffer content needed for upward pitch
+    bool mUpwardPitchReady;            // True when buffer has enough content for upward pitch
+    float mUpwardFadeInGain;           // Fade-in gain for upward pitch activation (0.0 to 1.0)
+    int mUpwardFadeInSamples;          // Samples remaining in upward pitch fade-in
+    static const int UPWARD_FADE_LENGTH = 1024;  // Fade-in length in samples (~23ms at 44.1kHz)
+
     void initializeGrains();
     void updateGrains();
     void startNewGrain();
@@ -145,6 +153,9 @@ private:
     void calculateAdaptiveSpacing();
     float interpolateBuffer(const std::vector<float>& buffer, float position) const;
     bool isBufferPositionValid(const std::vector<float>& buffer, float position) const;
+    void updateBufferReadiness(float input);
+    void updateUpwardPitchFadeIn();
+    bool isUpwardPitchBufferReady() const;
 };
 
 class STKDelayLine {
