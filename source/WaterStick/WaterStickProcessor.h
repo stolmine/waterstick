@@ -142,7 +142,9 @@ private:
     bool mUpwardPitchReady;            // True when buffer has enough content for upward pitch
     float mUpwardFadeInGain;           // Fade-in gain for upward pitch activation (0.0 to 1.0)
     int mUpwardFadeInSamples;          // Samples remaining in upward pitch fade-in
-    static const int UPWARD_FADE_LENGTH = 1024;  // Fade-in length in samples (~23ms at 44.1kHz)
+    int mActiveGrainCount;             // Number of grains to activate during warmup
+    static const int UPWARD_FADE_LENGTH = 256;   // Reduced fade-in length (~6ms at 44.1kHz)
+    static const int WARMUP_BUFFER_SIZE = GRAIN_SIZE / 4;  // Reduced from full grain size
 
     void initializeGrains();
     void updateGrains();
@@ -156,6 +158,7 @@ private:
     void updateBufferReadiness(float input);
     void updateUpwardPitchFadeIn();
     bool isUpwardPitchBufferReady() const;
+    void updateGrainActivation();
 };
 
 class STKDelayLine {

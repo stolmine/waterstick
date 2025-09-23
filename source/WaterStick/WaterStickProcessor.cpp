@@ -663,6 +663,7 @@ PitchShiftingDelayLine::PitchShiftingDelayLine()
 , mUpwardPitchReady(false)
 , mUpwardFadeInGain(0.0f)
 , mUpwardFadeInSamples(0)
+, mActiveGrainCount(0)
 {
     initializeGrains();
 }
@@ -680,12 +681,13 @@ void PitchShiftingDelayLine::initialize(double sampleRate, double maxDelaySecond
     mPitchBufferA.resize(pitchBufferSize, 0.0f);
     mPitchBufferB.resize(pitchBufferSize, 0.0f);
 
-    // Initialize buffer readiness tracking
+    // Initialize buffer readiness tracking - reduced warmup time
     mBufferReadinessSamples = 0.0f;
-    mMinBufferForUpward = static_cast<float>(GRAIN_SIZE);  // Need 1 full grain of content
+    mMinBufferForUpward = static_cast<float>(WARMUP_BUFFER_SIZE);  // Reduced to 1/4 grain size
     mUpwardPitchReady = false;
     mUpwardFadeInGain = 0.0f;
     mUpwardFadeInSamples = 0;
+    mActiveGrainCount = 1;  // Start with one grain during warmup
 
     initializeGrains();
     mSampleCount = 0.0f;
@@ -713,20 +715,11 @@ void PitchShiftingDelayLine::setPitchShift(int semitones)
             mUpwardFadeInGain = 1.0f;  // No fade needed
             mUpwardFadeInSamples = 0;
         } else {
-            // Upward pitch shifting - check buffer readiness
-            if (isUpwardPitchBufferReady()) {
-                // Buffer is ready, start with fade-in
-                initializeGrains();
-                mUpwardFadeInGain = 0.0f;
-                mUpwardFadeInSamples = UPWARD_FADE_LENGTH;
-            } else {
-                // Buffer not ready yet, disable grains until ready
-                for (int i = 0; i < NUM_GRAINS; i++) {
-                    mGrains[i].active = false;
-                }
-                mUpwardFadeInGain = 0.0f;
-                mUpwardFadeInSamples = 0;
-            }
+            // Upward pitch shifting - start immediately with progressive grain activation
+            initializeGrains();
+            mUpwardFadeInGain = 0.0f;
+            mUpwardFadeInSamples = UPWARD_FADE_LENGTH;
+            mActiveGrainCount = 1;  // Start with one grain, increase as buffer builds
         }
     }
 }
@@ -759,7 +752,10 @@ float PitchShiftingDelayLine::calculateHannWindow(float phase)
 
 void PitchShiftingDelayLine::startNewGrain()
 {
-    for (int i = 0; i < NUM_GRAINS; i++) {
+    // Limit active grains during warmup for upward pitch shifting
+    int maxGrains = (mPitchRatio > 1.0f && !mUpwardPitchReady) ? mActiveGrainCount : NUM_GRAINS;
+
+    for (int i = 0; i < maxGrains; i++) {
         if (!mGrains[i].active) {
             mGrains[i].active = true;
             mGrains[i].position = 0.0f;
@@ -767,11 +763,11 @@ void PitchShiftingDelayLine::startNewGrain()
             mGrains[i].pitchRatio = mPitchRatio;
             mGrains[i].grainStart = mSampleCount;
 
-            // For upward pitch shifting, start reading from appropriate position
+            // For upward pitch shifting, ensure safe read position
             if (mPitchRatio > 1.0f) {
-                // Start reading from a position that accounts for the faster playback
-                float readOffset = GRAIN_SIZE / mPitchRatio;
-                mGrains[i].readPosition = std::max(0.0f, mSampleCount - readOffset);
+                // Conservative read offset during warmup
+                float safeOffset = mUpwardPitchReady ? (GRAIN_SIZE / mPitchRatio) : (WARMUP_BUFFER_SIZE / 4.0f);
+                mGrains[i].readPosition = std::max(0.0f, mSampleCount - safeOffset);
             } else {
                 mGrains[i].readPosition = mSampleCount;
             }
@@ -814,22 +810,22 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
     int bufferIndex = static_cast<int>(mSampleCount) % static_cast<int>(currentPitchBuffer.size());
     currentPitchBuffer[bufferIndex] = input;
 
-    // For upward pitch shifting, check if buffer is ready and handle fade-in
-    if (mPitchRatio > 1.0f) {
-        if (!mUpwardPitchReady) {
-            // Buffer not ready yet for upward pitch shifting
-            mSampleCount += 1.0f;
-            return 0.0f;  // Return silence instead of passthrough
-        }
+    // For upward pitch shifting, return passthrough during warmup instead of silence
+    if (mPitchRatio > 1.0f && !mUpwardPitchReady) {
+        mSampleCount += 1.0f;
+        // Return passthrough during warmup to provide immediate response
+        return input * 0.8f;  // Slightly attenuated to indicate processing will start
+    }
 
-        // Update fade-in state
+    // Update fade-in state for upward pitch shifting
+    if (mPitchRatio > 1.0f) {
         updateUpwardPitchFadeIn();
     }
 
     // Use adaptive grain spacing for better quality
     if (mSampleCount >= mNextGrainSample) {
-        // Only start new grains if we're ready (for upward pitch) or not doing upward pitch
-        if (mPitchRatio <= 1.0f || mUpwardPitchReady) {
+        // Start grains progressively - always allow at least one grain
+        if (mPitchRatio <= 1.0f || mSampleCount >= static_cast<float>(WARMUP_BUFFER_SIZE / 2)) {
             startNewGrain();
         }
         mNextGrainSample = mSampleCount + mAdaptiveSpacing;
@@ -868,6 +864,11 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
         }
 
         return output;
+    }
+
+    // Fallback: return passthrough for immediate response
+    if (mPitchRatio > 1.0f && !mUpwardPitchReady) {
+        return input * 0.6f;  // Attenuated passthrough during warmup
     }
 
     return input;
@@ -922,25 +923,25 @@ bool PitchShiftingDelayLine::isBufferPositionValid(const std::vector<float>& buf
     // Check if the position is within reasonable bounds for reading
     float currentWritePos = mSampleCount;
 
-    // For upward pitch shifting, be more conservative about read-ahead
+    // For upward pitch shifting, use more permissive bounds during warmup
     if (mPitchRatio > 1.0f) {
-        // Only allow reading content that we're confident exists
-        // No read-ahead for upward pitch until buffer is well-established
-        float maxValidPos = currentWritePos - 1.0f;  // Stay behind current write position
-        float minValidPos = std::max(0.0f, currentWritePos - static_cast<float>(buffer.size()) + static_cast<float>(LOOKAHEAD_BUFFER));
-
-        // For upward pitch, also ensure we have accumulated enough real content
         if (!mUpwardPitchReady) {
-            return false;  // Don't allow any reading until buffer is ready
+            // During warmup, allow reading recent content with conservative bounds
+            float warmupReadRange = static_cast<float>(WARMUP_BUFFER_SIZE);
+            float maxValidPos = currentWritePos - 1.0f;  // Stay just behind write position
+            float minValidPos = std::max(0.0f, currentWritePos - warmupReadRange);
+            return (position >= minValidPos && position <= maxValidPos);
+        } else {
+            // After warmup, use full range but stay conservative
+            float maxValidPos = currentWritePos - 1.0f;
+            float minValidPos = std::max(0.0f, currentWritePos - static_cast<float>(buffer.size()) + static_cast<float>(LOOKAHEAD_BUFFER));
+            return (position >= minValidPos && position <= maxValidPos);
         }
-
-        return (position >= minValidPos && position <= maxValidPos);
     } else {
-        // For downward pitch shifting or no pitch shifting, use more permissive bounds
+        // For downward pitch shifting, use more permissive bounds
         float maxReadAhead = static_cast<float>(LOOKAHEAD_BUFFER / 4);
         float maxValidPos = currentWritePos + maxReadAhead;
         float minValidPos = currentWritePos - static_cast<float>(buffer.size()) + maxReadAhead;
-
         return (position >= minValidPos && position <= maxValidPos);
     }
 }
@@ -954,12 +955,23 @@ void PitchShiftingDelayLine::updateBufferReadiness(float input)
     bool wasReady = mUpwardPitchReady;
     mUpwardPitchReady = (mBufferReadinessSamples >= mMinBufferForUpward);
 
-    // If we just became ready and have upward pitch shifting requested, start fade-in
+    // Progressive grain activation during warmup
+    if (mPitchRatio > 1.0f && !mUpwardPitchReady) {
+        // Gradually increase active grains as buffer builds
+        float bufferProgress = mBufferReadinessSamples / mMinBufferForUpward;
+        mActiveGrainCount = std::max(1, static_cast<int>(bufferProgress * NUM_GRAINS));
+    } else if (mUpwardPitchReady) {
+        mActiveGrainCount = NUM_GRAINS;  // Full grain count when ready
+    }
+
+    // If we just became ready and have upward pitch shifting requested, enhance fade-in
     if (!wasReady && mUpwardPitchReady && mPitchRatio > 1.0f && mPitchSemitones != 0) {
-        // Buffer is now ready for upward pitch shifting - start grains with fade-in
-        initializeGrains();
-        mUpwardFadeInGain = 0.0f;
-        mUpwardFadeInSamples = UPWARD_FADE_LENGTH;
+        // Buffer is now ready for full upward pitch shifting
+        if (mUpwardFadeInSamples <= 0) {
+            // Start fade-in if not already active
+            mUpwardFadeInGain = std::max(0.5f, mUpwardFadeInGain);  // Start from current or 50%
+            mUpwardFadeInSamples = UPWARD_FADE_LENGTH / 2;  // Shorter fade since we're already partway
+        }
     }
 }
 
@@ -968,10 +980,18 @@ void PitchShiftingDelayLine::updateUpwardPitchFadeIn()
     if (mUpwardFadeInSamples > 0) {
         mUpwardFadeInSamples--;
         // Smooth fade-in curve using cosine
-        float fadeProgress = 1.0f - (static_cast<float>(mUpwardFadeInSamples) / static_cast<float>(UPWARD_FADE_LENGTH));
+        float fadeLength = static_cast<float>(UPWARD_FADE_LENGTH);
+        float fadeProgress = 1.0f - (static_cast<float>(mUpwardFadeInSamples) / fadeLength);
         mUpwardFadeInGain = 0.5f * (1.0f - std::cos(fadeProgress * 3.14159265f));
-    } else if (mPitchRatio > 1.0f && mUpwardPitchReady) {
-        mUpwardFadeInGain = 1.0f;
+    } else if (mPitchRatio > 1.0f) {
+        // Always provide some output for upward pitch shifting, even before full readiness
+        if (mUpwardPitchReady) {
+            mUpwardFadeInGain = 1.0f;
+        } else {
+            // Provide partial gain during warmup based on buffer progress
+            float bufferProgress = mBufferReadinessSamples / mMinBufferForUpward;
+            mUpwardFadeInGain = std::min(0.8f, 0.3f + (bufferProgress * 0.5f));
+        }
     }
 }
 
@@ -992,6 +1012,7 @@ void PitchShiftingDelayLine::reset()
     mUpwardPitchReady = false;
     mUpwardFadeInGain = 0.0f;
     mUpwardFadeInSamples = 0;
+    mActiveGrainCount = 1;  // Start with one grain
 
     mSampleCount = 0.0f;
     mNextGrainSample = 0.0f;
