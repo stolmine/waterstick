@@ -32,7 +32,6 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
         modeButtons[i] = nullptr;
     }
 
-    delayBypassToggle = nullptr;
 
     minimapContainer = nullptr;
     for (int i = 0; i < 16; i++) {
@@ -46,8 +45,10 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     inputGainKnob = nullptr;
     outputGainKnob = nullptr;
     dryWetKnob = nullptr;
+    delayBypassKnob = nullptr;
     globalDryWetKnob = nullptr;
 
+    delayBypassLabel = nullptr;
     syncModeLabel = nullptr;
     timeDivisionLabel = nullptr;
     feedbackLabel = nullptr;
@@ -57,6 +58,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     dryWetLabel = nullptr;
     globalDryWetLabel = nullptr;
 
+    delayBypassValue = nullptr;
     syncModeValue = nullptr;
     timeDivisionValue = nullptr;
     feedbackValue = nullptr;
@@ -65,8 +67,6 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     outputGainValue = nullptr;
     dryWetValue = nullptr;
     globalDryWetValue = nullptr;
-
-    delayBypassLabel = nullptr;
 }
 
 bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType& platformType)
@@ -81,7 +81,6 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
     createTapButtons(container);
     createModeButtons(container);
-    createBypassControls(container);
     createGlobalControls(container);
     createMinimap(container);
 
@@ -114,12 +113,10 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     const int gridHeight = 2;           // 2 rows
 
     // Calculate total grid dimensions
-    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
     // Position grid in left section (2/3 of window width) with margin
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
-    const int delaySection = (kEditorWidth * 2) / 3;  // 667px for delay section
     const int delayMargin = 30;
     const int gridLeft = delayMargin;  // Align to left margin within delay section
     const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
@@ -181,7 +178,6 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     const int gridHeight = 2;           // 2 rows
 
     // Calculate total grid dimensions
-    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
     // Match the tap button positioning
@@ -260,62 +256,48 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
     const int buttonSize = 53;
     const int buttonSpacing = buttonSize / 2;
     const int gridWidth = 8;
-    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int delayMargin = 30;
     const int tapGridLeft = delayMargin;
-    const int availableWidth = totalGridWidth - (6 * knobSize);
-    const int knobSpacing = availableWidth / 5;
     const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
     const int knobY = bottomThirdTop + modeButtonSpacing;
 
     ControlFactory factory(this, container);
 
     KnobDefinition globalKnobs[] = {
+        {"D-BYP", kDelayBypass, &delayBypassKnob, &delayBypassLabel, &delayBypassValue, false},
         {"SYNC", kTempoSyncMode, &syncModeKnob, &syncModeLabel, &syncModeValue, false},
         {"TIME", kDelayTime, &timeDivisionKnob, &timeDivisionLabel, &timeDivisionValue, true},
         {"FEEDBACK", kFeedback, &feedbackKnob, &feedbackLabel, &feedbackValue, false},
         {"GRID", kGrid, &gridKnob, &gridLabel, &gridValue, false},
         {"INPUT", kInputGain, &inputGainKnob, &inputGainLabel, &inputGainValue, false},
         {"OUTPUT", kOutputGain, &outputGainKnob, &outputGainLabel, &outputGainValue, false},
+        {"G-MIX", kGlobalDryWet, &globalDryWetKnob, &globalDryWetLabel, &globalDryWetValue, false},
     };
 
-    factory.createGlobalKnobsHorizontal(tapGridLeft, knobY, knobSize, knobSpacing, globalKnobs, 6);
-
-    // Create G-MIX global dry/wet control (larger, 63px) in upper-right of delay section
-    const int largeMixKnobSize = 63;
-    const int delaySection = (kEditorWidth * 2) / 3;  // 667px delay section
-    const int margin = 30;
-    const int minimapWidth = 150;  // From minimap creation
-
-    // Position G-MIX in the bottom-right area of the delay section
-    const int gmixX = delaySection - margin - largeMixKnobSize;  // Right-aligned in delay section
-    const int gmixY = kEditorHeight - margin - largeMixKnobSize - 40;  // Bottom-aligned with spacing
-
-    KnobDefinition gmixDef = {"G-MIX", kGlobalDryWet, &globalDryWetKnob, &globalDryWetLabel, &globalDryWetValue, false};
-    factory.createKnobWithLayout(gmixX, gmixY, largeMixKnobSize, gmixDef);
+    // Create global knobs using column-based positioning to match tap array
+    for (int i = 0; i < 8; i++) {
+        // Calculate X position using same column calculation as tap array
+        int knobX = tapGridLeft + i * (buttonSize + buttonSpacing);
+        factory.createKnobWithLayout(knobX, knobY, knobSize, globalKnobs[i]);
+    }
 
     auto controller = getController();
     if (controller) {
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 8; i++) {
             float value = controller->getParamNormalized(globalKnobs[i].tag);
             std::string paramName;
             switch (globalKnobs[i].tag) {
+                case kDelayBypass: paramName = "DelayBypass"; break;
                 case kInputGain: paramName = "InputGain"; break;
                 case kOutputGain: paramName = "OutputGain"; break;
                 case kTempoSyncMode: paramName = "TempoSyncMode"; break;
                 case kDelayTime: paramName = "DelayTime"; break;
                 case kFeedback: paramName = "Feedback"; break;
                 case kGrid: paramName = "Grid"; break;
+                case kGlobalDryWet: paramName = "GlobalDryWet"; break;
                 default: paramName = "Unknown"; break;
             }
             WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", globalKnobs[i].tag, paramName, value);
-        }
-
-        // Load G-MIX parameter value
-        if (globalDryWetKnob) {
-            float gmixValue = controller->getParamNormalized(kGlobalDryWet);
-            globalDryWetKnob->setValue(gmixValue);
-            WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", kGlobalDryWet, "GlobalDryWet", gmixValue);
         }
     }
 }
@@ -390,15 +372,15 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain};
-    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue};
+    const int knobTags[] = {kDelayBypass, kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
+    VSTGUI::CTextLabel* valueLabels[] = {delayBypassValue, syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, globalDryWetValue};
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 8; i++) {
         if (valueLabels[i]) {
             int paramId = knobTags[i];
 
             // Special handling for time/division knob
-            if (i == 1) {
+            if (i == 2) {
                 float syncMode = controller->getParamNormalized(kTempoSyncMode);
                 if (syncMode > 0.5f) {
                     paramId = kSyncDivision;
@@ -412,14 +394,6 @@ void WaterStickEditor::updateValueReadouts()
             valueLabels[i]->setText(valueText.c_str());
             valueLabels[i]->invalid();
         }
-    }
-
-    // Update G-MIX value readout
-    if (globalDryWetValue) {
-        float gmixValue = controller->getParamNormalized(kGlobalDryWet);
-        std::string gmixText = formatParameterValue(kGlobalDryWet, gmixValue);
-        globalDryWetValue->setText(gmixText.c_str());
-        globalDryWetValue->invalid();
     }
 
 }
@@ -1502,12 +1476,9 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     const int buttonSpacing = buttonSize / 2;
     const int gridWidth = 8;
     const int gridHeight = 2;
-    const int totalGridWidth = (gridWidth * buttonSize) + ((gridWidth - 1) * buttonSpacing);
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
-    const int gridLeft = delayMargin;  // Match repositioned tap buttons
-    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
 
     // Position in upper right area of delay section (left 2/3)
     const int delaySection = (kEditorWidth * 2) / 3;  // 667px delay section
@@ -1623,15 +1594,15 @@ void WaterStickEditor::forceParameterSynchronization()
     }
 
     // Sync all global knobs with current parameter values
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain};
-    KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob};
+    const int knobTags[] = {kDelayBypass, kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
+    KnobControl* knobs[] = {delayBypassKnob, syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, globalDryWetKnob};
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 8; i++) {
         if (knobs[i]) {
             int paramId = knobTags[i];
 
             // Special handling for time/division knob
-            if (i == 1 && knobs[i]->getIsTimeDivisionKnob()) {
+            if (i == 2 && knobs[i]->getIsTimeDivisionKnob()) {
                 float syncMode = controller->getParamNormalized(kTempoSyncMode);
                 if (syncMode > 0.5f) {
                     paramId = kSyncDivision;
@@ -1644,21 +1615,6 @@ void WaterStickEditor::forceParameterSynchronization()
             knobs[i]->setValue(paramValue);
             knobs[i]->invalid();
         }
-    }
-
-    // Sync G-MIX knob with current parameter value
-    if (globalDryWetKnob) {
-        float gmixValue = controller->getParamNormalized(kGlobalDryWet);
-        globalDryWetKnob->setValue(gmixValue);
-        globalDryWetKnob->invalid();
-    }
-
-
-    // Sync bypass toggle with current parameter value
-    if (delayBypassToggle) {
-        float delayBypassValue = controller->getParamNormalized(kDelayBypass);
-        delayBypassToggle->setValue(delayBypassValue);
-        delayBypassToggle->invalid();
     }
 
     // Force visual updates
@@ -1761,52 +1717,5 @@ VSTGUI::CMouseEventResult BypassToggle::onMouseDown(VSTGUI::CPoint& where, const
     return VSTGUI::kMouseEventNotHandled;
 }
 
-void WaterStickEditor::createBypassControls(VSTGUI::CViewContainer* container)
-{
-    // Position bypass toggle in top left corner of the window
-    const int toggleWidth = 50;          // Smaller width for bypass toggle
-    const int toggleHeight = 30;         // Smaller height for bypass toggle
-
-    // Top left corner positioning with clean margins
-    const int topMargin = 20;            // Distance from top edge
-    const int leftMargin = 30;           // Distance from left edge (matching delay section margin)
-
-    // Calculate position for toggle in top left
-    const int toggleX = leftMargin;
-    const int toggleY = topMargin;
-
-    // Create delay bypass toggle in top left
-    VSTGUI::CRect delayToggleRect(toggleX, toggleY, toggleX + toggleWidth, toggleY + toggleHeight);
-    delayBypassToggle = new BypassToggle(delayToggleRect, this, kDelayBypass);
-
-    // Load initial value from controller
-    auto controller = getController();
-    if (controller) {
-        float value = controller->getParamNormalized(kDelayBypass);
-        delayBypassToggle->setValue(value);
-    }
-
-    container->addView(delayBypassToggle);
-
-    // Create delay bypass label below the toggle
-    const int labelHeight = 20;
-    const int labelY = toggleY + toggleHeight + 5;  // Position label 5px below toggle
-    VSTGUI::CRect delayLabelRect(toggleX, labelY, toggleX + toggleWidth, labelY + labelHeight);
-    delayBypassLabel = new VSTGUI::CTextLabel(delayLabelRect, "D-BYP");
-
-    // Set label styling to match mode button labels
-    delayBypassLabel->setHoriAlign(VSTGUI::kCenterText);
-    delayBypassLabel->setFontColor(VSTGUI::kBlackCColor);
-    delayBypassLabel->setBackColor(VSTGUI::kTransparentCColor);
-    delayBypassLabel->setFrameColor(VSTGUI::kTransparentCColor);
-    delayBypassLabel->setStyle(VSTGUI::CTextLabel::kNoFrame);
-
-    auto customFont = getWorkSansFont(11.0f);
-    if (customFont) {
-        delayBypassLabel->setFont(customFont);
-    }
-
-    container->addView(delayBypassLabel);
-}
 
 } // namespace WaterStick

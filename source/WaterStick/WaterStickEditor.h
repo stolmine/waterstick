@@ -173,8 +173,7 @@ private:
     // Mode button references (8 total, one under each column)
     ModeButton* modeButtons[8];
 
-    // Bypass toggle controls
-    BypassToggle* delayBypassToggle;
+    // Bypass knob controls
 
     // Global control knobs
     KnobControl* syncModeKnob;
@@ -184,7 +183,8 @@ private:
     KnobControl* outputGainKnob;
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
-    KnobControl* globalDryWetKnob;  // G-MIX: Global dry/wet control (larger, in delay section upper-right)
+    KnobControl* delayBypassKnob;   // D-BYP: Delay bypass control
+    KnobControl* globalDryWetKnob;  // G-MIX: Global dry/wet control
 
 
     // Knob labels
@@ -207,7 +207,7 @@ private:
     VSTGUI::CTextLabel* dryWetValue;
     VSTGUI::CTextLabel* gridValue;
     VSTGUI::CTextLabel* globalDryWetValue;
-
+    VSTGUI::CTextLabel* delayBypassValue;
 
     // Mode button labels
     VSTGUI::CTextLabel* modeButtonLabels[8];
@@ -225,7 +225,6 @@ private:
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);
     void createModeButtons(VSTGUI::CViewContainer* container);
-    void createBypassControls(VSTGUI::CViewContainer* container);
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
