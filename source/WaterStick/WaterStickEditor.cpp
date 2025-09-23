@@ -738,6 +738,15 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
     const VSTGUI::CRect& rect = getViewSize();
     float currentValue = getValue();
 
+    // Check if flash effect is active and should be stopped
+    if (isFlashing) {
+        auto currentTime = std::chrono::steady_clock::now();
+        auto flashDuration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - flashStartTime);
+        if (flashDuration >= FLASH_DURATION) {
+            isFlashing = false;
+        }
+    }
+
     // Set stroke width to 5px
     context->setLineWidth(5.0);
     context->setFrameColor(VSTGUI::kBlackCColor);
@@ -1053,12 +1062,33 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
         }
     }
 
+    // Apply flash effect overlay if active
+    if (isFlashing) {
+        context->setFillColor(VSTGUI::CColor(255, 255, 255, 180)); // Semi-transparent white
+        context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
+
+        // Schedule redraw to update flash effect
+        invalid();
+    }
+
     setDirty(false);
 }
 
 VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
+        auto currentTime = std::chrono::steady_clock::now();
+
+        // Check for double-click (only for non-Enable contexts)
+        if (currentContext != TapContext::Enable && isDoubleClick(currentTime)) {
+            resetToDefaultValue();
+            lastClickTime = currentTime;
+            return VSTGUI::kMouseEventHandled;
+        }
+
+        // Update last click time for next double-click detection
+        lastClickTime = currentTime;
+
         if (currentContext == TapContext::Volume || currentContext == TapContext::Pan ||
             currentContext == TapContext::FilterCutoff || currentContext == TapContext::FilterResonance ||
             currentContext == TapContext::FilterType) {
@@ -1237,6 +1267,56 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
 }
 
 //------------------------------------------------------------------------
+// TapButton Double-Click Helper Methods
+//------------------------------------------------------------------------
+
+bool TapButton::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
+{
+    auto timeSinceLastClick = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastClickTime);
+    return timeSinceLastClick <= DOUBLE_CLICK_TIMEOUT && timeSinceLastClick > std::chrono::milliseconds{0};
+}
+
+void TapButton::resetToDefaultValue()
+{
+    // Only reset if not in Enable context (per requirements)
+    if (currentContext == TapContext::Enable) {
+        return;
+    }
+
+    float defaultValue = getContextDefaultValue();
+    setValue(defaultValue);
+
+    // Start flash effect
+    isFlashing = true;
+    flashStartTime = std::chrono::steady_clock::now();
+
+    invalid(); // Trigger visual update
+
+    if (listener) {
+        listener->valueChanged(this);
+    }
+}
+
+float TapButton::getContextDefaultValue() const
+{
+    switch (currentContext) {
+        case TapContext::Volume:
+            return 0.8f; // 80% volume
+        case TapContext::Pan:
+            return 0.5f; // Center pan
+        case TapContext::FilterCutoff:
+            return 0.566323334778673f; // 1kHz cutoff (matches controller default)
+        case TapContext::FilterResonance:
+            return 0.5f; // Moderate resonance
+        case TapContext::FilterType:
+            return 0.0f; // Bypass filter
+        case TapContext::Enable:
+        default:
+            return 0.0f; // Not used for Enable context
+    }
+}
+
+//------------------------------------------------------------------------
 // ModeButton Implementation
 //------------------------------------------------------------------------
 
@@ -1366,6 +1446,15 @@ KnobControl::KnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* li
 
 void KnobControl::draw(VSTGUI::CDrawContext* context)
 {
+    // Check if flash effect is active and should be stopped
+    if (isFlashing) {
+        auto currentTime = std::chrono::steady_clock::now();
+        auto flashDuration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - flashStartTime);
+        if (flashDuration >= FLASH_DURATION) {
+            isFlashing = false;
+        }
+    }
+
     VSTGUI::CRect drawRect = getViewSize();
     drawRect.makeIntegral();
 
@@ -1410,12 +1499,33 @@ void KnobControl::draw(VSTGUI::CDrawContext* context)
     context->setFillColor(VSTGUI::kBlackCColor);
     context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
 
+    // Apply flash effect overlay if active
+    if (isFlashing) {
+        context->setFillColor(VSTGUI::CColor(255, 255, 255, 180)); // Semi-transparent white
+        context->drawEllipse(drawRect, VSTGUI::kDrawFilled);
+
+        // Schedule redraw to update flash effect
+        invalid();
+    }
+
     setDirty(false);
 }
 
 VSTGUI::CMouseEventResult KnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
+        auto currentTime = std::chrono::steady_clock::now();
+
+        // Check for double-click
+        if (isDoubleClick(currentTime)) {
+            resetToDefaultValue();
+            lastClickTime = currentTime;
+            return VSTGUI::kMouseEventHandled;
+        }
+
+        // Update last click time for next double-click detection
+        lastClickTime = currentTime;
+
         isDragging = true;
         lastMousePos = where;
         return VSTGUI::kMouseEventHandled;
@@ -1453,6 +1563,66 @@ VSTGUI::CMouseEventResult KnobControl::onMouseUp(VSTGUI::CPoint& where, const VS
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
+}
+
+//------------------------------------------------------------------------
+// KnobControl Double-Click Helper Methods
+//------------------------------------------------------------------------
+
+bool KnobControl::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
+{
+    auto timeSinceLastClick = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastClickTime);
+    return timeSinceLastClick <= DOUBLE_CLICK_TIMEOUT && timeSinceLastClick > std::chrono::milliseconds{0};
+}
+
+void KnobControl::resetToDefaultValue()
+{
+    auto editor = dynamic_cast<WaterStickEditor*>(listener);
+    if (!editor) return;
+
+    auto controller = editor->getController();
+    if (!controller) return;
+
+    // Get parameter default value from controller
+    int paramTag = getTag();
+    float defaultValue = 0.0f;
+
+    // Get default based on parameter type
+    switch (paramTag) {
+        case kInputGain:
+        case kOutputGain:
+            defaultValue = 40.0f/52.0f; // 0dB gain
+            break;
+        case kTempoSyncMode:
+            defaultValue = 0.0f; // Free mode
+            break;
+        case kDelayTime:
+            defaultValue = 0.05f; // Short delay
+            break;
+        case kFeedback:
+            defaultValue = 0.0f; // No feedback
+            break;
+        case kGrid:
+            defaultValue = static_cast<float>(kGrid_4) / (kNumGridValues - 1); // 4 taps/beat
+            break;
+        case kGlobalDryWet:
+            defaultValue = 0.5f; // 50% mix
+            break;
+        default:
+            return; // Unknown parameter, don't reset
+    }
+
+    setValue(defaultValue);
+
+    // Start flash effect
+    isFlashing = true;
+    flashStartTime = std::chrono::steady_clock::now();
+
+    invalid(); // Trigger visual update
+
+    if (listener) {
+        listener->valueChanged(this);
+    }
 }
 
 //========================================================================

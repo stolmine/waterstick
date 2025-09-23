@@ -5,6 +5,7 @@
 #include "vstgui/lib/cdrawcontext.h"
 #include "vstgui/lib/controls/icontrollistener.h"
 #include <set>
+#include <chrono>
 
 namespace WaterStick {
 
@@ -88,6 +89,18 @@ private:
         Horizontal
     };
     DragDirection currentDragDirection = DragDirection::None;
+
+    // Double-click detection state
+    std::chrono::steady_clock::time_point lastClickTime;
+    static constexpr std::chrono::milliseconds DOUBLE_CLICK_TIMEOUT{400};
+    bool isFlashing = false;
+    std::chrono::steady_clock::time_point flashStartTime;
+    static constexpr std::chrono::milliseconds FLASH_DURATION{100};
+
+    // Double-click helper methods
+    bool isDoubleClick(const std::chrono::steady_clock::time_point& currentTime);
+    void resetToDefaultValue();
+    float getContextDefaultValue() const;
 };
 
 // Custom mode button class with center dot styling
@@ -123,6 +136,17 @@ private:
     bool isDragging = false;
     VSTGUI::CPoint lastMousePos;
     bool isTimeDivisionKnob = false;
+
+    // Double-click detection state
+    std::chrono::steady_clock::time_point lastClickTime;
+    static constexpr std::chrono::milliseconds DOUBLE_CLICK_TIMEOUT{400};
+    bool isFlashing = false;
+    std::chrono::steady_clock::time_point flashStartTime;
+    static constexpr std::chrono::milliseconds FLASH_DURATION{100};
+
+    // Double-click helper methods
+    bool isDoubleClick(const std::chrono::steady_clock::time_point& currentTime);
+    void resetToDefaultValue();
 };
 
 // Custom bypass toggle button class for section bypass controls
