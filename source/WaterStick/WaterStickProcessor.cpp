@@ -655,9 +655,9 @@ PitchShiftingDelayLine::PitchShiftingDelayLine()
 : DualDelayLine()
 , mPitchSemitones(0)
 , mPitchRatio(1.0f)
-, mGrainSpacing(GRAIN_SIZE - GRAIN_OVERLAP)
-, mNextGrainSample(0)
-, mSampleCount(0)
+, mNextGrainSample(0.0f)
+, mSampleCount(0.0f)
+, mAdaptiveSpacing(static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP))
 {
     initializeGrains();
 }
@@ -670,13 +670,15 @@ void PitchShiftingDelayLine::initialize(double sampleRate, double maxDelaySecond
 {
     DualDelayLine::initialize(sampleRate, maxDelaySeconds);
 
-    int pitchBufferSize = mBufferSize + GRAIN_SIZE;
+    // Increased buffer size for upward pitch shifting lookahead
+    int pitchBufferSize = mBufferSize + LOOKAHEAD_BUFFER;
     mPitchBufferA.resize(pitchBufferSize, 0.0f);
     mPitchBufferB.resize(pitchBufferSize, 0.0f);
 
     initializeGrains();
-    mSampleCount = 0;
-    mNextGrainSample = 0;
+    mSampleCount = 0.0f;
+    mNextGrainSample = 0.0f;
+    calculateAdaptiveSpacing();
 }
 
 void PitchShiftingDelayLine::setPitchShift(int semitones)
@@ -684,6 +686,7 @@ void PitchShiftingDelayLine::setPitchShift(int semitones)
     if (mPitchSemitones != semitones) {
         mPitchSemitones = std::max(-12, std::min(12, semitones));
         updatePitchRatio();
+        calculateAdaptiveSpacing();
 
         if (mPitchSemitones == 0) {
             for (int i = 0; i < NUM_GRAINS; i++) {
@@ -708,10 +711,11 @@ void PitchShiftingDelayLine::initializeGrains()
 {
     for (int i = 0; i < NUM_GRAINS; i++) {
         mGrains[i].active = false;
-        mGrains[i].position = 0;
+        mGrains[i].position = 0.0f;
         mGrains[i].phase = 0.0f;
         mGrains[i].pitchRatio = mPitchRatio;
-        mGrains[i].grainStart = 0;
+        mGrains[i].grainStart = 0.0f;
+        mGrains[i].readPosition = 0.0f;
     }
 }
 
@@ -725,10 +729,18 @@ void PitchShiftingDelayLine::startNewGrain()
     for (int i = 0; i < NUM_GRAINS; i++) {
         if (!mGrains[i].active) {
             mGrains[i].active = true;
-            mGrains[i].position = 0;
+            mGrains[i].position = 0.0f;
             mGrains[i].phase = 0.0f;
             mGrains[i].pitchRatio = mPitchRatio;
             mGrains[i].grainStart = mSampleCount;
+
+            // For upward pitch shifting, start reading from appropriate position
+            if (mPitchRatio > 1.0f) {
+                // Start reading from a position that accounts for the faster playback
+                mGrains[i].readPosition = mSampleCount - (GRAIN_SIZE / mPitchRatio);
+            } else {
+                mGrains[i].readPosition = mSampleCount;
+            }
             break;
         }
     }
@@ -740,8 +752,12 @@ void PitchShiftingDelayLine::updateGrains()
 
     for (int i = 0; i < NUM_GRAINS; i++) {
         if (mGrains[i].active) {
-            mGrains[i].position += static_cast<int>(mGrains[i].pitchRatio * 1000.0f);
-            mGrains[i].phase = static_cast<float>(mGrains[i].position) / static_cast<float>(GRAIN_SIZE * 1000);
+            // Use floating-point advancement for smooth pitch shifting
+            mGrains[i].position += mGrains[i].pitchRatio;
+            mGrains[i].phase = mGrains[i].position / static_cast<float>(GRAIN_SIZE);
+
+            // Update read position for buffer access
+            mGrains[i].readPosition += mGrains[i].pitchRatio;
 
             if (mGrains[i].phase >= 1.0f) {
                 mGrains[i].active = false;
@@ -756,25 +772,27 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
         return input;
     }
 
+    // Use adaptive grain spacing for better quality
     if (mSampleCount >= mNextGrainSample) {
         startNewGrain();
-        mNextGrainSample = mSampleCount + mGrainSpacing;
+        mNextGrainSample = mSampleCount + mAdaptiveSpacing;
     }
 
     float output = 0.0f;
     int activeGrains = 0;
 
     std::vector<float>& currentPitchBuffer = mUsingLineA ? mPitchBufferA : mPitchBufferB;
-    currentPitchBuffer[mSampleCount % currentPitchBuffer.size()] = input;
+    int bufferIndex = static_cast<int>(mSampleCount) % static_cast<int>(currentPitchBuffer.size());
+    currentPitchBuffer[bufferIndex] = input;
 
     for (int i = 0; i < NUM_GRAINS; i++) {
         if (mGrains[i].active) {
-            float readPosition = static_cast<float>(mGrains[i].position) / 1000.0f;
-            int readIndex = static_cast<int>(readPosition) + mGrains[i].grainStart;
-            readIndex = readIndex % static_cast<int>(currentPitchBuffer.size());
+            // Calculate floating-point read position with bounds checking
+            float absoluteReadPos = mGrains[i].grainStart + mGrains[i].position;
 
-            if (readIndex >= 0 && readIndex < static_cast<int>(currentPitchBuffer.size())) {
-                float sample = currentPitchBuffer[readIndex];
+            // Ensure we don't read beyond buffer bounds
+            if (isBufferPositionValid(currentPitchBuffer, absoluteReadPos)) {
+                float sample = interpolateBuffer(currentPitchBuffer, absoluteReadPos);
                 float window = calculateHannWindow(mGrains[i].phase);
                 output += sample * window;
                 activeGrains++;
@@ -783,9 +801,20 @@ float PitchShiftingDelayLine::processPitchShifting(float input)
     }
 
     updateGrains();
-    mSampleCount++;
+    mSampleCount += 1.0f;
 
-    return activeGrains > 0 ? output / static_cast<float>(activeGrains) : input;
+    // Normalize by active grains and apply slight gain compensation for upward shifts
+    if (activeGrains > 0) {
+        output /= static_cast<float>(activeGrains);
+
+        // Compensate for energy loss in upward pitch shifting
+        if (mPitchRatio > 1.0f) {
+            output *= std::min(1.5f, 1.0f + (mPitchRatio - 1.0f) * 0.3f);
+        }
+        return output;
+    }
+
+    return input;
 }
 
 void PitchShiftingDelayLine::processSample(float input, float& output)
@@ -799,6 +828,53 @@ void PitchShiftingDelayLine::processSample(float input, float& output)
     }
 }
 
+void PitchShiftingDelayLine::calculateAdaptiveSpacing()
+{
+    // Adapt grain spacing based on pitch ratio for consistent grain density
+    if (mPitchRatio > 1.0f) {
+        // For upward pitch shifting, reduce spacing to maintain grain density
+        mAdaptiveSpacing = static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP) / mPitchRatio;
+    } else if (mPitchRatio < 1.0f) {
+        // For downward pitch shifting, increase spacing slightly
+        mAdaptiveSpacing = static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP) * (2.0f - mPitchRatio);
+    } else {
+        // No pitch shift
+        mAdaptiveSpacing = static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP);
+    }
+
+    // Ensure minimum and maximum spacing bounds
+    mAdaptiveSpacing = std::max(64.0f, std::min(mAdaptiveSpacing, static_cast<float>(GRAIN_SIZE)));
+}
+
+float PitchShiftingDelayLine::interpolateBuffer(const std::vector<float>& buffer, float position) const
+{
+    // Linear interpolation for fractional sample positions
+    int intPos = static_cast<int>(std::floor(position));
+    float fracPos = position - static_cast<float>(intPos);
+
+    // Ensure we're within buffer bounds
+    int bufferSize = static_cast<int>(buffer.size());
+    intPos = ((intPos % bufferSize) + bufferSize) % bufferSize;
+    int nextPos = (intPos + 1) % bufferSize;
+
+    // Linear interpolation
+    return buffer[intPos] * (1.0f - fracPos) + buffer[nextPos] * fracPos;
+}
+
+bool PitchShiftingDelayLine::isBufferPositionValid(const std::vector<float>& buffer, float position) const
+{
+    // Check if the position is within reasonable bounds for reading
+    // Allow for some future reading for upward pitch shifts, but not too far
+    float maxReadAhead = static_cast<float>(LOOKAHEAD_BUFFER / 2);
+    float currentWritePos = mSampleCount;
+
+    // For upward pitch shifting, we can read ahead a bit
+    float maxValidPos = currentWritePos + maxReadAhead;
+    float minValidPos = currentWritePos - static_cast<float>(buffer.size()) + maxReadAhead;
+
+    return (position >= minValidPos && position <= maxValidPos);
+}
+
 void PitchShiftingDelayLine::reset()
 {
     DualDelayLine::reset();
@@ -806,9 +882,10 @@ void PitchShiftingDelayLine::reset()
     std::fill(mPitchBufferA.begin(), mPitchBufferA.end(), 0.0f);
     std::fill(mPitchBufferB.begin(), mPitchBufferB.end(), 0.0f);
 
-    mSampleCount = 0;
-    mNextGrainSample = 0;
+    mSampleCount = 0.0f;
+    mNextGrainSample = 0.0f;
     initializeGrains();
+    calculateAdaptiveSpacing();
 }
 
 

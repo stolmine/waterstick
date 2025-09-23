@@ -113,22 +113,24 @@ public:
 private:
     struct Grain {
         bool active;
-        int position;           // Current read position in grain
+        float position;         // Current read position in grain (floating-point for precision)
         float phase;           // 0.0 to 1.0 for windowing
         float pitchRatio;      // Playback speed ratio for this grain
-        int grainStart;        // Start position in delay buffer
+        float grainStart;      // Start position in delay buffer (floating-point)
+        float readPosition;    // Current floating-point read position in buffer
     };
 
-    static const int NUM_GRAINS = 4;
+    static const int NUM_GRAINS = 6;    // Increased for better upward pitch shifting
     static const int GRAIN_SIZE = 2048;  // ~46ms at 44.1kHz
     static const int GRAIN_OVERLAP = GRAIN_SIZE * 3 / 4;  // 75% overlap
+    static const int LOOKAHEAD_BUFFER = GRAIN_SIZE * 2;  // Extra buffer for upward shifts
 
     Grain mGrains[NUM_GRAINS];
     int mPitchSemitones;      // -12 to +12
     float mPitchRatio;        // Calculated from semitones
-    int mGrainSpacing;        // Samples between grain starts
-    int mNextGrainSample;     // When to start next grain
-    int mSampleCount;         // Running sample counter
+    float mNextGrainSample;   // When to start next grain (floating-point)
+    float mSampleCount;       // Running sample counter (floating-point for precision)
+    float mAdaptiveSpacing;   // Dynamically calculated grain spacing
 
     // Pitch shifting buffers (separate from delay buffers)
     std::vector<float> mPitchBufferA;
@@ -140,6 +142,9 @@ private:
     float calculateHannWindow(float phase);
     float processPitchShifting(float input);
     void updatePitchRatio();
+    void calculateAdaptiveSpacing();
+    float interpolateBuffer(const std::vector<float>& buffer, float position) const;
+    bool isBufferPositionValid(const std::vector<float>& buffer, float position) const;
 };
 
 class STKDelayLine {
