@@ -6,6 +6,27 @@ Current development has completed the core VST3 foundation with professional mul
 
 ---
 
+### Phase 4.0: Pitch Shifting Implementation ✅ COMPLETED
+**Semitone-Based Pitch Shifting DSP**
+
+1. **✅ Core Pitch Shifting Architecture**
+   - PitchShiftingDelayLine class extending DualDelayLine
+   - 4-grain overlap system with Hann windowing
+   - Semitone range: -12 to +12 with automatic dry/wet bypass
+   - ER-301-inspired grain processing for professional quality
+
+2. **✅ Parameter System Integration**
+   - 16 new VST3 parameters: kTap1PitchShift through kTap16PitchShift
+   - Full automation support with semitone value display
+   - Integration with existing parameter history system
+   - Total parameter count now 121 parameters
+
+3. **✅ Technical Quality**
+   - Zero CPU overhead when pitch shift = 0 (automatic bypass)
+   - Sample-accurate parameter automation
+   - Professional grain windowing techniques
+   - Seamless integration with existing delay architecture
+
 ## Development Phases
 
 ### Phase 1: Core VST3 Architecture & Timing System ✅ COMPLETED
@@ -821,13 +842,69 @@ Merged routing research findings from V3.5.0_routingResearch, providing comprehe
 
 **Status**: Build signing issue completely resolved with comprehensive prevention measures.
 
-- **Phase 4**: Advanced Features 🚀 Planning Stage
+### Phase 4.0: Pitch Shifting Implementation ✅ COMPLETED
+**Semitone-Based Pitch Shifting DSP**
+
+1. **✅ Core Pitch Shifting Architecture**
+   - PitchShiftingDelayLine class extending DualDelayLine
+   - 4-grain overlap system with Hann windowing
+   - Semitone range: -12 to +12 with automatic dry/wet bypass
+   - ER-301-inspired grain processing for professional quality
+
+2. **✅ Parameter System Integration**
+   - 16 new VST3 parameters: kTap1PitchShift through kTap16PitchShift
+   - Full automation support with semitone value display
+   - Integration with existing parameter history system
+   - Total parameter count now 121 parameters
+
+3. **✅ Technical Quality**
+   - Zero CPU overhead when pitch shift = 0 (automatic bypass)
+   - Sample-accurate parameter automation
+   - Professional grain windowing techniques
+   - Seamless integration with existing delay architecture
+
+- **Phase 5**: Advanced Features 🚀 Planning Stage
+
+---
+
+### Phase 3.12: GUI Finalization and Interaction Enhancements ✅ COMPLETED (2025-09-23)
+
+**Advanced GUI Development Completed:**
+
+1. **✅ Contextual Minimap Filter Type Display**
+   - Implemented filter type letter display (X,L,H,B,N) in tap enable/mutes context
+   - Removed circle background interference for clean text-only display
+   - Fixed context switching to properly invalidate minimap buttons
+   - Improved text positioning with proper typography baseline (center.y + fontSize * 0.3f)
+   - Font size increased from 8.0f to 11.0f to match mode button labels exactly
+   - Conditional circle sizing: 16px for Enable context text, 13px for other contexts' circles
+
+2. **✅ Double-Click to Default Functionality**
+   - Industry-standard 400ms double-click detection with std::chrono timing
+   - Global knobs reset to parameter defaults (Input/Output Gain to 0dB, Sync to Free, etc.)
+   - Tap buttons context-aware reset (Volume 80%, Pan center, Filter defaults) excluding Enable context
+   - Proper exclusions for tap enable context controls and bypass control per requirements
+   - VST3 automation compatibility with parameter change events
+   - Clean visual feedback through natural parameter value changes only (no artificial flash effects)
+
+**Technical Achievements:**
+- Professional audio software standard double-click behavior implemented
+- Perfect typography consistency between minimap and mode button labels
+- Context-aware visual feedback systems
+- Maintained all existing functionality while adding convenience features
+- VST3 validation: 47/47 tests passed throughout implementation
+
+**Code Quality:**
+- Minimal intrusion approach enhancing existing mouse event methods
+- Pattern consistency following existing codebase conventions
+- Type safety using actual parameter defaults from WaterStickController
+- Clean integration with existing font loading and parameter systems
 
 ---
 
 ## Current Status
 
-The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, enhanced GUI with dynamic layout capabilities, and clear mode button labeling. Following the architectural simplification to delay-only processing, the project maintains its professional audio quality and advanced delay capabilities while significantly reducing complexity.
+The WaterStick VST3 plugin now provides a professional, production-ready delay effect with comprehensive per-tap control, global feedback system, six-mode contextual interface, complete filter system, enhanced GUI with dynamic layout capabilities, clear mode button labeling, advanced minimap functionality, and intuitive double-click to default behavior. The project maintains its professional audio quality and advanced delay capabilities with a polished, user-friendly interface.
 
 ## Feature Overview
 
@@ -840,14 +917,17 @@ The WaterStick VST3 plugin now provides a professional, production-ready delay e
 
 ### Current Features
 - Per-tap enable, volume, pan, and filter controls
+- Per-tap pitch shifting with semitone-based DSP
 - Multiple parameter navigation modes
 - Global controls for sync, timing, input/output levels, and feedback
 - Sophisticated DSP with Three Sisters-quality filtering
-- 106 total parameters (reduced from previous architecture)
+- 121 total parameters with professional pitch shifting system
 - 47/47 VST3 validation tests passed
 
 ### Planned Future Developments
 - Enhanced visual feedback and performance optimizations
 - Advanced delay tap distribution patterns
+- Comprehensive pitch shifting UI controls
+- Pitch shifting interaction and smoothing improvements
 - Additional global modulation options
 - Preset system with morphing capabilities

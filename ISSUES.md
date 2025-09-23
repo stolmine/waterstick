@@ -55,18 +55,55 @@
 - Phase 4: Hierarchical Dry/Wet Controls ✅
 - Phase 4.5: Delay Parameter Propagation ✅
 
-### 🎯 Primary Focus: GUI Finalization
+### 🎯 Primary Focus: Advanced Feature Development
 **Priority**: High
-**Component**: GUI/UX
+**Component**: DSP/Audio Processing
 
-**Tasks:**
-1. Complete delay parameter visualization improvements
-2. Enhance user interaction paradigms for advanced tap control
-3. Implement dynamic tap distribution pattern selection
-4. Refine global control spacing and visual hierarchy
-5. Optimize mouse interaction zones for precise control
+**Feature-Driven Development Priorities:**
 
-**Expected Outcome**: Professional-grade GUI with intuitive, high-precision tap management
+#### 1. Granular Pitch Shifting ✅ COMPLETED
+**Priority**: Completed
+**Component**: DSP/Audio Processing
+**Description**: Implemented real-time pitch shifting for each delay tap
+**Completed Goals**:
+- ✅ Per-tap pitch control with semitone precision (-12 to +12 semitones)
+- ✅ Real-time pitch shifting without artifacts using 4-grain overlap system
+- ✅ Integration with existing filter and level systems
+- ✅ Musical pitch relationships with ER-301-quality smoothness
+- ✅ Automatic dry/wet bypass (zero pitch = bypass, any shift = 100% wet)
+- ✅ 16 new VST3 parameters with full automation support
+
+**Status**: Core DSP implementation complete. GUI integration planned for future branch.
+
+#### 2. Randomization System
+**Priority**: High
+**Component**: Parameter Control/Modulation
+**Description**: Comprehensive randomization system for tap parameters
+**Goals**:
+- Intelligent parameter randomization with musical constraints
+- Per-context randomization (volume, pan, filter, timing)
+- Probability-based parameter variation
+- Undo/redo for randomization operations
+
+#### 3. Macro Control System
+**Priority**: High
+**Component**: Parameter Control/Automation
+**Description**: Advanced macro control system for complex parameter relationships
+**Goals**:
+- Multi-parameter macro assignments
+- Morphing between parameter states
+- Performance-oriented macro controls
+- Integration with existing parameter automation
+
+#### 4. Tap Selection for Feedback Routing
+**Priority**: Medium
+**Component**: DSP/Signal Processing
+**Description**: Selective feedback routing from specific delay taps
+**Goals**:
+- Individual tap feedback send controls
+- Selectable feedback source taps (which taps feed back to input)
+- Variable feedback amounts per tap
+- Complex feedback routing patterns for enhanced delay textures
 
 ### 📊 Global DSP Enhancement
 **Priority**: Medium
@@ -122,6 +159,14 @@ When adding new issues, use this format:
 **Location**: All completed issues and phases have been moved to PROGRESS.md for historical tracking.
 
 **Recent Completions**:
+- Phase 4.0: Granular Pitch Shifting Implementation
+  - Semitone-snapped pitch shifting (-12 to +12 semitones)
+  - 4-grain overlap system with ER-301-quality smoothness
+  - Automatic dry/wet bypass for zero CPU overhead
+  - 16 new VST3 parameters with full automation support
+- Phase 3.12: GUI Finalization and Interaction Enhancements
+  - Contextual Minimap Filter Type Display
+  - Double-Click to Default Functionality
 - Phase 1: C-GAIN Parameter Implementation
 - Phase 1.5: D-GAIN Parameter Implementation
 - Phase 4: Hierarchical Dry/Wet Controls
@@ -132,7 +177,7 @@ When adding new issues, use this format:
 - Plugin Loading Issues Resolution
 - Clean Installation Process Establishment
 
-See PROGRESS.md Phase 3.10 for complete technical details.
+See PROGRESS.md Phase 4.0 for complete technical details.
 
 ### Code Signing & Distribution Challenges
 **Priority**: High

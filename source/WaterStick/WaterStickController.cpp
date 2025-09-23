@@ -199,6 +199,24 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 16 Filter Resonance"), STR16("%"), 0, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16FilterResonance, 0, STR16("Filter"));
     parameters.addParameter(STR16("Tap 16 Filter Type"), nullptr, kNumFilterTypes - 1, 0.0, Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kTap16FilterType, 0, STR16("Filter"));
 
+    // Per-tap pitch shift parameters
+    parameters.addParameter(STR16("Tap 1 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap1PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 2 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap2PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 3 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap3PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 4 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap4PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 5 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap5PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 6 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap6PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 7 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap7PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 8 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap8PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 9 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap9PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 10 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap10PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 11 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap11PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 12 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap12PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 13 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap13PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 14 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap14PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 15 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15PitchShift, 0, STR16("Pitch"));
+    parameters.addParameter(STR16("Tap 16 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16PitchShift, 0, STR16("Pitch"));
+
     // Global controls
     parameters.addParameter(STR16("Global Dry/Wet"), STR16("%"), 0, 0.5,
                            Vst::ParameterInfo::kCanAutomate, kGlobalDryWet, 0,
@@ -1058,6 +1076,21 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
         }
         default:
         {
+            // Handle per-tap pitch shift parameters
+            if (id >= kTap1PitchShift && id <= kTap16PitchShift) {
+                int semitones = static_cast<int>(round((valueNormalized * 24.0) - 12.0));
+                char pitchText[128];
+                if (semitones == 0) {
+                    snprintf(pitchText, sizeof(pitchText), "0 st");
+                } else if (semitones > 0) {
+                    snprintf(pitchText, sizeof(pitchText), "+%d st", semitones);
+                } else {
+                    snprintf(pitchText, sizeof(pitchText), "%d st", semitones);
+                }
+                Steinberg::UString(string, 128).fromAscii(pitchText);
+                return kResultTrue;
+            }
+
             // Handle per-tap filter parameters
             if (id >= kTap1FilterCutoff && id <= kTap16FilterType) {
                 int paramOffset = id - kTap1FilterCutoff;
