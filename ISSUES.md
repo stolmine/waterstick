@@ -63,8 +63,8 @@
 
 #### 1. Granular Pitch Shifting ✅ COMPLETED
 **Priority**: Completed
-**Component**: DSP/Audio Processing
-**Description**: Implemented real-time pitch shifting for each delay tap
+**Component**: DSP/Audio Processing + GUI
+**Description**: Implemented complete real-time pitch shifting system for each delay tap
 **Completed Goals**:
 - ✅ Per-tap pitch control with semitone precision (-12 to +12 semitones)
 - ✅ Real-time pitch shifting without artifacts using 4-grain overlap system
@@ -72,8 +72,14 @@
 - ✅ Musical pitch relationships with ER-301-quality smoothness
 - ✅ Automatic dry/wet bypass (zero pitch = bypass, any shift = 100% wet)
 - ✅ 16 new VST3 parameters with full automation support
+- ✅ **V4.0.1 GUI Implementation**: Complete pitch shifting interface
+  - Extended context system with 7th PitchShift context
+  - 7th mode button with "PITCH" label and mutual exclusion
+  - Text-based semitone display (-12 to +12) in tap buttons
+  - Mouse interaction patterns (click, drag, double-click reset)
+  - Real-time parameter automation and VST3 validator compliance (47/47 tests)
 
-**Status**: Core DSP implementation complete. GUI integration planned for future branch.
+**Status**: Complete DSP + GUI implementation. Branch V4.0.1_shiftGUI.
 
 #### 2. Randomization System
 **Priority**: High
@@ -119,11 +125,13 @@
 **Expected Outcome**: Advanced delay processing with minimal computational overhead
 
 ### 🌟 Next Development Priorities
-1. Advanced tap distribution pattern implementation
-2. Enhanced visual feedback for delay parameters
-3. Performance optimization for high tap count scenarios
-4. Develop advanced parameter automation features
-5. Implement professional preset management system
+With pitch shifting system now complete (DSP + GUI), the following features represent the next major development opportunities:
+
+1. **Randomization System** - Intelligent parameter randomization with musical constraints
+2. **Macro Control System** - Advanced macro controls for complex parameter relationships
+3. **Tap Selection for Feedback Routing** - Selective feedback routing from specific delay taps
+4. **Advanced tap distribution pattern implementation**
+5. **Performance optimization and advanced parameter automation features**
 
 ### 🎛️ GUI & User Experience Issues
 *Additional UX issues to be added as discovered*
@@ -159,6 +167,15 @@ When adding new issues, use this format:
 **Location**: All completed issues and phases have been moved to PROGRESS.md for historical tracking.
 
 **Recent Completions**:
+- **V4.0.1: Pitch Shifting GUI Implementation** ✅
+  - Extended context system with 7th PitchShift context
+  - Implemented 7th mode button with "PITCH" label and mutual exclusion
+  - Added text-based semitone display (-12 to +12) in tap buttons
+  - Implemented mouse interaction patterns matching res/pan behavior
+  - Connected GUI controls to pitch shift parameters with real-time automation
+  - Built and validated with VST3 validator (47/47 tests passing)
+  - Successful code signing and build process
+  - Branch: V4.0.1_shiftGUI
 - Phase 4.0: Granular Pitch Shifting Implementation
   - Semitone-snapped pitch shifting (-12 to +12 semitones)
   - 4-grain overlap system with ER-301-quality smoothness

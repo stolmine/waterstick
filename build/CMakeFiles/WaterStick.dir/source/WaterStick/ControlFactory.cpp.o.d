@@ -933,4 +933,7 @@ CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o: \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/lib/animation/../vstguibase.h \
   /Users/why/repos/waterstick/vst3sdk/vstgui4/vstgui/lib/animation/../cpoint.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/set \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/chrono \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__chrono/file_clock.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/forward_list \
   /Users/why/repos/waterstick/source/WaterStick/WaterStickParameters.h
