@@ -68,4 +68,15 @@ target_link_libraries(${target} PRIVATE
     vstgui_support
 )
 
+# Code signing configuration
+if(SMTG_MAC)
+    # Use adhoc signing with custom entitlements to allow plugin loading
+    set_target_properties(${target} PROPERTIES
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "-"
+        XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${CMAKE_CURRENT_SOURCE_DIR}/resources/WaterStick.entitlements"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
+    )
+endif()
+
 # Tests will be added later

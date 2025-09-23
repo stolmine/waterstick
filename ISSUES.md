@@ -126,8 +126,28 @@ When adding new issues, use this format:
 - Phase 1.5: D-GAIN Parameter Implementation
 - Phase 4: Hierarchical Dry/Wet Controls
 - Phase 4.5: Delay Parameter Propagation
+- Minimap Layout Implementation
+- Uniform Spacing Corrections
+- Code Signing and AMFI Validation Fixes
+- Plugin Loading Issues Resolution
+- Clean Installation Process Establishment
 
 See PROGRESS.md Phase 3.10 for complete technical details.
+
+### Code Signing & Distribution Challenges
+**Priority**: High
+**Component**: Build/Distribution
+
+**Key Challenges**:
+1. AMFI (Apple Mobile File Integrity) Validation Failures
+2. CMS Blob Missing Errors
+3. Adhoc Signing Rejection (Error -423)
+
+**Implemented Solutions**:
+- Custom entitlements for audio plugins
+- Refined CMake configuration for code signing
+- Improved build process for macOS compatibility
+- Established plugin cache clearing procedures for DAW testing
 
 ---
 

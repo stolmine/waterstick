@@ -243,9 +243,6 @@ EXPAT_LIBRARY_DEBUG:FILEPATH=EXPAT_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.
 EXPAT_LIBRARY_RELEASE:FILEPATH=/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
 
-//The directory containing a CMake configuration file for GTest.
-GTest_DIR:PATH=/opt/homebrew/lib/cmake/GTest
-
 //Path to a file.
 LIBJACK_INCLUDE_DIR:PATH=LIBJACK_INCLUDE_DIR-NOTFOUND
 
@@ -311,6 +308,9 @@ SMTG_ENABLE_VST3_PLUGIN_EXAMPLES:BOOL=ON
 //Enable VSTGUI Support
 SMTG_ENABLE_VSTGUI_SUPPORT:BOOL=ON
 
+//Apple Developer Team ID
+SMTG_IOS_DEVELOPMENT_TEAM:STRING=YOUR_TEAM_ID_HERE
+
 //Build the MDA examples as a replacement for their VST2 counterpart
 SMTG_MDA_VST3_VST2_COMPATIBLE:BOOL=ON
 
@@ -325,6 +325,9 @@ SMTG_RUN_VST_VALIDATOR:BOOL=ON
 
 //Create macOS and iOS collection targets
 SMTG_VSTSDK_GENERATE_MACOS_IOS_COLLECTION_TARGETS:BOOL=OFF
+
+//Enable Manual Code Signing
+SMTG_XCODE_MANUAL_CODE_SIGN_STYLE:BOOL=ON
 
 //Override XCode version check
 SMTG_XCODE_VERSION:STRING=15.0
@@ -349,9 +352,6 @@ WaterStick_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
 WaterStick_SOURCE_DIR:STATIC=/Users/why/repos/waterstick
-
-//The directory containing a CMake configuration file for benchmark.
-benchmark_DIR:PATH=/opt/homebrew/lib/cmake/benchmark
 
 //Value Computed by CMake
 smtg-vst3-adelay_BINARY_DIR:STATIC=/Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay
@@ -628,8 +628,6 @@ CMAKE_GENERATOR_INSTANCE:INTERNAL=
 CMAKE_GENERATOR_PLATFORM:INTERNAL=
 //Name of generator toolset.
 CMAKE_GENERATOR_TOOLSET:INTERNAL=
-//Test CMAKE_HAVE_LIBC_PTHREAD
-CMAKE_HAVE_LIBC_PTHREAD:INTERNAL=1
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/Users/why/repos/waterstick
@@ -707,8 +705,6 @@ EXPAT_LIBRARY_DEBUG-ADVANCED:INTERNAL=1
 EXPAT_LIBRARY_RELEASE-ADVANCED:INTERNAL=1
 //Details about finding EXPAT
 FIND_PACKAGE_MESSAGE_DETAILS_EXPAT:INTERNAL=[/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd][/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include][v2.6.3()]
-//Details about finding GTest
-FIND_PACKAGE_MESSAGE_DETAILS_GTest:INTERNAL=[/opt/homebrew/lib/cmake/GTest/GTestConfig.cmake][ ][v1.17.0()]
 //ADVANCED property for variable: PKG_CONFIG_ARGN
 PKG_CONFIG_ARGN-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: PKG_CONFIG_EXECUTABLE
