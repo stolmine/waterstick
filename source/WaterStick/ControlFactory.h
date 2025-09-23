@@ -38,12 +38,12 @@ public:
     void createCombKnobsGrid(int startX, int startY, int knobSize, int hSpacing, int vSpacing,
                            int columns, const KnobDefinition* defs, int count);
 
+    VSTGUI::CTextLabel* createLabel(const VSTGUI::CRect& rect, const char* text,
+                                  float fontSize = 11.0f, bool isValueLabel = false);
+
 private:
     WaterStickEditor* editor;
     VSTGUI::CViewContainer* container;
-
-    VSTGUI::CTextLabel* createLabel(const VSTGUI::CRect& rect, const char* text,
-                                  float fontSize = 11.0f, bool isValueLabel = false);
     int calculateLabelWidth(const char* text, int minWidth = 0);
     void styleLabel(VSTGUI::CTextLabel* label, float fontSize, bool isValueLabel = false);
     VSTGUI::SharedPointer<VSTGUI::CFontDesc> getWorkSansFont(float size) const;

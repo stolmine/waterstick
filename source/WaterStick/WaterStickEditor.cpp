@@ -45,7 +45,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
     inputGainKnob = nullptr;
     outputGainKnob = nullptr;
     dryWetKnob = nullptr;
-    delayBypassKnob = nullptr;
+    delayBypassToggle = nullptr;
     globalDryWetKnob = nullptr;
 
     delayBypassLabel = nullptr;
@@ -263,8 +263,24 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 
     ControlFactory factory(this, container);
 
+    // Create bypass toggle in first column
+    int bypassX = tapGridLeft;
+    int bypassY = knobY + (knobSize - knobSize) / 2; // Center vertically with knobs
+    VSTGUI::CRect bypassRect(bypassX, bypassY, bypassX + knobSize, bypassY + knobSize);
+    delayBypassToggle = new BypassToggle(bypassRect, this, kDelayBypass);
+    container->addView(delayBypassToggle);
+
+    // Create bypass label
+    VSTGUI::CRect bypassLabelRect(bypassX, bypassY + knobSize + 5, bypassX + knobSize, bypassY + knobSize + 25);
+    delayBypassLabel = factory.createLabel(bypassLabelRect, "D-BYP", 11.0f, false);
+    container->addView(delayBypassLabel);
+
+    // Create bypass value display
+    VSTGUI::CRect bypassValueRect(bypassX, bypassLabelRect.bottom + 2, bypassX + knobSize, bypassLabelRect.bottom + 20);
+    delayBypassValue = factory.createLabel(bypassValueRect, "OFF", 9.0f, true);
+    container->addView(delayBypassValue);
+
     KnobDefinition globalKnobs[] = {
-        {"D-BYP", kDelayBypass, &delayBypassKnob, &delayBypassLabel, &delayBypassValue, false},
         {"SYNC", kTempoSyncMode, &syncModeKnob, &syncModeLabel, &syncModeValue, false},
         {"TIME", kDelayTime, &timeDivisionKnob, &timeDivisionLabel, &timeDivisionValue, true},
         {"FEEDBACK", kFeedback, &feedbackKnob, &feedbackLabel, &feedbackValue, false},
@@ -274,20 +290,27 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
         {"G-MIX", kGlobalDryWet, &globalDryWetKnob, &globalDryWetLabel, &globalDryWetValue, false},
     };
 
-    // Create global knobs using column-based positioning to match tap array
-    for (int i = 0; i < 8; i++) {
-        // Calculate X position using same column calculation as tap array
-        int knobX = tapGridLeft + i * (buttonSize + buttonSpacing);
+    // Create remaining 7 knobs in columns 2-8
+    for (int i = 0; i < 7; i++) {
+        // Calculate X position (skip column 0 which has the bypass toggle)
+        int knobX = tapGridLeft + (i + 1) * (buttonSize + buttonSpacing);
         factory.createKnobWithLayout(knobX, knobY, knobSize, globalKnobs[i]);
     }
 
     auto controller = getController();
     if (controller) {
-        for (int i = 0; i < 8; i++) {
+        // Load bypass toggle value
+        float bypassValue = controller->getParamNormalized(kDelayBypass);
+        if (delayBypassToggle) {
+            delayBypassToggle->setValue(bypassValue);
+            delayBypassToggle->invalid();
+        }
+
+        // Load knob values
+        for (int i = 0; i < 7; i++) {
             float value = controller->getParamNormalized(globalKnobs[i].tag);
             std::string paramName;
             switch (globalKnobs[i].tag) {
-                case kDelayBypass: paramName = "DelayBypass"; break;
                 case kInputGain: paramName = "InputGain"; break;
                 case kOutputGain: paramName = "OutputGain"; break;
                 case kTempoSyncMode: paramName = "TempoSyncMode"; break;
@@ -297,7 +320,12 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
                 case kGlobalDryWet: paramName = "GlobalDryWet"; break;
                 default: paramName = "Unknown"; break;
             }
-            WS_LOG_PARAM_CONTEXT("GLOBAL-LOAD", globalKnobs[i].tag, paramName, value);
+
+            // Update the knob with parameter value
+            if (globalKnobs[i].knobPtr && *(globalKnobs[i].knobPtr)) {
+                (*(globalKnobs[i].knobPtr))->setValue(value);
+                (*(globalKnobs[i].knobPtr))->invalid();
+            }
         }
     }
 }
@@ -372,15 +400,22 @@ void WaterStickEditor::updateValueReadouts()
     if (!controller) return;
 
     // Update all global control value readouts
-    const int knobTags[] = {kDelayBypass, kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
-    VSTGUI::CTextLabel* valueLabels[] = {delayBypassValue, syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, globalDryWetValue};
+    // Update bypass value display separately
+    if (delayBypassValue) {
+        float bypassValue = controller->getParamNormalized(kDelayBypass);
+        std::string valueText = formatParameterValue(kDelayBypass, bypassValue);
+        delayBypassValue->setText(valueText.c_str());
+    }
 
-    for (int i = 0; i < 8; i++) {
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
+    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, globalDryWetValue};
+
+    for (int i = 0; i < 7; i++) {
         if (valueLabels[i]) {
             int paramId = knobTags[i];
 
             // Special handling for time/division knob
-            if (i == 2) {
+            if (i == 1) {
                 float syncMode = controller->getParamNormalized(kTempoSyncMode);
                 if (syncMode > 0.5f) {
                     paramId = kSyncDivision;
@@ -481,6 +516,16 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
                         float delayTimeValue = controller->getParamNormalized(kDelayTime);
                         timeDivisionKnob->setValue(delayTimeValue);
                         timeDivisionKnob->invalid();
+                    }
+                }
+
+                // Special handling for bypass toggle value display - do this first
+                if (control->getTag() == kDelayBypass) {
+                    // Force immediate update of bypass value display
+                    if (delayBypassValue) {
+                        std::string valueText = formatParameterValue(kDelayBypass, control->getValue());
+                        delayBypassValue->setText(valueText.c_str());
+                        delayBypassValue->invalid(); // Force redraw
                     }
                 }
 
@@ -1593,16 +1638,23 @@ void WaterStickEditor::forceParameterSynchronization()
         }
     }
 
-    // Sync all global knobs with current parameter values
-    const int knobTags[] = {kDelayBypass, kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
-    KnobControl* knobs[] = {delayBypassKnob, syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, globalDryWetKnob};
+    // Sync bypass toggle separately
+    if (delayBypassToggle) {
+        float bypassValue = controller->getParamNormalized(kDelayBypass);
+        delayBypassToggle->setValue(bypassValue);
+        delayBypassToggle->invalid();
+    }
 
-    for (int i = 0; i < 8; i++) {
+    // Sync all global knobs with current parameter values
+    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
+    KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, globalDryWetKnob};
+
+    for (int i = 0; i < 7; i++) {
         if (knobs[i]) {
             int paramId = knobTags[i];
 
             // Special handling for time/division knob
-            if (i == 2 && knobs[i]->getIsTimeDivisionKnob()) {
+            if (i == 1 && knobs[i]->getIsTimeDivisionKnob()) {
                 float syncMode = controller->getParamNormalized(kTempoSyncMode);
                 if (syncMode > 0.5f) {
                     paramId = kSyncDivision;
@@ -1640,62 +1692,48 @@ void BypassToggle::draw(VSTGUI::CDrawContext* context)
     const VSTGUI::CRect& rect = getViewSize();
     bool isBypassed = (getValue() > 0.5);
 
-    // Set stroke and drawing properties
-    context->setLineWidth(2.0);
-    context->setDrawMode(VSTGUI::kAntiAliasing);
+    // Match mode button approach: use fixed 53px circle with precise centering
+    const double buttonSize = 53.0;
+    VSTGUI::CPoint viewCenter = rect.getCenter();
+    const double halfButtonSize = buttonSize / 2.0;
 
-    // Create rounded rectangle with 6px corner radius
-    const double cornerRadius = 6.0;
-
-    if (isBypassed) {
-        // Bypassed state: black background, white text, black stroke
-        context->setFillColor(VSTGUI::kBlackCColor);
-        context->setFrameColor(VSTGUI::kBlackCColor);
-    } else {
-        // Active state: white background, black text, black stroke
-        context->setFillColor(VSTGUI::kWhiteCColor);
-        context->setFrameColor(VSTGUI::kBlackCColor);
-    }
-
-    // Draw rounded rectangle
-    VSTGUI::CGraphicsPath* path = context->createRoundRectGraphicsPath(rect, cornerRadius);
-    if (path) {
-        context->drawGraphicsPath(path, VSTGUI::CDrawContext::kPathFilled);
-        context->drawGraphicsPath(path, VSTGUI::CDrawContext::kPathStroked);
-        path->forget();
-    }
-
-    // Draw text
-    const char* text = isBypassed ? "BYP" : "OFF";
-
-    // Set text color
-    if (isBypassed) {
-        context->setFontColor(VSTGUI::kWhiteCColor);  // White text on black background
-    } else {
-        context->setFontColor(VSTGUI::kBlackCColor);  // Black text on white background
-    }
-
-    // Set font - use WorkSans-Regular 11pt to match mode button labels
-    auto editor = dynamic_cast<WaterStickEditor*>(listener);
-    auto customFont = editor ? editor->getWorkSansFont(11.0f) : nullptr;
-    if (customFont) {
-        context->setFont(customFont);
-    } else {
-        auto systemFont = VSTGUI::kSystemFont;
-        systemFont->setSize(11);
-        context->setFont(systemFont);
-    }
-
-    // Calculate text position for centering
-    auto textWidth = context->getStringWidth(text);
-    VSTGUI::CPoint center = rect.getCenter();
-    VSTGUI::CPoint textPos(
-        center.x - textWidth / 2.0,
-        center.y + 4.0  // Slight vertical adjustment for better visual centering
+    VSTGUI::CRect buttonRect(
+        viewCenter.x - halfButtonSize,
+        viewCenter.y - halfButtonSize,
+        viewCenter.x + halfButtonSize,
+        viewCenter.y + halfButtonSize
     );
 
-    // Draw the text
-    context->drawString(text, textPos);
+    // Set stroke properties (same as mode buttons)
+    context->setLineWidth(5.0);
+    context->setDrawMode(VSTGUI::kAntiAliasing);
+    context->setFrameColor(VSTGUI::CColor(35, 31, 32, 255)); // #231f20 from SVG
+    context->setFillColor(VSTGUI::CColor(35, 31, 32, 255));
+
+    // Apply stroke inset compensation (exactly like mode buttons)
+    VSTGUI::CRect drawRect = buttonRect;
+    const double strokeInset = 2.5; // Half of 5px stroke
+    drawRect.inset(strokeInset, strokeInset);
+
+    // Draw outer circle using stroke-compensated rect
+    context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+
+    // Draw inner circle using mode button centering technique
+    if (isBypassed) {
+        // Use stroke-compensated center for perfect alignment
+        VSTGUI::CPoint center = drawRect.getCenter();
+        // Calculate inner radius with another 10% reduction
+        // Previous: 19.35px, reduced by 10%: 19.35 * 0.9 = 17.415px
+        const double innerRadius = 17.415;
+
+        VSTGUI::CRect innerRect(
+            center.x - innerRadius,
+            center.y - innerRadius,
+            center.x + innerRadius,
+            center.y + innerRadius
+        );
+        context->drawEllipse(innerRect, VSTGUI::kDrawFilled);
+    }
 
     setDirty(false);
 }
@@ -1710,11 +1748,28 @@ VSTGUI::CMouseEventResult BypassToggle::onMouseDown(VSTGUI::CPoint& where, const
         // Notify listener
         if (listener) {
             listener->valueChanged(this);
+
+            // Force immediate value display update for bypass toggle
+            auto editor = dynamic_cast<WaterStickEditor*>(listener);
+            if (editor) {
+                editor->updateBypassValueDisplay();
+            }
         }
 
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
+}
+
+void WaterStickEditor::updateBypassValueDisplay()
+{
+    auto controller = getController();
+    if (delayBypassValue && controller) {
+        float bypassValue = controller->getParamNormalized(kDelayBypass);
+        std::string valueText = formatParameterValue(kDelayBypass, bypassValue);
+        delayBypassValue->setText(valueText.c_str());
+        delayBypassValue->invalid();
+    }
 }
 
 

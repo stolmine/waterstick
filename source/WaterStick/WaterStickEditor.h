@@ -159,6 +159,7 @@ public:
     // Value formatting helpers
     std::string formatParameterValue(int parameterId, float normalizedValue) const;
     void updateValueReadouts();
+    void updateBypassValueDisplay();
 
     // VST3 lifecycle compliance
     void forceParameterSynchronization();
@@ -183,7 +184,7 @@ private:
     KnobControl* outputGainKnob;
     KnobControl* dryWetKnob;
     KnobControl* gridKnob;
-    KnobControl* delayBypassKnob;   // D-BYP: Delay bypass control
+    BypassToggle* delayBypassToggle; // D-BYP: Delay bypass control
     KnobControl* globalDryWetKnob;  // G-MIX: Global dry/wet control
 
 
