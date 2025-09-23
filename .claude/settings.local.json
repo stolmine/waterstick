@@ -63,7 +63,8 @@
       "Bash(git pull:*)",
       "Bash(awk:*)",
       "Bash(validator:*)",
-      "Bash(/Users/why/repos/waterstick/vst3sdk/bin/validator/validator.app/Contents/MacOS/validator /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3)"
+      "Bash(/Users/why/repos/waterstick/vst3sdk/bin/validator/validator.app/Contents/MacOS/validator /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3)",
+      "Bash(/Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3/Contents/macOS/validator /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3)"
     ],
     "deny": [],
     "ask": []
