@@ -1525,8 +1525,8 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
         double minimapY;
 
         if (row == 0) {
-            // Row 1 circles: Position 13.5px above tap buttons (7px clearance + 6.5px radius)
-            minimapY = gridTop - 13.5;
+            // Row 1 circles: Position 13.25px above tap buttons (consistent clearance)
+            minimapY = gridTop - 13.25;
         } else {
             // Row 2 circles: Position at center of 26.5px gap between rows
             minimapY = gridTop + 53 + 6.75;
