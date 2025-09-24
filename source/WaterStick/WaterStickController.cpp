@@ -10,14 +10,402 @@
 #include <cmath>
 #include <iostream>
 #include <iomanip>
+#include <vector>
+#include <sstream>
 
 using namespace Steinberg;
 
 namespace WaterStick {
 
 //------------------------------------------------------------------------
+// RandomizationEngine Implementation
+//------------------------------------------------------------------------
+RandomizationEngine::RandomizationEngine() :
+    mGenerator(),
+    mDistribution(0.0f, 1.0f),
+    mAmount(1.0f),
+    mCurrentSeed(0)
+{
+}
+
+RandomizationEngine::~RandomizationEngine() {}
+
+void RandomizationEngine::initialize(unsigned int seed) {
+    setSeed(seed);
+}
+
+void RandomizationEngine::setSeed(unsigned int seed) {
+    mCurrentSeed = seed;
+    mGenerator.seed(seed);
+}
+
+void RandomizationEngine::setAmount(float amount) {
+    mAmount = std::max(0.0f, std::min(1.0f, amount));
+}
+
+float RandomizationEngine::randomizeParameter(Steinberg::Vst::ParamID id, float currentValue, RandomizationConstraints constraint) {
+    float randomValue = generateConstrainedValue(constraint, currentValue, id);
+    return currentValue + mAmount * (randomValue - currentValue);
+}
+
+void RandomizationEngine::randomizeAllParameters(WaterStickController* controller) {
+    if (!controller) return;
+
+    // Randomize discrete parameters with full scale
+    for (int i = 0; i < 24; i++) {
+        Steinberg::Vst::ParamID paramId = kDiscrete1 + i;
+        float currentValue = controller->getParamNormalized(paramId);
+        float newValue = randomizeParameter(paramId, currentValue, kRandomConstraint_Full);
+        controller->setParamNormalized(paramId, newValue);
+    }
+
+    // Randomize filter resonance with FULL SCALE 0.0-1.0 as specified
+    for (int i = 0; i < 16; i++) {
+        Steinberg::Vst::ParamID resonanceId = kTap1FilterResonance + (i * 3);
+        float newValue = mDistribution(mGenerator); // Full scale 0.0-1.0
+        controller->setParamNormalized(resonanceId, newValue);
+    }
+
+    // Randomize other tap parameters with musical constraints
+    for (int i = 0; i < 16; i++) {
+        Steinberg::Vst::ParamID levelId = kTap1Level + (i * 3);
+        Steinberg::Vst::ParamID panId = kTap1Pan + (i * 3);
+        Steinberg::Vst::ParamID cutoffId = kTap1FilterCutoff + (i * 3);
+
+        float currentLevel = controller->getParamNormalized(levelId);
+        float currentPan = controller->getParamNormalized(panId);
+        float currentCutoff = controller->getParamNormalized(cutoffId);
+
+        float newLevel = randomizeParameter(levelId, currentLevel, kRandomConstraint_Musical);
+        float newPan = randomizeParameter(panId, currentPan, kRandomConstraint_Bipolar);
+        float newCutoff = randomizeParameter(cutoffId, currentCutoff, kRandomConstraint_Musical);
+
+        controller->setParamNormalized(levelId, newLevel);
+        controller->setParamNormalized(panId, newPan);
+        controller->setParamNormalized(cutoffId, newCutoff);
+    }
+}
+
+void RandomizationEngine::randomizeParameterGroup(WaterStickController* controller, const std::vector<Steinberg::Vst::ParamID>& paramIds) {
+    if (!controller) return;
+
+    for (auto paramId : paramIds) {
+        RandomizationConstraints constraint = classifyParameter(paramId);
+        float currentValue = controller->getParamNormalized(paramId);
+        float newValue = randomizeParameter(paramId, currentValue, constraint);
+        controller->setParamNormalized(paramId, newValue);
+    }
+}
+
+float RandomizationEngine::applyMusicalConstraint(float value, Steinberg::Vst::ParamID id) {
+    // Apply musical quantization based on parameter type
+    if (id >= kTap1FilterCutoff && id <= kTap16FilterCutoff) {
+        // Quantize filter cutoffs to musical intervals
+        const float musicalSteps[] = {0.0f, 0.125f, 0.25f, 0.375f, 0.5f, 0.625f, 0.75f, 0.875f, 1.0f};
+        const int numSteps = sizeof(musicalSteps) / sizeof(musicalSteps[0]);
+
+        float bestDistance = 2.0f;
+        float quantizedValue = value;
+
+        for (int i = 0; i < numSteps; i++) {
+            float distance = std::abs(value - musicalSteps[i]);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                quantizedValue = musicalSteps[i];
+            }
+        }
+        return quantizedValue;
+    }
+
+    return value;
+}
+
+float RandomizationEngine::applyConservativeConstraint(float value, float currentValue) {
+    // Limit randomization to ±30% of current value
+    float minValue = std::max(0.0f, currentValue - 0.3f);
+    float maxValue = std::min(1.0f, currentValue + 0.3f);
+    return minValue + value * (maxValue - minValue);
+}
+
+float RandomizationEngine::applyBipolarConstraint(float value, float currentValue) {
+    // Center around 0.5 with controlled deviation
+    float deviation = (value - 0.5f) * 0.6f; // ±30% max deviation
+    return std::max(0.0f, std::min(1.0f, 0.5f + deviation));
+}
+
+RandomizationConstraints RandomizationEngine::classifyParameter(Steinberg::Vst::ParamID id) {
+    if (id >= kDiscrete1 && id <= kDiscrete24) {
+        return kRandomConstraint_Full;
+    } else if (id >= kTap1FilterResonance && id <= kTap16FilterResonance) {
+        return kRandomConstraint_Full; // Specified requirement
+    } else if (id >= kTap1Pan && id <= kTap16Pan) {
+        return kRandomConstraint_Bipolar;
+    } else if (id >= kTap1FilterCutoff && id <= kTap16FilterCutoff) {
+        return kRandomConstraint_Musical;
+    } else if (id >= kTap1Level && id <= kTap16Level) {
+        return kRandomConstraint_Musical;
+    } else {
+        return kRandomConstraint_Conservative;
+    }
+}
+
+float RandomizationEngine::generateConstrainedValue(RandomizationConstraints constraint, float currentValue, Steinberg::Vst::ParamID id) {
+    float randomValue = mDistribution(mGenerator);
+
+    switch (constraint) {
+        case kRandomConstraint_Full:
+            return randomValue;
+        case kRandomConstraint_Musical:
+            return applyMusicalConstraint(randomValue, id);
+        case kRandomConstraint_Conservative:
+            return applyConservativeConstraint(randomValue, currentValue);
+        case kRandomConstraint_Bipolar:
+            return applyBipolarConstraint(randomValue, currentValue);
+        default:
+            return randomValue;
+    }
+}
+
+//------------------------------------------------------------------------
+// DefaultResetSystem Implementation
+//------------------------------------------------------------------------
+DefaultResetSystem::DefaultResetSystem() {}
+
+DefaultResetSystem::~DefaultResetSystem() {}
+
+void DefaultResetSystem::initialize() {
+    buildDefaultValueMap();
+}
+
+void DefaultResetSystem::resetAllParameters(WaterStickController* controller) {
+    if (!controller) return;
+
+    for (const auto& pair : mDefaultValues) {
+        controller->setParamNormalized(pair.first, pair.second);
+    }
+}
+
+void DefaultResetSystem::resetParameterGroup(WaterStickController* controller, const std::vector<Steinberg::Vst::ParamID>& paramIds) {
+    if (!controller) return;
+
+    for (auto paramId : paramIds) {
+        float defaultValue = getDefaultValue(paramId);
+        controller->setParamNormalized(paramId, defaultValue);
+    }
+}
+
+void DefaultResetSystem::resetGlobalParameters(WaterStickController* controller) {
+    if (!controller) return;
+
+    std::vector<Steinberg::Vst::ParamID> globalParams = {
+        kInputGain, kOutputGain, kDelayTime, kFeedback, kTempoSyncMode,
+        kSyncDivision, kGrid, kGlobalDryWet, kDelayBypass
+    };
+    resetParameterGroup(controller, globalParams);
+}
+
+void DefaultResetSystem::resetTapParameters(WaterStickController* controller) {
+    if (!controller) return;
+
+    std::vector<Steinberg::Vst::ParamID> tapParams;
+    for (int i = 0; i < 16; i++) {
+        tapParams.push_back(kTap1Enable + (i * 3));
+        tapParams.push_back(kTap1Level + (i * 3));
+        tapParams.push_back(kTap1Pan + (i * 3));
+        tapParams.push_back(kTap1PitchShift + i);
+        tapParams.push_back(kTap1FeedbackSend + i);
+    }
+    resetParameterGroup(controller, tapParams);
+}
+
+void DefaultResetSystem::resetFilterParameters(WaterStickController* controller) {
+    if (!controller) return;
+
+    std::vector<Steinberg::Vst::ParamID> filterParams;
+    for (int i = 0; i < 16; i++) {
+        filterParams.push_back(kTap1FilterCutoff + (i * 3));
+        filterParams.push_back(kTap1FilterResonance + (i * 3));
+        filterParams.push_back(kTap1FilterType + (i * 3));
+    }
+    resetParameterGroup(controller, filterParams);
+}
+
+void DefaultResetSystem::resetDiscreteParameters(WaterStickController* controller) {
+    if (!controller) return;
+
+    std::vector<Steinberg::Vst::ParamID> discreteParams;
+    for (int i = 0; i < 24; i++) {
+        discreteParams.push_back(kDiscrete1 + i);
+    }
+    resetParameterGroup(controller, discreteParams);
+}
+
+float DefaultResetSystem::getDefaultValue(Steinberg::Vst::ParamID id) {
+    auto it = mDefaultValues.find(id);
+    if (it != mDefaultValues.end()) {
+        return it->second;
+    }
+    return 0.0f; // Safe fallback
+}
+
+void DefaultResetSystem::buildDefaultValueMap() {
+    // Global parameters
+    mDefaultValues[kInputGain] = 40.0f/52.0f;  // 0dB
+    mDefaultValues[kOutputGain] = 40.0f/52.0f; // 0dB
+    mDefaultValues[kDelayTime] = 0.05f;        // 50ms
+    mDefaultValues[kFeedback] = 0.0f;          // 0%
+    mDefaultValues[kTempoSyncMode] = 0.0f;     // Free mode
+    mDefaultValues[kSyncDivision] = static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
+    mDefaultValues[kGrid] = static_cast<float>(kGrid_4) / (kNumGridValues - 1);
+    mDefaultValues[kGlobalDryWet] = 0.5f;      // 50%
+    mDefaultValues[kDelayBypass] = 0.0f;       // Active
+
+    // Tap parameters
+    for (int i = 0; i < 16; i++) {
+        mDefaultValues[kTap1Enable + (i * 3)] = 0.0f;   // Disabled
+        mDefaultValues[kTap1Level + (i * 3)] = 0.8f;    // 80%
+        mDefaultValues[kTap1Pan + (i * 3)] = 0.5f;      // Center
+        mDefaultValues[kTap1FilterCutoff + (i * 3)] = 0.566323334778673f; // 1kHz
+        mDefaultValues[kTap1FilterResonance + (i * 3)] = 0.5f; // Moderate
+        mDefaultValues[kTap1FilterType + (i * 3)] = 0.0f; // Bypass
+        mDefaultValues[kTap1PitchShift + i] = 0.5f;     // 0 semitones
+        mDefaultValues[kTap1FeedbackSend + i] = 0.0f;   // 0%
+    }
+
+    // Discrete parameters default to 0.0
+    for (int i = 0; i < 24; i++) {
+        mDefaultValues[kDiscrete1 + i] = 0.0f;
+    }
+
+    // Macro curve parameters default to Linear
+    for (int i = 0; i < 4; i++) {
+        mDefaultValues[kMacroCurve1Type + i] = 0.0f; // Linear
+    }
+
+    // System parameters
+    mDefaultValues[kRandomizeSeed] = 0.0f;
+    mDefaultValues[kRandomizeAmount] = 1.0f;
+    mDefaultValues[kRandomizeTrigger] = 0.0f;
+    mDefaultValues[kResetTrigger] = 0.0f;
+}
+
+//------------------------------------------------------------------------
+// MacroCurveSystem Implementation
+//------------------------------------------------------------------------
+const char* MacroCurveSystem::sCurveTypeNames[kNumCurveTypes] = {
+    "Linear", "Exponential", "Inv Exponential", "Logarithmic",
+    "Inv Logarithmic", "S-Curve", "Inv S-Curve", "Quantized"
+};
+
+MacroCurveSystem::MacroCurveSystem() {
+    // Initialize to linear curves
+    for (int i = 0; i < 4; i++) {
+        mCurveTypes[i] = kCurveType_Linear;
+    }
+}
+
+MacroCurveSystem::~MacroCurveSystem() {}
+
+void MacroCurveSystem::initialize() {
+    // Curves initialized in constructor
+}
+
+void MacroCurveSystem::setCurveType(int curveIndex, MacroCurveTypes type) {
+    if (curveIndex >= 0 && curveIndex < 4) {
+        mCurveTypes[curveIndex] = type;
+    }
+}
+
+MacroCurveTypes MacroCurveSystem::getCurveType(int curveIndex) const {
+    if (curveIndex >= 0 && curveIndex < 4) {
+        return mCurveTypes[curveIndex];
+    }
+    return kCurveType_Linear;
+}
+
+float MacroCurveSystem::evaluateCurve(MacroCurveTypes type, float input) const {
+    // Clamp input to [0.0, 1.0]
+    float x = std::max(0.0f, std::min(1.0f, input));
+
+    switch (type) {
+        case kCurveType_Linear:
+            return evaluateLinear(x);
+        case kCurveType_Exponential:
+            return evaluateExponential(x);
+        case kCurveType_InverseExp:
+            return evaluateInverseExponential(x);
+        case kCurveType_Logarithmic:
+            return evaluateLogarithmic(x);
+        case kCurveType_InverseLog:
+            return evaluateInverseLogarithmic(x);
+        case kCurveType_SCurve:
+            return evaluateSCurve(x);
+        case kCurveType_InverseSCurve:
+            return evaluateInverseSCurve(x);
+        case kCurveType_Quantized:
+            return evaluateQuantized(x);
+        default:
+            return evaluateLinear(x);
+    }
+}
+
+float MacroCurveSystem::evaluateCurve(int curveIndex, float input) const {
+    MacroCurveTypes type = getCurveType(curveIndex);
+    return evaluateCurve(type, input);
+}
+
+const char* MacroCurveSystem::getCurveTypeName(MacroCurveTypes type) const {
+    if (type >= 0 && type < kNumCurveTypes) {
+        return sCurveTypeNames[type];
+    }
+    return "Unknown";
+}
+
+float MacroCurveSystem::applyCurveToParameter(int curveIndex, float parameterValue) const {
+    return evaluateCurve(curveIndex, parameterValue);
+}
+
+float MacroCurveSystem::evaluateLinear(float x) const {
+    return x;
+}
+
+float MacroCurveSystem::evaluateExponential(float x) const {
+    return x * x;
+}
+
+float MacroCurveSystem::evaluateInverseExponential(float x) const {
+    return 1.0f - (1.0f - x) * (1.0f - x);
+}
+
+float MacroCurveSystem::evaluateLogarithmic(float x) const {
+    return std::log10(1.0f + x * 9.0f);
+}
+
+float MacroCurveSystem::evaluateInverseLogarithmic(float x) const {
+    return (std::pow(10.0f, x) - 1.0f) / 9.0f;
+}
+
+float MacroCurveSystem::evaluateSCurve(float x) const {
+    return 0.5f * (1.0f + std::tanh(4.0f * (x - 0.5f)));
+}
+
+float MacroCurveSystem::evaluateInverseSCurve(float x) const {
+    return 0.5f + 0.25f * std::atan(4.0f * (2.0f * x - 1.0f)) / std::atan(4.0f);
+}
+
+float MacroCurveSystem::evaluateQuantized(float x) const {
+    // 8 quantized steps
+    int step = static_cast<int>(x * 7.999f); // 0-7
+    return static_cast<float>(step) / 7.0f;
+}
+
+//------------------------------------------------------------------------
 WaterStickController::WaterStickController()
 {
+    // Initialize discrete parameters
+    for (int i = 0; i < 24; i++) {
+        mDiscreteParameters[i] = 0.0f;
+    }
 }
 
 //------------------------------------------------------------------------
@@ -35,6 +423,11 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     {
         return result;
     }
+
+    // Initialize backend systems
+    mRandomizationEngine.initialize();
+    mDefaultResetSystem.initialize();
+    mMacroCurveSystem.initialize();
 
     // Add parameters
     parameters.addParameter(STR16("Input Gain"), STR16("dB"), 0, 40.0/52.0,
@@ -244,6 +637,50 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kDelayBypass, 0,
                            STR16("Control"));
 
+    // Discrete control parameters (24 parameters)
+    // Use static strings for VST3 parameter names to avoid dynamic allocation issues
+    const Steinberg::Vst::TChar* discreteNames[24] = {
+        STR16("Discrete 1"), STR16("Discrete 2"), STR16("Discrete 3"), STR16("Discrete 4"),
+        STR16("Discrete 5"), STR16("Discrete 6"), STR16("Discrete 7"), STR16("Discrete 8"),
+        STR16("Discrete 9"), STR16("Discrete 10"), STR16("Discrete 11"), STR16("Discrete 12"),
+        STR16("Discrete 13"), STR16("Discrete 14"), STR16("Discrete 15"), STR16("Discrete 16"),
+        STR16("Discrete 17"), STR16("Discrete 18"), STR16("Discrete 19"), STR16("Discrete 20"),
+        STR16("Discrete 21"), STR16("Discrete 22"), STR16("Discrete 23"), STR16("Discrete 24")
+    };
+
+    for (int i = 0; i < 24; i++) {
+        parameters.addParameter(discreteNames[i], STR16("%"), 0, 0.0,
+                               Vst::ParameterInfo::kCanAutomate, kDiscrete1 + i, 0,
+                               STR16("Discrete"));
+    }
+
+    // Macro curve type parameters
+    parameters.addParameter(STR16("Macro Curve 1 Type"), nullptr, kNumCurveTypes - 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kMacroCurve1Type, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Curve 2 Type"), nullptr, kNumCurveTypes - 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kMacroCurve2Type, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Curve 3 Type"), nullptr, kNumCurveTypes - 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kMacroCurve3Type, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Curve 4 Type"), nullptr, kNumCurveTypes - 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kMacroCurve4Type, 0,
+                           STR16("Macro"));
+
+    // Randomization and reset control parameters
+    parameters.addParameter(STR16("Randomization Seed"), nullptr, 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kRandomizeSeed, 0,
+                           STR16("System"));
+    parameters.addParameter(STR16("Randomization Amount"), STR16("%"), 0, 1.0,
+                           Vst::ParameterInfo::kCanAutomate, kRandomizeAmount, 0,
+                           STR16("System"));
+    parameters.addParameter(STR16("Randomize Trigger"), nullptr, 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kRandomizeTrigger, 0,
+                           STR16("System"));
+    parameters.addParameter(STR16("Reset Trigger"), nullptr, 1, 0.0,
+                           Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kResetTrigger, 0,
+                           STR16("System"));
 
     // Initialize all parameters to their default values
     // This ensures proper display even if setComponentState is never called
@@ -1027,6 +1464,32 @@ Vst::ParamValue PLUGIN_API WaterStickController::getParamNormalized(Vst::ParamID
 tresult PLUGIN_API WaterStickController::setParamNormalized(Vst::ParamID id, Vst::ParamValue value)
 {
     tresult result = EditControllerEx1::setParamNormalized(id, value);
+
+    // Handle system triggers
+    if (id == kRandomizeTrigger && value > 0.5f) {
+        handleRandomizeTrigger();
+    } else if (id == kResetTrigger && value > 0.5f) {
+        handleResetTrigger();
+    }
+
+    // Update curve types
+    if (id >= kMacroCurve1Type && id <= kMacroCurve4Type) {
+        updateCurveTypes();
+    }
+
+    // Update discrete parameters
+    if (id >= kDiscrete1 && id <= kDiscrete24) {
+        updateDiscreteParameters();
+    }
+
+    // Update randomization settings
+    if (id == kRandomizeSeed) {
+        unsigned int seed = static_cast<unsigned int>(value * 4294967295.0); // Max uint32
+        mRandomizationEngine.setSeed(seed);
+    } else if (id == kRandomizeAmount) {
+        mRandomizationEngine.setAmount(static_cast<float>(value));
+    }
+
     return result;
 }
 
@@ -1093,8 +1556,59 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
             Steinberg::UString(string, 128).fromAscii(text);
             return kResultTrue;
         }
+        case kMacroCurve1Type:
+        case kMacroCurve2Type:
+        case kMacroCurve3Type:
+        case kMacroCurve4Type:
+        {
+            int curveType = static_cast<int>(valueNormalized * (kNumCurveTypes - 1) + 0.5);
+            if (curveType >= 0 && curveType < kNumCurveTypes) {
+                const char* curveName = mMacroCurveSystem.getCurveTypeName(static_cast<MacroCurveTypes>(curveType));
+                Steinberg::UString(string, 128).fromAscii(curveName);
+                return kResultTrue;
+            }
+            break;
+        }
+        case kRandomizeTrigger:
+        {
+            const char* text = (valueNormalized > 0.5) ? "Triggered" : "Idle";
+            Steinberg::UString(string, 128).fromAscii(text);
+            return kResultTrue;
+        }
+        case kResetTrigger:
+        {
+            const char* text = (valueNormalized > 0.5) ? "Triggered" : "Idle";
+            Steinberg::UString(string, 128).fromAscii(text);
+            return kResultTrue;
+        }
         default:
         {
+            // Handle discrete parameters
+            if (id >= kDiscrete1 && id <= kDiscrete24) {
+                float percentage = valueNormalized * 100.0f;
+                char discreteText[128];
+                snprintf(discreteText, sizeof(discreteText), "%.1f%%", percentage);
+                Steinberg::UString(string, 128).fromAscii(discreteText);
+                return kResultTrue;
+            }
+
+            // Handle randomization parameters
+            if (id == kRandomizeSeed) {
+                unsigned int seed = static_cast<unsigned int>(valueNormalized * 4294967295.0);
+                char seedText[128];
+                snprintf(seedText, sizeof(seedText), "%u", seed);
+                Steinberg::UString(string, 128).fromAscii(seedText);
+                return kResultTrue;
+            }
+
+            if (id == kRandomizeAmount) {
+                float percentage = valueNormalized * 100.0f;
+                char amountText[128];
+                snprintf(amountText, sizeof(amountText), "%.1f%%", percentage);
+                Steinberg::UString(string, 128).fromAscii(amountText);
+                return kResultTrue;
+            }
+
             // Handle per-tap pitch shift parameters
             if (id >= kTap1PitchShift && id <= kTap16PitchShift) {
                 int semitones = static_cast<int>(round((valueNormalized * 24.0) - 12.0));
@@ -1235,6 +1749,61 @@ IPlugView* PLUGIN_API WaterStickController::createView(FIDString name)
         return editor;
     }
     return nullptr;
+}
+
+//------------------------------------------------------------------------
+// System Integration Methods
+//------------------------------------------------------------------------
+void WaterStickController::handleRandomizeTrigger()
+{
+    // Reset trigger parameter to idle state
+    setParamNormalized(kRandomizeTrigger, 0.0);
+
+    // Execute randomization
+    mRandomizationEngine.randomizeAllParameters(this);
+}
+
+void WaterStickController::handleResetTrigger()
+{
+    // Reset trigger parameter to idle state
+    setParamNormalized(kResetTrigger, 0.0);
+
+    // Execute reset to defaults
+    mDefaultResetSystem.resetAllParameters(this);
+}
+
+void WaterStickController::updateCurveTypes()
+{
+    // Update macro curve system with current parameter values
+    for (int i = 0; i < 4; i++) {
+        float curveValue = getParamNormalized(kMacroCurve1Type + i);
+        int curveTypeIndex = static_cast<int>(curveValue * (kNumCurveTypes - 1) + 0.5);
+        MacroCurveTypes curveType = static_cast<MacroCurveTypes>(curveTypeIndex);
+        mMacroCurveSystem.setCurveType(i, curveType);
+    }
+}
+
+void WaterStickController::updateDiscreteParameters()
+{
+    // Update discrete parameter array with current values
+    for (int i = 0; i < 24; i++) {
+        mDiscreteParameters[i] = static_cast<float>(getParamNormalized(kDiscrete1 + i));
+    }
+}
+
+void WaterStickController::applyParameterSmoothing()
+{
+    // Apply curve evaluation to discrete parameters in real-time
+    // This method can be called from the processor for real-time parameter smoothing
+    for (int i = 0; i < 24; i++) {
+        float rawValue = mDiscreteParameters[i];
+
+        // Apply curves if assigned (example: use first 4 curves for first 4 discrete parameters)
+        if (i < 4) {
+            float curvedValue = mMacroCurveSystem.applyCurveToParameter(i, rawValue);
+            mDiscreteParameters[i] = curvedValue;
+        }
+    }
 }
 
 } // namespace WaterStick

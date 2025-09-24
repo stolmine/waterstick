@@ -117,7 +117,11 @@
       "Bash(__NEW_LINE__ echo -e \"\\n\\nBundle File Permissions:\")",
       "Bash(__NEW_LINE__ find \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\" -type f -exec ls -l {} ;)",
       "Bash(__NEW_LINE__ file \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/MacOS/WaterStick\")",
-      "Bash(\"/Users/why/repos/waterstick/build/bin/Release/validator\" \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\")"
+      "Bash(\"/Users/why/repos/waterstick/build/bin/Release/validator\" \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\")",
+      "Bash(git log:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(/Users/why/repos/waterstick/build/bin/Release/moduleinfotool:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

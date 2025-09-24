@@ -148,6 +148,41 @@ enum {
     // Global controls
     kGlobalDryWet,       // Global Dry/Wet mix (affects final output)
     kDelayBypass,        // Delay section bypass toggle
+    // Discrete control system parameters (32 parameters)
+    kDiscrete1,          // Discrete control 1 (0.0-1.0)
+    kDiscrete2,          // Discrete control 2 (0.0-1.0)
+    kDiscrete3,          // Discrete control 3 (0.0-1.0)
+    kDiscrete4,          // Discrete control 4 (0.0-1.0)
+    kDiscrete5,          // Discrete control 5 (0.0-1.0)
+    kDiscrete6,          // Discrete control 6 (0.0-1.0)
+    kDiscrete7,          // Discrete control 7 (0.0-1.0)
+    kDiscrete8,          // Discrete control 8 (0.0-1.0)
+    kDiscrete9,          // Discrete control 9 (0.0-1.0)
+    kDiscrete10,         // Discrete control 10 (0.0-1.0)
+    kDiscrete11,         // Discrete control 11 (0.0-1.0)
+    kDiscrete12,         // Discrete control 12 (0.0-1.0)
+    kDiscrete13,         // Discrete control 13 (0.0-1.0)
+    kDiscrete14,         // Discrete control 14 (0.0-1.0)
+    kDiscrete15,         // Discrete control 15 (0.0-1.0)
+    kDiscrete16,         // Discrete control 16 (0.0-1.0)
+    kDiscrete17,         // Discrete control 17 (0.0-1.0)
+    kDiscrete18,         // Discrete control 18 (0.0-1.0)
+    kDiscrete19,         // Discrete control 19 (0.0-1.0)
+    kDiscrete20,         // Discrete control 20 (0.0-1.0)
+    kDiscrete21,         // Discrete control 21 (0.0-1.0)
+    kDiscrete22,         // Discrete control 22 (0.0-1.0)
+    kDiscrete23,         // Discrete control 23 (0.0-1.0)
+    kDiscrete24,         // Discrete control 24 (0.0-1.0)
+    // Macro curve system parameters
+    kMacroCurve1Type,    // Curve type 1 (0-7)
+    kMacroCurve2Type,    // Curve type 2 (0-7)
+    kMacroCurve3Type,    // Curve type 3 (0-7)
+    kMacroCurve4Type,    // Curve type 4 (0-7)
+    // Randomization and reset controls
+    kRandomizeSeed,      // Randomization seed value
+    kRandomizeAmount,    // Randomization intensity (0.0-1.0)
+    kRandomizeTrigger,   // Trigger randomization (0=idle, 1=trigger)
+    kResetTrigger,       // Trigger reset to defaults (0=idle, 1=trigger)
     kNumParams
 };
 
@@ -199,6 +234,28 @@ enum FilterTypes {
     kFilterType_BandPass,        // Band pass filter
     kFilterType_Notch,           // Notch filter
     kNumFilterTypes
+};
+
+// Macro curve types (from Rainmaker manual)
+enum MacroCurveTypes {
+    kCurveType_Linear = 0,       // Linear curve (y = x)
+    kCurveType_Exponential,      // Exponential curve (y = x^2)
+    kCurveType_InverseExp,       // Inverse exponential curve (y = 1 - (1-x)^2)
+    kCurveType_Logarithmic,      // Logarithmic curve (y = log(1 + x*9)/log(10))
+    kCurveType_InverseLog,       // Inverse logarithmic curve (y = (10^x - 1)/9)
+    kCurveType_SCurve,          // S-curve (y = 0.5 * (1 + tanh(4*(x-0.5))))
+    kCurveType_InverseSCurve,   // Inverse S-curve (y = 0.5 + 0.25*atan(4*(2*x-1))/atan(4))
+    kCurveType_Quantized,       // Quantized/stepped curve (8 steps)
+    kNumCurveTypes
+};
+
+// Randomization constraints for different parameter types
+enum RandomizationConstraints {
+    kRandomConstraint_Full = 0,      // Full 0.0-1.0 randomization
+    kRandomConstraint_Musical,       // Musical intervals and scales
+    kRandomConstraint_Conservative,  // Limited range for stability
+    kRandomConstraint_Bipolar,      // Bipolar around center (0.5)
+    kNumRandomConstraints
 };
 
 

@@ -15,6 +15,8 @@
 #include <sstream>
 #include <iomanip>
 #include <iostream>
+#include <cstdlib>
+#include <algorithm>
 
 namespace WaterStick {
 
@@ -30,8 +32,10 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
 
     for (int i = 0; i < 8; i++) {
         modeButtons[i] = nullptr;
+        macroKnobs[i] = nullptr;
+        randomizeButtons[i] = nullptr;
+        resetButtons[i] = nullptr;
     }
-
 
     for (int i = 0; i < 16; i++) {
         minimapButtons[i] = nullptr;
@@ -80,6 +84,7 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
     // Create all content first, then position with equal margins
     createTapButtons(container);
+    createSmartHierarchy(container);
     createModeButtons(container);
     createGlobalControls(container);
     createMinimap(container);
@@ -450,6 +455,30 @@ void WaterStickEditor::updateValueReadouts()
 
 void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 {
+    // Check if this is a Smart Hierarchy control
+    auto macroKnob = dynamic_cast<MacroKnobControl*>(control);
+    if (macroKnob) {
+        // Find which macro knob this is (0-7)
+        int columnIndex = -1;
+        for (int i = 0; i < 8; i++) {
+            if (macroKnobs[i] == macroKnob) {
+                columnIndex = i;
+                break;
+            }
+        }
+        if (columnIndex >= 0) {
+            handleMacroKnobChange(columnIndex, control->getValue());
+        }
+        return;
+    }
+
+    auto actionButton = dynamic_cast<ActionButton*>(control);
+    if (actionButton) {
+        // ActionButtons are handled in their onMouseDown method
+        // No further processing needed here
+        return;
+    }
+
     // Check if this is a mode button being selected
     auto modeButton = dynamic_cast<ModeButton*>(control);
     if (modeButton && modeButton->getValue() > 0.5) {
@@ -2303,8 +2332,490 @@ void WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
     moveView(outputGainValue);
     moveView(globalDryWetValue);
 
+    // Include Smart Hierarchy controls in layout calculation
+    for (int i = 0; i < 8; i++) {
+        expandBounds(macroKnobs[i]);
+        expandBounds(randomizeButtons[i]);
+        expandBounds(resetButtons[i]);
+    }
+
     // Force invalidation of all moved views
     container->invalid();
+}
+
+void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
+{
+    // Smart Hierarchy positioning configuration
+    const int buttonSize = 53;           // Match tap button size for consistent spacing
+    const int buttonSpacing = buttonSize / 2;  // Half diameter spacing
+    const int delayMargin = 30;          // Match existing layout
+    const int gridLeft = delayMargin;    // Align to existing grid
+
+    // Y positions for the three Smart Hierarchy rows
+    const int macroKnobY = 208;         // Exact specification
+    const int randomizeButtonY = 238;   // Exact specification
+    const int resetButtonY = 258;       // Exact specification
+
+    // Control dimensions
+    const int macroKnobSize = 24;       // Exact specification
+    const int actionButtonSize = 14;    // Exact specification for R/× buttons
+
+    // Create 8 columns of Smart Hierarchy controls
+    for (int i = 0; i < 8; i++) {
+        // Calculate X position for this column (aligned with tap button columns)
+        int columnX = gridLeft + i * (buttonSize + buttonSpacing);
+
+        // Center controls within the column width
+        int macroKnobX = columnX + (buttonSize - macroKnobSize) / 2;
+        int actionButtonX = columnX + (buttonSize - actionButtonSize) / 2;
+
+        // Create Macro Knob (Row 1)
+        VSTGUI::CRect macroRect(macroKnobX, macroKnobY, macroKnobX + macroKnobSize, macroKnobY + macroKnobSize);
+        macroKnobs[i] = new MacroKnobControl(macroRect, this, -1); // Temporary tag, will be updated
+        container->addView(macroKnobs[i]);
+
+        // Create Randomize Button (Row 2)
+        VSTGUI::CRect randomizeRect(actionButtonX, randomizeButtonY, actionButtonX + actionButtonSize, randomizeButtonY + actionButtonSize);
+        randomizeButtons[i] = new ActionButton(randomizeRect, this, -1, ActionButton::Randomize, i);
+        container->addView(randomizeButtons[i]);
+
+        // Create Reset Button (Row 3)
+        VSTGUI::CRect resetRect(actionButtonX, resetButtonY, actionButtonX + actionButtonSize, resetButtonY + actionButtonSize);
+        resetButtons[i] = new ActionButton(resetRect, this, -1, ActionButton::Reset, i);
+        container->addView(resetButtons[i]);
+    }
+}
+
+//========================================================================
+// Smart Hierarchy Helper Methods
+//========================================================================
+
+void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
+{
+    if (columnIndex < 0 || columnIndex >= 8) return;
+
+    // Get the discrete position (0-7) from the normalized value
+    MacroKnobControl* knob = macroKnobs[columnIndex];
+    if (!knob) return;
+
+    int discretePos = knob->getDiscretePosition();
+
+    // Map discrete position to tap indices for this column
+    // Column 0 affects taps 1&9, Column 1 affects taps 2&10, etc.
+    int topRowTap = columnIndex;      // Taps 0-7 (display as 1-8)
+    int bottomRowTap = columnIndex + 8; // Taps 8-15 (display as 9-16)
+
+    // Apply macro value to both taps in this column based on current context
+    TapContext currentCtx = getCurrentContext();
+
+    // Get normalized value for the discrete position (0-7 maps to 0.0-1.0)
+    float normalizedValue = static_cast<float>(discretePos) / 7.0f;
+
+    // Update the tap buttons in this column
+    if (tapButtons[topRowTap]) {
+        auto topTapButton = static_cast<TapButton*>(tapButtons[topRowTap]);
+        topTapButton->setContextValue(currentCtx, normalizedValue);
+        if (topTapButton->getContext() == currentCtx) {
+            topTapButton->setValue(normalizedValue);
+            topTapButton->invalid();
+        }
+
+        // Update VST parameter
+        int paramId = getTapParameterIdForContext(topRowTap, currentCtx);
+        if (paramId >= 0) {
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(paramId, normalizedValue);
+                controller->performEdit(paramId, normalizedValue);
+            }
+        }
+    }
+
+    if (tapButtons[bottomRowTap]) {
+        auto bottomTapButton = static_cast<TapButton*>(tapButtons[bottomRowTap]);
+        bottomTapButton->setContextValue(currentCtx, normalizedValue);
+        if (bottomTapButton->getContext() == currentCtx) {
+            bottomTapButton->setValue(normalizedValue);
+            bottomTapButton->invalid();
+        }
+
+        // Update VST parameter
+        int paramId = getTapParameterIdForContext(bottomRowTap, currentCtx);
+        if (paramId >= 0) {
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(paramId, normalizedValue);
+                controller->performEdit(paramId, normalizedValue);
+            }
+        }
+    }
+}
+
+void WaterStickEditor::handleRandomizeAction(int columnIndex)
+{
+    if (columnIndex < 0 || columnIndex >= 8) return;
+
+    // Randomize both taps in this column for the current context
+    TapContext currentCtx = getCurrentContext();
+    int topRowTap = columnIndex;
+    int bottomRowTap = columnIndex + 8;
+
+    // Generate random values for both taps
+    float topRandomValue = generateRandomValue();
+    float bottomRandomValue = generateRandomValue();
+
+    // Update top row tap
+    if (tapButtons[topRowTap]) {
+        auto topTapButton = static_cast<TapButton*>(tapButtons[topRowTap]);
+        topTapButton->setContextValue(currentCtx, topRandomValue);
+        if (topTapButton->getContext() == currentCtx) {
+            topTapButton->setValue(topRandomValue);
+            topTapButton->invalid();
+        }
+
+        int paramId = getTapParameterIdForContext(topRowTap, currentCtx);
+        if (paramId >= 0) {
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(paramId, topRandomValue);
+                controller->performEdit(paramId, topRandomValue);
+            }
+        }
+    }
+
+    // Update bottom row tap
+    if (tapButtons[bottomRowTap]) {
+        auto bottomTapButton = static_cast<TapButton*>(tapButtons[bottomRowTap]);
+        bottomTapButton->setContextValue(currentCtx, bottomRandomValue);
+        if (bottomTapButton->getContext() == currentCtx) {
+            bottomTapButton->setValue(bottomRandomValue);
+            bottomTapButton->invalid();
+        }
+
+        int paramId = getTapParameterIdForContext(bottomRowTap, currentCtx);
+        if (paramId >= 0) {
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(paramId, bottomRandomValue);
+                controller->performEdit(paramId, bottomRandomValue);
+            }
+        }
+    }
+
+    // Update the macro knob to reflect the average of the randomized values
+    float averageValue = (topRandomValue + bottomRandomValue) / 2.0f;
+    if (macroKnobs[columnIndex]) {
+        macroKnobs[columnIndex]->setValue(averageValue);
+        macroKnobs[columnIndex]->invalid();
+    }
+}
+
+void WaterStickEditor::handleResetAction(int columnIndex)
+{
+    if (columnIndex < 0 || columnIndex >= 8) return;
+
+    // Reset both taps in this column to default values for current context
+    TapContext currentCtx = getCurrentContext();
+    float defaultValue = getContextDefaultValue(currentCtx);
+
+    int topRowTap = columnIndex;
+    int bottomRowTap = columnIndex + 8;
+
+    // Reset top row tap
+    if (tapButtons[topRowTap]) {
+        auto topTapButton = static_cast<TapButton*>(tapButtons[topRowTap]);
+        topTapButton->setContextValue(currentCtx, defaultValue);
+        if (topTapButton->getContext() == currentCtx) {
+            topTapButton->setValue(defaultValue);
+            topTapButton->invalid();
+        }
+
+        int paramId = getTapParameterIdForContext(topRowTap, currentCtx);
+        if (paramId >= 0) {
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(paramId, defaultValue);
+                controller->performEdit(paramId, defaultValue);
+            }
+        }
+    }
+
+    // Reset bottom row tap
+    if (tapButtons[bottomRowTap]) {
+        auto bottomTapButton = static_cast<TapButton*>(tapButtons[bottomRowTap]);
+        bottomTapButton->setContextValue(currentCtx, defaultValue);
+        if (bottomTapButton->getContext() == currentCtx) {
+            bottomTapButton->setValue(defaultValue);
+            bottomTapButton->invalid();
+        }
+
+        int paramId = getTapParameterIdForContext(bottomRowTap, currentCtx);
+        if (paramId >= 0) {
+            auto controller = getController();
+            if (controller) {
+                controller->setParamNormalized(paramId, defaultValue);
+                controller->performEdit(paramId, defaultValue);
+            }
+        }
+    }
+
+    // Update the macro knob to reflect the default value
+    if (macroKnobs[columnIndex]) {
+        macroKnobs[columnIndex]->setValue(defaultValue);
+        macroKnobs[columnIndex]->invalid();
+    }
+}
+
+float WaterStickEditor::generateRandomValue()
+{
+    // Generate random value between 0.0 and 1.0
+    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+}
+
+float WaterStickEditor::getContextDefaultValue(TapContext context)
+{
+    // Return appropriate default values for each context
+    switch (context) {
+        case TapContext::Enable:        return 0.0f;   // Disabled by default
+        case TapContext::Volume:        return 0.8f;   // 80% volume
+        case TapContext::Pan:           return 0.5f;   // Center pan
+        case TapContext::FilterCutoff:  return 1.0f;   // Full cutoff (no filtering)
+        case TapContext::FilterResonance: return 0.0f; // No resonance
+        case TapContext::FilterType:    return 0.0f;   // Bypass filter
+        case TapContext::PitchShift:    return 0.5f;   // No pitch shift (center)
+        case TapContext::FeedbackSend:  return 0.0f;   // No feedback send
+        default:                        return 0.5f;   // Safe middle value
+    }
+}
+
+//========================================================================
+// MacroKnobControl Implementation
+//========================================================================
+
+MacroKnobControl::MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+: VSTGUI::CControl(size, listener, tag)
+{
+    setMax(1.0);
+    setMin(0.0);
+    setValue(0.0);  // Default to first position
+}
+
+void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
+{
+    const VSTGUI::CRect& rect = getViewSize();
+
+    // Get discrete position (0-7)
+    int discretePos = getDiscretePosition();
+
+    // Calculate rotation angle for 8 positions
+    // Positions are evenly distributed around a circle (0-7 = 8 positions)
+    // Start at top (-90°) and go clockwise
+    const float startAngle = -90.0f; // Start at top
+    const float angleRange = 315.0f; // 7/8 of full rotation (315° instead of 360°)
+    float angle = startAngle + (discretePos * angleRange / 7.0f);
+
+    // Convert to radians
+    float angleRad = angle * M_PI / 180.0f;
+
+    // Colors matching hardware aesthetic
+    VSTGUI::CColor knobColor(35, 31, 32, 255);    // Dark knob body
+    VSTGUI::CColor dotColor(255, 255, 255, 255);  // White position dot
+
+    context->setDrawMode(VSTGUI::kAntiAliasing);
+
+    // Draw knob body (filled circle)
+    context->setFillColor(knobColor);
+    context->setFrameColor(knobColor);
+    context->setLineWidth(1.0);
+
+    VSTGUI::CRect knobRect = rect;
+    knobRect.inset(1.0, 1.0);  // Slight inset for clean edges
+    context->drawEllipse(knobRect, VSTGUI::kDrawFilled);
+
+    // Draw position indicator dot
+    VSTGUI::CPoint center = rect.getCenter();
+    float radius = (rect.getWidth() / 2.0f) - 4.0f; // Dot positioned near edge
+
+    float dotX = center.x + radius * cos(angleRad);
+    float dotY = center.y + radius * sin(angleRad);
+
+    // Draw dot as small filled circle
+    const float dotRadius = 2.0f;
+    VSTGUI::CRect dotRect(dotX - dotRadius, dotY - dotRadius, dotX + dotRadius, dotY + dotRadius);
+
+    context->setFillColor(dotColor);
+    context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
+
+    setDirty(false);
+}
+
+void MacroKnobControl::setValue(float value)
+{
+    // Quantize to discrete positions (0-7 mapped to 0.0-1.0)
+    float quantizedValue = getDiscreteValue();
+    VSTGUI::CControl::setValue(quantizedValue);
+}
+
+float MacroKnobControl::getDiscreteValue() const
+{
+    // Convert current value to discrete position and back to normalized
+    int pos = getDiscretePosition();
+    return static_cast<float>(pos) / 7.0f;
+}
+
+int MacroKnobControl::getDiscretePosition() const
+{
+    // Map normalized value (0.0-1.0) to discrete position (0-7)
+    float normalizedValue = getValue();
+    int pos = static_cast<int>(normalizedValue * 7.0f + 0.5f); // Round to nearest
+    return std::max(0, std::min(7, pos)); // Clamp to valid range
+}
+
+VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (buttons & VSTGUI::kLButton) {
+        auto currentTime = std::chrono::steady_clock::now();
+
+        // Check for double-click to reset to default
+        if (isDoubleClick(currentTime)) {
+            resetToDefaultValue();
+            if (listener) {
+                listener->valueChanged(this);
+            }
+            return VSTGUI::kMouseEventHandled;
+        }
+
+        lastClickTime = currentTime;
+        isDragging = true;
+        lastMousePos = where;
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (isDragging && (buttons & VSTGUI::kLButton)) {
+        // Calculate vertical drag distance
+        float deltaY = lastMousePos.y - where.y;
+        float sensitivity = 0.01f; // Adjust sensitivity as needed
+
+        // Update value based on drag
+        float currentValue = getValue();
+        float newValue = currentValue + (deltaY * sensitivity);
+        newValue = std::max(0.0f, std::min(1.0f, newValue)); // Clamp to 0-1
+
+        setValue(newValue);
+        invalid();
+
+        if (listener) {
+            listener->valueChanged(this);
+        }
+
+        lastMousePos = where;
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+VSTGUI::CMouseEventResult MacroKnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (isDragging) {
+        isDragging = false;
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
+bool MacroKnobControl::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
+{
+    auto timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastClickTime);
+    return timeDiff <= DOUBLE_CLICK_TIMEOUT;
+}
+
+void MacroKnobControl::resetToDefaultValue()
+{
+    setValue(0.0f); // Reset to first position
+    invalid();
+}
+
+//========================================================================
+// ActionButton Implementation
+//========================================================================
+
+ActionButton::ActionButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, ActionType type, int columnIndex)
+: VSTGUI::CControl(size, listener, tag), actionType(type), columnIndex(columnIndex)
+{
+    setMax(1.0);
+    setMin(0.0);
+}
+
+void ActionButton::draw(VSTGUI::CDrawContext* context)
+{
+    const VSTGUI::CRect& rect = getViewSize();
+
+    // Colors matching hardware aesthetic
+    VSTGUI::CColor buttonColor(35, 31, 32, 255);   // Dark button background
+    VSTGUI::CColor textColor(255, 255, 255, 255);  // White text
+    VSTGUI::CColor hoverColor(60, 56, 57, 255);    // Slightly lighter when pressed
+
+    context->setDrawMode(VSTGUI::kAntiAliasing);
+
+    // Draw button background (small square with rounded corners)
+    VSTGUI::CColor bgColor = (getValue() > 0.5f) ? hoverColor : buttonColor;
+    context->setFillColor(bgColor);
+    context->setFrameColor(buttonColor);
+    context->setLineWidth(1.0);
+
+    // Draw rounded rectangle
+    const float cornerRadius = 2.0f;
+    context->drawRoundRect(rect, cornerRadius);
+    context->fillRoundRect(rect, cornerRadius);
+
+    // Draw symbol/text centered in button
+    context->setFontColor(textColor);
+
+    // Use a small, bold font
+    auto editor = static_cast<WaterStickEditor*>(listener);
+    auto font = editor ? editor->getWorkSansFont(10.0f) : VSTGUI::kNormalFontSmall;
+
+    if (font) {
+        context->setFont(font);
+    }
+
+    // Draw appropriate symbol
+    const char* symbol = (actionType == Randomize) ? "R" : "×";
+
+    // Center the text
+    context->drawString(symbol, rect, VSTGUI::kCenterText, true);
+
+    setDirty(false);
+}
+
+VSTGUI::CMouseEventResult ActionButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (buttons & VSTGUI::kLButton) {
+        // Brief visual feedback
+        setValue(1.0f);
+        invalid();
+
+        // Trigger action via editor
+        auto editor = static_cast<WaterStickEditor*>(listener);
+        if (editor) {
+            if (actionType == Randomize) {
+                editor->handleRandomizeAction(columnIndex);
+            } else {
+                editor->handleResetAction(columnIndex);
+            }
+        }
+
+        // Reset visual state after brief delay
+        setValue(0.0f);
+        invalid();
+
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
 }
 
 

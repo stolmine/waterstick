@@ -1314,6 +1314,18 @@ WaterStickProcessor::WaterStickProcessor()
     mFeedbackSubMixerL = 0.0f;
     mFeedbackSubMixerR = 0.0f;
 
+    // Initialize discrete parameters and smoothing
+    mSmoothingCoeff = 0.999f; // Very smooth for audio-rate control
+    for (int i = 0; i < 24; i++) {
+        mDiscreteParameters[i] = 0.0f;
+        mDiscreteParametersSmoothed[i] = 0.0f;
+    }
+
+    // Initialize macro curve types
+    for (int i = 0; i < 4; i++) {
+        mMacroCurveTypes[i] = 0; // Linear curves
+    }
+
     // Initialize parameter history with current values
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < PARAM_HISTORY_SIZE; j++) {
@@ -1678,6 +1690,11 @@ void WaterStickProcessor::updateParameters()
         mTapFiltersL[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
         mTapFiltersR[i].setParameters(mTapFilterCutoff[i], mTapFilterResonance[i], mTapFilterType[i]);
     }
+
+    // Update discrete parameters with real-time curve evaluation and smoothing
+    updateDiscreteParameters();
+    applyCurveEvaluation();
+    applyParameterSmoothing();
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -1737,7 +1754,26 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             mDelayBypass = value > 0.5;
                             break;
                         default:
-                            TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);
+                            // Handle discrete parameters
+                            if (paramQueue->getParameterId() >= kDiscrete1 && paramQueue->getParameterId() <= kDiscrete24) {
+                                int index = paramQueue->getParameterId() - kDiscrete1;
+                                mDiscreteParameters[index] = static_cast<float>(value);
+                            }
+                            // Handle macro curve type parameters
+                            else if (paramQueue->getParameterId() >= kMacroCurve1Type && paramQueue->getParameterId() <= kMacroCurve4Type) {
+                                int index = paramQueue->getParameterId() - kMacroCurve1Type;
+                                mMacroCurveTypes[index] = static_cast<int>(value * (kNumCurveTypes - 1) + 0.5);
+                            }
+                            // Handle randomization and reset parameters (processed in controller)
+                            else if (paramQueue->getParameterId() == kRandomizeSeed ||
+                                    paramQueue->getParameterId() == kRandomizeAmount ||
+                                    paramQueue->getParameterId() == kRandomizeTrigger ||
+                                    paramQueue->getParameterId() == kResetTrigger) {
+                                // These are handled by the controller
+                            }
+                            else {
+                                TapParameterProcessor::processTapParameter(paramQueue->getParameterId(), value, this);
+                            }
                             break;
                     }
                 }
@@ -1967,6 +2003,84 @@ tresult WaterStickProcessor::readCurrentVersionProcessorState(IBStream* state)
 
     // Read parameters using the legacy format (same structure)
     return readLegacyProcessorState(state);
+}
+
+//------------------------------------------------------------------------
+// Real-time curve evaluation and parameter smoothing implementation
+//------------------------------------------------------------------------
+void WaterStickProcessor::updateDiscreteParameters()
+{
+    // This method is called from updateParameters() - parameters already updated from VST
+    // No additional processing needed here as parameters are updated in the main parameter switch
+}
+
+void WaterStickProcessor::applyCurveEvaluation()
+{
+    // Apply macro curves to discrete parameters for immediate response
+    for (int i = 0; i < 24; i++) {
+        float rawValue = mDiscreteParameters[i];
+
+        // Apply curves to first 4 discrete parameters using the 4 macro curves
+        if (i < 4) {
+            float curvedValue = evaluateMacroCurve(mMacroCurveTypes[i], rawValue);
+            mDiscreteParameters[i] = curvedValue;
+        }
+    }
+}
+
+void WaterStickProcessor::applyParameterSmoothing()
+{
+    // Apply sample-level smoothing for zipper-free modulation
+    for (int i = 0; i < 24; i++) {
+        float target = mDiscreteParameters[i];
+        mDiscreteParametersSmoothed[i] = mDiscreteParametersSmoothed[i] * mSmoothingCoeff + target * (1.0f - mSmoothingCoeff);
+    }
+}
+
+float WaterStickProcessor::evaluateMacroCurve(int curveType, float input) const
+{
+    // Clamp input to [0.0, 1.0]
+    float x = std::max(0.0f, std::min(1.0f, input));
+
+    switch (curveType) {
+        case 0: // Linear
+            return x;
+        case 1: // Exponential
+            return x * x;
+        case 2: // Inverse Exponential
+            return 1.0f - (1.0f - x) * (1.0f - x);
+        case 3: // Logarithmic
+            return std::log10(1.0f + x * 9.0f);
+        case 4: // Inverse Logarithmic
+            return (std::pow(10.0f, x) - 1.0f) / 9.0f;
+        case 5: // S-Curve
+            return 0.5f * (1.0f + std::tanh(4.0f * (x - 0.5f)));
+        case 6: // Inverse S-Curve
+            return 0.5f + 0.25f * std::atan(4.0f * (2.0f * x - 1.0f)) / std::atan(4.0f);
+        case 7: // Quantized
+        {
+            int step = static_cast<int>(x * 7.999f); // 0-7
+            return static_cast<float>(step) / 7.0f;
+        }
+        default:
+            return x; // Default to linear
+    }
+}
+
+float WaterStickProcessor::getSmoothedDiscreteParameter(int index) const
+{
+    if (index >= 0 && index < 24) {
+        return mDiscreteParametersSmoothed[index];
+    }
+    return 0.0f;
+}
+
+float WaterStickProcessor::getRawDiscreteParameter(int index) const
+{
+    if (index >= 0 && index < 24) {
+        return mDiscreteParameters[index];
+    }
+    return 0.0f;
 }
 
 } // namespace WaterStick

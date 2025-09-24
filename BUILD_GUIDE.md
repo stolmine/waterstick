@@ -80,6 +80,34 @@ cp -R build/VST3/Release/WaterStick.vst3 \
     "/Library/Audio/Plug-Ins/VST3/"
 ```
 
+## Critical Build Corruption Prevention
+
+### Bundle Configuration Files
+**Info.plist Requirements** (Critical for loading):
+```xml
+<!-- Required fields that MUST be populated -->
+<key>CFBundleIdentifier</key>
+<string>com.waterstick.vst3</string>
+<key>CFBundleName</key>
+<string>WaterStick</string>
+<key>CFBundleShortVersionString</key>
+<string>4.1.1</string>
+<key>NSHumanReadableCopyright</key>
+<string>© 2025 WaterStick Audio</string>
+```
+
+**moduleinfo.json Syntax** (Critical for VST3 compliance):
+- **REMOVE all trailing commas** - JSON parsers will fail
+- Common locations: "Flags" section, "Classes" arrays, nested objects
+- Validate with `python -m json.tool moduleinfo.json` before deployment
+
+### Ad-hoc Signing Fallback
+When Developer ID certificates unavailable:
+```bash
+# Proven working fallback for development
+codesign --force --deep --sign - /Library/Audio/Plug-Ins/VST3/WaterStick.vst3
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -93,8 +121,17 @@ cp -R build/VST3/Release/WaterStick.vst3 \
   - Update Xcode command-line tools
   - Verify Apple Developer account
 
-### Validation
-- Run VST3 plugin validator
+- **Build Corruption Indicators**:
+  - Empty CFBundleIdentifier or CFBundleName in Info.plist
+  - JSON syntax errors in moduleinfo.json (trailing commas)
+  - "sealed resource is missing or invalid" from Gatekeeper
+  - Plugin loads but parameters not recognized by DAW
+
+### Validation Protocol
+- **VST3 Validator**: Must pass 47/47 tests for professional deployment
+- **Parameter Count**: Verify parameters exported correctly
+- **Bundle Integrity**: Check Info.plist and moduleinfo.json syntax
+- **Code Signing Status**: Use `codesign -dv` to verify signature
 - Test in multiple DAWs
 - Verify parameter automation
 - Check CPU performance
@@ -110,4 +147,4 @@ cp -R build/VST3/Release/WaterStick.vst3 \
 - Check for audio glitches
 - Validate low-latency performance
 
-*Last Updated: 2025-09-23*
+*Last Updated: 2025-01-27 - Added critical corruption prevention knowledge*

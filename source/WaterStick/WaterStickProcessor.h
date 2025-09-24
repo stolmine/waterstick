@@ -318,6 +318,14 @@ private:
     int mSyncDivision;
     int mGrid;
 
+    // Discrete control parameters (24 parameters with real-time smoothing)
+    float mDiscreteParameters[24];
+    float mDiscreteParametersSmoothed[24];
+    float mSmoothingCoeff;
+
+    // Macro curve parameters
+    int mMacroCurveTypes[4];
+
     float mGlobalDryWet;
     bool mDelayBypass;
 
@@ -409,6 +417,17 @@ private:
 
     void updateParameters();
     void checkTempoSyncParameterChanges();
+
+    // Real-time curve evaluation and parameter smoothing
+    void updateDiscreteParameters();
+    void applyCurveEvaluation();
+    void applyParameterSmoothing();
+    float evaluateMacroCurve(int curveType, float input) const;
+
+public:
+    // Access discrete parameters with smoothing
+    float getSmoothedDiscreteParameter(int index) const;
+    float getRawDiscreteParameter(int index) const;
 };
 
 } // namespace WaterStick

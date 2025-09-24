@@ -160,6 +160,60 @@ public:
     CLASS_METHODS(BypassToggle, VSTGUI::CControl)
 };
 
+// Custom macro knob control with 8-position discrete behavior
+class MacroKnobControl : public VSTGUI::CControl
+{
+public:
+    MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    // 8-position discrete value management
+    void setValue(float value) SMTG_OVERRIDE;
+    float getDiscreteValue() const;
+    int getDiscretePosition() const;
+
+    CLASS_METHODS(MacroKnobControl, VSTGUI::CControl)
+
+private:
+    bool isDragging = false;
+    VSTGUI::CPoint lastMousePos;
+
+    // Double-click detection state
+    std::chrono::steady_clock::time_point lastClickTime;
+    static constexpr std::chrono::milliseconds DOUBLE_CLICK_TIMEOUT{400};
+
+    bool isDoubleClick(const std::chrono::steady_clock::time_point& currentTime);
+    void resetToDefaultValue();
+};
+
+// Custom action button class for R/× buttons
+class ActionButton : public VSTGUI::CControl
+{
+public:
+    enum ActionType {
+        Randomize,  // R button - randomizes current context values
+        Reset       // × button - resets current context values to defaults
+    };
+
+    ActionButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, ActionType type, int columnIndex);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    ActionType getActionType() const { return actionType; }
+    int getColumnIndex() const { return columnIndex; }
+
+    CLASS_METHODS(ActionButton, VSTGUI::CControl)
+
+private:
+    ActionType actionType;
+    int columnIndex;  // Which column (0-7) this button affects
+};
+
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
 {
 public:
@@ -209,7 +263,10 @@ private:
     // Mode button references (8 total, one under each column)
     ModeButton* modeButtons[8];
 
-    // Bypass knob controls
+    // Smart Hierarchy macro controls (8 columns × 3 rows = 24 controls)
+    MacroKnobControl* macroKnobs[8];        // Row 1: Macro knobs for each column
+    ActionButton* randomizeButtons[8];      // Row 2: Randomize buttons (R)
+    ActionButton* resetButtons[8];          // Row 3: Reset buttons (×)
 
     // Global control knobs
     KnobControl* syncModeKnob;
@@ -260,10 +317,18 @@ private:
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);
     void createModeButtons(VSTGUI::CViewContainer* container);
+    void createSmartHierarchy(VSTGUI::CViewContainer* container);
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
     void applyEqualMarginLayout(VSTGUI::CViewContainer* container);
+
+    // Smart Hierarchy helper methods
+    void handleMacroKnobChange(int columnIndex, float value);
+    void handleRandomizeAction(int columnIndex);
+    void handleResetAction(int columnIndex);
+    float generateRandomValue();
+    float getContextDefaultValue(TapContext context);
 };
 
 } // namespace WaterStick
