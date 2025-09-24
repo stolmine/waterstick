@@ -200,8 +200,8 @@ public:
     void forceParameterSynchronization();
 
 private:
-    static constexpr int kEditorWidth = 700;   // Optimized for delay-only layout
-    static constexpr int kEditorHeight = 500;  // Compact height for delay controls
+    static constexpr int kEditorWidth = 670;   // Optimized to eliminate excess whitespace while maintaining 30px margins
+    static constexpr int kEditorHeight = 440;  // Professional tight layout with proper content fit
 
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];
@@ -263,6 +263,7 @@ private:
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
+    void applyEqualMarginLayout(VSTGUI::CViewContainer* container);
 };
 
 } // namespace WaterStick

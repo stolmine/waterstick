@@ -78,10 +78,14 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     auto container = new VSTGUI::CViewContainer(frameSize);
     container->setBackgroundColor(VSTGUI::kWhiteCColor);
 
+    // Create all content first, then position with equal margins
     createTapButtons(container);
     createModeButtons(container);
     createGlobalControls(container);
     createMinimap(container);
+
+    // Apply equal margin positioning after all content is created
+    applyEqualMarginLayout(container);
 
     frame->addView(container);
 
@@ -118,7 +122,8 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
     const int gridLeft = delayMargin;  // Align to left margin within delay section
-    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+    // Center content vertically by moving up 23px from calculated position
+    const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
 
     for (int i = 0; i < 16; i++) {
         int row = i / 8;
@@ -191,11 +196,12 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
     const int gridLeft = delayMargin;  // Match repositioned tap buttons
-    const int tapGridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+    // Center content vertically by moving up 23px from calculated position
+    const int tapGridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
 
-    // Calculate mode button position
-    // Place 1.5x button spacing below the tap button grid
-    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 1.5);
+    // Calculate mode button position with improved spacing
+    // Place with increased spacing below the tap button grid for better visual hierarchy
+    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 2.2);
 
     // Calculate expanded view bounds to accommodate the rectangle (scaled by 1.75x)
     // Circle size: 53px - 5px stroke = 48px (keeping 5px stroke width)
@@ -227,10 +233,10 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
         container->addView(modeButtons[i]);
     }
 
-    // Add labels below mode buttons
-    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "PITCH", "FB SEND"};
+    // Add labels below mode buttons with optimized spacing
+    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "Pitch", "FB Send"};
     const int labelHeight = 20; // Match global control labels
-    const int labelY = modeButtonY + buttonSize + 15; // Increased gap to clear selection rectangle
+    const int labelY = modeButtonY + buttonSize + 12; // Reduced gap for tighter layout while maintaining clearance
 
     for (int i = 0; i < 8; i++) {
         const int modeButtonX = gridLeft + i * (buttonSize + buttonSpacing);
@@ -258,14 +264,16 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
 void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 {
-    const int bottomThirdTop = (kEditorHeight * 2) / 3;
+    // Center content vertically by moving up 23px from calculated position
+    const int bottomThirdTop = ((kEditorHeight * 2) / 3) - 23;
     const int knobSize = 53;
     const int buttonSize = 53;
     const int buttonSpacing = buttonSize / 2;
     const int gridWidth = 8;
     const int delayMargin = 30;
     const int tapGridLeft = delayMargin;
-    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 1.5);
+    // Increase spacing between context buttons and global controls for better visual separation
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 2.8);
     const int knobY = bottomThirdTop + modeButtonSpacing;
 
     ControlFactory factory(this, container);
@@ -622,6 +630,10 @@ void WaterStickEditor::switchToContext(TapContext newContext)
         for (int i = 0; i < 16; i++) {
             auto tapButton = static_cast<TapButton*>(tapButtons[i]);
             if (tapButton) {
+                // CRITICAL FIX: Force complete state clearing before context switch
+                // This prevents graphics artifacts from previous context (especially PitchShift)
+                tapButton->setDirty(true);
+
                 // Set the context for the button
                 tapButton->setContext(newContext);
 
@@ -639,7 +651,8 @@ void WaterStickEditor::switchToContext(TapContext newContext)
                 tapButton->setValue(paramValue);
                 tapButton->setContextValue(newContext, paramValue);
 
-                // Trigger visual update
+                // Trigger comprehensive visual update with state clearing
+                tapButton->setDirty(true);
                 tapButton->invalid();
             }
         }
@@ -1084,6 +1097,11 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             // Pitch Shift context: display numerical semitone value as text (similar to FilterType)
             // Parameter range: 0.0 = -12 semitones, 0.5 = 0 semitones, 1.0 = +12 semitones
 
+            // CRITICAL FIX: Explicit background clearing to prevent graphics persistence
+            // PitchShift context uses enlarged bounds (73px vs 53px) and must clear the entire area
+            context->setFillColor(VSTGUI::kWhiteCColor);
+            context->drawRect(rect, VSTGUI::kDrawFilled);
+
             // Convert normalized value to semitones (-12 to +12) with proper rounding
             int semitones = static_cast<int>(std::round((currentValue - 0.5) * 24.0));
 
@@ -1426,6 +1444,15 @@ void TapButton::updateViewBoundsForContext(TapContext context, WaterStickEditor*
         VSTGUI::CRect currentBounds = getViewSize();
         VSTGUI::CPoint center = currentBounds.getCenter();
 
+        // CRITICAL FIX: When shrinking from larger bounds (e.g., PitchShift 73px -> 53px),
+        // we need to ensure the parent container invalidates the larger area to clear artifacts
+        if (requiredSize < currentSize) {
+            // Force parent container to redraw the larger area before we shrink
+            if (getParentView()) {
+                getParentView()->invalid();
+            }
+        }
+
         // Calculate new bounds centered at the same position
         double halfSize = requiredSize / 2.0;
         VSTGUI::CRect newBounds(
@@ -1438,6 +1465,9 @@ void TapButton::updateViewBoundsForContext(TapContext context, WaterStickEditor*
         // Update view size
         setViewSize(newBounds);
         setMouseableArea(newBounds);
+
+        // Force complete redraw with proper state clearing
+        setDirty(true);
         invalid(); // Trigger redraw with new bounds
     }
 }
@@ -1866,7 +1896,8 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
     const int gridLeft = delayMargin;
-    const int gridTop = (upperTwoThirdsHeight - totalGridHeight) / 2;
+    // Center content vertically by moving up 23px from calculated position
+    const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
 
     // Create minimap buttons positioned relative to their corresponding tap buttons
     for (int i = 0; i < 16; i++) {
@@ -2120,6 +2151,160 @@ void WaterStickEditor::updateBypassValueDisplay()
         delayBypassValue->setText(valueText.c_str());
         delayBypassValue->invalid();
     }
+}
+
+void WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
+{
+    // Calculate the true content bounding box including ALL visual elements
+    VSTGUI::CRect contentBounds;
+    bool firstElement = true;
+
+    // Helper lambda to expand bounds to include a view
+    auto expandBounds = [&](VSTGUI::CView* view) {
+        if (view) {
+            VSTGUI::CRect viewRect = view->getViewSize();
+            if (firstElement) {
+                contentBounds = viewRect;
+                firstElement = false;
+            } else {
+                contentBounds.unite(viewRect);
+            }
+        }
+    };
+
+    // Include all minimap buttons (topmost elements)
+    for (int i = 0; i < 16; i++) {
+        expandBounds(minimapButtons[i]);
+    }
+
+    // Include all tap buttons
+    for (int i = 0; i < 16; i++) {
+        expandBounds(tapButtons[i]);
+    }
+
+    // Include all mode buttons
+    for (int i = 0; i < 8; i++) {
+        expandBounds(modeButtons[i]);
+    }
+
+    // Include all mode button labels
+    for (int i = 0; i < 8; i++) {
+        expandBounds(modeButtonLabels[i]);
+    }
+
+    // Include global controls
+    expandBounds(delayBypassToggle);
+    expandBounds(syncModeKnob);
+    expandBounds(timeDivisionKnob);
+    expandBounds(feedbackKnob);
+    expandBounds(gridKnob);
+    expandBounds(inputGainKnob);
+    expandBounds(outputGainKnob);
+    expandBounds(globalDryWetKnob);
+
+    // Include global control labels
+    expandBounds(delayBypassLabel);
+    expandBounds(syncModeLabel);
+    expandBounds(timeDivisionLabel);
+    expandBounds(feedbackLabel);
+    expandBounds(gridLabel);
+    expandBounds(inputGainLabel);
+    expandBounds(outputGainLabel);
+    expandBounds(globalDryWetLabel);
+
+    // Include global control value labels (bottommost elements)
+    expandBounds(delayBypassValue);
+    expandBounds(syncModeValue);
+    expandBounds(timeDivisionValue);
+    expandBounds(feedbackValue);
+    expandBounds(gridValue);
+    expandBounds(inputGainValue);
+    expandBounds(outputGainValue);
+    expandBounds(globalDryWetValue);
+
+    // Calculate available space and desired margins
+    const int windowWidth = kEditorWidth;
+    const int windowHeight = kEditorHeight;
+    const int contentWidth = static_cast<int>(contentBounds.getWidth());
+    const int contentHeight = static_cast<int>(contentBounds.getHeight());
+
+    // Calculate equal margins
+    const int horizontalMargin = (windowWidth - contentWidth) / 2;
+    const int verticalMargin = (windowHeight - contentHeight) / 2;
+
+    // Calculate the offset needed to center content with equal margins
+    const int currentContentLeft = static_cast<int>(contentBounds.left);
+    const int currentContentTop = static_cast<int>(contentBounds.top);
+    const int desiredContentLeft = horizontalMargin;
+    const int desiredContentTop = verticalMargin;
+
+    const int xOffset = desiredContentLeft - currentContentLeft;
+    const int yOffset = desiredContentTop - currentContentTop;
+
+    // Helper lambda to move a view by the calculated offset
+    auto moveView = [&](VSTGUI::CView* view) {
+        if (view) {
+            VSTGUI::CRect currentRect = view->getViewSize();
+            currentRect.offset(xOffset, yOffset);
+            view->setViewSize(currentRect);
+            view->setMouseableArea(currentRect);
+        }
+    };
+
+    // Apply offset to all elements
+
+    // Move minimap buttons
+    for (int i = 0; i < 16; i++) {
+        moveView(minimapButtons[i]);
+    }
+
+    // Move tap buttons
+    for (int i = 0; i < 16; i++) {
+        moveView(tapButtons[i]);
+    }
+
+    // Move mode buttons
+    for (int i = 0; i < 8; i++) {
+        moveView(modeButtons[i]);
+    }
+
+    // Move mode button labels
+    for (int i = 0; i < 8; i++) {
+        moveView(modeButtonLabels[i]);
+    }
+
+    // Move global controls
+    moveView(delayBypassToggle);
+    moveView(syncModeKnob);
+    moveView(timeDivisionKnob);
+    moveView(feedbackKnob);
+    moveView(gridKnob);
+    moveView(inputGainKnob);
+    moveView(outputGainKnob);
+    moveView(globalDryWetKnob);
+
+    // Move global control labels
+    moveView(delayBypassLabel);
+    moveView(syncModeLabel);
+    moveView(timeDivisionLabel);
+    moveView(feedbackLabel);
+    moveView(gridLabel);
+    moveView(inputGainLabel);
+    moveView(outputGainLabel);
+    moveView(globalDryWetLabel);
+
+    // Move global control value labels
+    moveView(delayBypassValue);
+    moveView(syncModeValue);
+    moveView(timeDivisionValue);
+    moveView(feedbackValue);
+    moveView(gridValue);
+    moveView(inputGainValue);
+    moveView(outputGainValue);
+    moveView(globalDryWetValue);
+
+    // Force invalidation of all moved views
+    container->invalid();
 }
 
 
