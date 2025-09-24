@@ -2603,13 +2603,13 @@ float WaterStickEditor::generateRandomValue()
 
 float WaterStickEditor::getContextDefaultValue(TapContext context)
 {
-    // Return appropriate default values for each context
+    // Return appropriate default values for each context - match VST parameter initialization defaults
     switch (context) {
         case TapContext::Enable:        return 0.0f;   // Disabled by default
         case TapContext::Volume:        return 0.8f;   // 80% volume
         case TapContext::Pan:           return 0.5f;   // Center pan
-        case TapContext::FilterCutoff:  return 1.0f;   // Full cutoff (no filtering)
-        case TapContext::FilterResonance: return 0.0f; // No resonance
+        case TapContext::FilterCutoff:  return 0.566323334778673f;   // 1kHz (matches VST parameter default)
+        case TapContext::FilterResonance: return 0.5f; // Moderate resonance (matches VST parameter default)
         case TapContext::FilterType:    return 0.0f;   // Bypass filter
         case TapContext::PitchShift:    return 0.5f;   // No pitch shift (center)
         case TapContext::FeedbackSend:  return 0.0f;   // No feedback send
