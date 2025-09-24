@@ -543,6 +543,66 @@ void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTa
     }
 }
 
+void MacroCurveSystem::applyGlobalMacroCurveWithType(int discretePosition, int currentTapContext, MacroCurveTypes curveType, WaterStickController* controller) const {
+    if (!controller || discretePosition < 0 || discretePosition > 7) return;
+
+    // Apply specified curve type to all 16 taps based on current context
+    for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
+        float curveValue = getCurveValueForTapWithType(curveType, tapIndex);
+
+        // Get the appropriate parameter ID based on context and tap index
+        Steinberg::Vst::ParamID paramId = -1;
+
+        switch (currentTapContext) {
+            case 0: // TapContext::Enable
+                paramId = kTap1Enable + (tapIndex * 3);
+                break;
+            case 1: // TapContext::Volume
+                paramId = kTap1Level + (tapIndex * 3);
+                break;
+            case 2: // TapContext::Pan
+                paramId = kTap1Pan + (tapIndex * 3);
+                break;
+            case 3: // TapContext::FilterCutoff
+                paramId = kTap1FilterCutoff + (tapIndex * 3);
+                break;
+            case 4: // TapContext::FilterResonance
+                paramId = kTap1FilterResonance + (tapIndex * 3);
+                break;
+            case 5: // TapContext::FilterType
+                paramId = kTap1FilterType + (tapIndex * 3);
+                // For filter type, quantize to valid discrete values (0-4)
+                curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                break;
+            case 6: // TapContext::PitchShift
+                paramId = kTap1PitchShift + tapIndex;
+                // For pitch shift, map to bipolar range (-1.0 to +1.0)
+                curveValue = (curveValue * 2.0f) - 1.0f;
+                break;
+            case 7: // TapContext::FeedbackSend
+                paramId = kTap1FeedbackSend + tapIndex;
+                break;
+            default:
+                continue;
+        }
+
+        // Apply the curve value to the parameter
+        if (paramId >= 0) {
+            controller->setParamNormalized(paramId, curveValue);
+            controller->performEdit(paramId, curveValue);
+        }
+    }
+}
+
+float MacroCurveSystem::getCurveValueForTapWithType(MacroCurveTypes curveType, int tapIndex) const {
+    if (tapIndex < 0 || tapIndex >= 16) return 0.0f;
+
+    // Normalize tap index to 0.0-1.0 for curve evaluation
+    const float normalizedPosition = static_cast<float>(tapIndex) / 15.0f; // 0-15 maps to 0.0-1.0
+
+    return evaluateCurve(curveType, normalizedPosition);
+}
+
 const char* MacroCurveSystem::getRainmakerCurveName(int discretePosition) const {
     if (discretePosition >= 0 && discretePosition < 8) {
         return sRainmakerCurveNames[discretePosition];

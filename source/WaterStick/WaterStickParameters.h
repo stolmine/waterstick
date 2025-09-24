@@ -178,6 +178,15 @@ enum {
     kMacroCurve2Type,    // Curve type 2 (0-7)
     kMacroCurve3Type,    // Curve type 3 (0-7)
     kMacroCurve4Type,    // Curve type 4 (0-7)
+    // Macro knob parameters
+    kMacroKnob1,         // Macro knob 1 (0.0-1.0)
+    kMacroKnob2,         // Macro knob 2 (0.0-1.0)
+    kMacroKnob3,         // Macro knob 3 (0.0-1.0)
+    kMacroKnob4,         // Macro knob 4 (0.0-1.0)
+    kMacroKnob5,         // Macro knob 5 (0.0-1.0)
+    kMacroKnob6,         // Macro knob 6 (0.0-1.0)
+    kMacroKnob7,         // Macro knob 7 (0.0-1.0)
+    kMacroKnob8,         // Macro knob 8 (0.0-1.0)
     // Randomization and reset controls
     kRandomizeSeed,      // Randomization seed value
     kRandomizeAmount,    // Randomization intensity (0.0-1.0)
