@@ -81,6 +81,24 @@ public:
     // Apply curves to parameter values in real-time
     float applyCurveToParameter(int curveIndex, float parameterValue) const;
 
+    // Rainmaker-style global macro curve application across all 16 taps
+    void applyGlobalMacroCurve(int discretePosition, int currentTapContext, class WaterStickController* controller) const;
+
+    // Enhanced global macro curve application with specific curve type
+    void applyGlobalMacroCurveWithType(int discretePosition, int currentTapContext, MacroCurveTypes curveType, class WaterStickController* controller) const;
+
+    // Get curve value for specific tap index in global application (0-15 for 16 taps)
+    float getGlobalCurveValueForTap(int discretePosition, int tapIndex) const;
+
+    // Get curve value for specific tap index using a specific curve type
+    float getCurveValueForTapWithType(MacroCurveTypes curveType, int tapIndex) const;
+
+    // Get uniform level for positions 6-7
+    float getUniformLevel(int discretePosition) const;
+
+    // Get Rainmaker-style curve name for UI display
+    const char* getRainmakerCurveName(int discretePosition) const;
+
 private:
     MacroCurveTypes mCurveTypes[4]; // 4 macro curves
 
@@ -94,7 +112,16 @@ private:
     float evaluateInverseSCurve(float x) const;
     float evaluateQuantized(float x) const;
 
+    // Rainmaker-style curve implementations for global application
+    float evaluateRampUp(float x) const;          // Position 0: Linear ramp up
+    float evaluateRampDown(float x) const;        // Position 1: Linear ramp down
+    float evaluateSigmoidSCurve(float x) const;   // Position 2: S-curve sigmoid
+    float evaluateInverseSigmoid(float x) const;  // Position 3: S-curve inverted
+    float evaluateExpUp(float x) const;           // Position 4: Exponential up
+    float evaluateExpDown(float x) const;         // Position 5: Exponential down
+
     static const char* sCurveTypeNames[kNumCurveTypes];
+    static const char* sRainmakerCurveNames[8]; // Names for Rainmaker-style macro curves
 };
 
 class WaterStickController : public Steinberg::Vst::EditControllerEx1
@@ -159,6 +186,7 @@ private:
     void handleRandomizeTrigger();
     void handleResetTrigger();
     void updateCurveTypes();
+    void handleMacroKnobParameterChange(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value);
 
     // Discrete parameter management
     float mDiscreteParameters[24];

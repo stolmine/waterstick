@@ -282,6 +282,16 @@ void DefaultResetSystem::buildDefaultValueMap() {
         mDefaultValues[kMacroCurve1Type + i] = 0.0f; // Linear
     }
 
+    // Macro knob parameters
+    mDefaultValues[kMacroKnob1] = 0.0f;
+    mDefaultValues[kMacroKnob2] = 0.0f;
+    mDefaultValues[kMacroKnob3] = 0.0f;
+    mDefaultValues[kMacroKnob4] = 0.0f;
+    mDefaultValues[kMacroKnob5] = 0.0f;
+    mDefaultValues[kMacroKnob6] = 0.0f;
+    mDefaultValues[kMacroKnob7] = 0.0f;
+    mDefaultValues[kMacroKnob8] = 0.0f;
+
     // System parameters
     mDefaultValues[kRandomizeSeed] = 0.0f;
     mDefaultValues[kRandomizeAmount] = 1.0f;
@@ -295,6 +305,18 @@ void DefaultResetSystem::buildDefaultValueMap() {
 const char* MacroCurveSystem::sCurveTypeNames[kNumCurveTypes] = {
     "Linear", "Exponential", "Inv Exponential", "Logarithmic",
     "Inv Logarithmic", "S-Curve", "Inv S-Curve", "Quantized"
+};
+
+// Rainmaker-style macro curve names for positions 0-7
+const char* MacroCurveSystem::sRainmakerCurveNames[8] = {
+    "Ramp Up",         // Position 0: Linear ramp up (tap 1=0%, tap 16=100%)
+    "Ramp Down",       // Position 1: Linear ramp down (tap 1=100%, tap 16=0%)
+    "S-Curve",         // Position 2: S-curve sigmoid (smooth acceleration/deceleration)
+    "S-Curve Inv",     // Position 3: Inverted S-curve
+    "Exp Up",          // Position 4: Exponential up (slow start, fast finish)
+    "Exp Down",        // Position 5: Exponential down (fast start, slow finish)
+    "Level 70%",       // Position 6: Uniform level at 70%
+    "Level 90%"        // Position 7: Uniform level at 90%
 };
 
 MacroCurveSystem::MacroCurveSystem() {
@@ -397,6 +419,135 @@ float MacroCurveSystem::evaluateQuantized(float x) const {
     // 8 quantized steps
     int step = static_cast<int>(x * 7.999f); // 0-7
     return static_cast<float>(step) / 7.0f;
+}
+
+// Rainmaker-style global curve implementations
+float MacroCurveSystem::evaluateRampUp(float x) const {
+    // Linear ascending: tap 1 = 0%, tap 16 = 100%
+    return x;
+}
+
+float MacroCurveSystem::evaluateRampDown(float x) const {
+    // Linear descending: tap 1 = 100%, tap 16 = 0%
+    return 1.0f - x;
+}
+
+float MacroCurveSystem::evaluateSigmoidSCurve(float x) const {
+    // Professional S-curve sigmoid with smooth acceleration/deceleration
+    // Using tanh-based sigmoid for smooth transitions
+    const float steepness = 6.0f; // Professional steepness for audio applications
+    return 0.5f * (1.0f + std::tanh(steepness * (x - 0.5f)));
+}
+
+float MacroCurveSystem::evaluateInverseSigmoid(float x) const {
+    // Inverse sigmoid curve - inverse of the S-curve
+    const float steepness = 6.0f;
+    return 1.0f - (0.5f * (1.0f + std::tanh(steepness * (x - 0.5f))));
+}
+
+float MacroCurveSystem::evaluateExpUp(float x) const {
+    // Exponential up: slow start, fast finish
+    return x * x * x; // Cubic curve for professional feel
+}
+
+float MacroCurveSystem::evaluateExpDown(float x) const {
+    // Exponential down: fast start, slow finish
+    const float invX = 1.0f - x;
+    return 1.0f - (invX * invX * invX);
+}
+
+float MacroCurveSystem::getGlobalCurveValueForTap(int discretePosition, int tapIndex) const {
+    if (tapIndex < 0 || tapIndex >= 16) return 0.0f;
+
+    // Normalize tap index to 0.0-1.0 for curve evaluation
+    const float normalizedPosition = static_cast<float>(tapIndex) / 15.0f; // 0-15 maps to 0.0-1.0
+
+    switch (discretePosition) {
+        case 0: // Ramp up curve
+            return evaluateRampUp(normalizedPosition);
+        case 1: // Ramp down curve
+            return evaluateRampDown(normalizedPosition);
+        case 2: // S-curve sigmoid
+            return evaluateSigmoidSCurve(normalizedPosition);
+        case 3: // S-curve inverted
+            return evaluateInverseSigmoid(normalizedPosition);
+        case 4: // Exponential up
+            return evaluateExpUp(normalizedPosition);
+        case 5: // Exponential down
+            return evaluateExpDown(normalizedPosition);
+        case 6: // Uniform level 70%
+            return 0.7f;
+        case 7: // Uniform level 90%
+            return 0.9f;
+        default:
+            return 0.0f;
+    }
+}
+
+float MacroCurveSystem::getUniformLevel(int discretePosition) const {
+    switch (discretePosition) {
+        case 6: return 0.7f; // 70% uniform level
+        case 7: return 0.9f; // 90% uniform level
+        default: return 0.0f;
+    }
+}
+
+void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTapContext, WaterStickController* controller) const {
+    if (!controller || discretePosition < 0 || discretePosition > 7) return;
+
+    // Apply curve to all 16 taps based on current context
+    for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
+        float curveValue = getGlobalCurveValueForTap(discretePosition, tapIndex);
+
+        // Get the appropriate parameter ID based on context and tap index
+        Steinberg::Vst::ParamID paramId = -1;
+
+        switch (currentTapContext) {
+            case 0: // TapContext::Enable
+                paramId = kTap1Enable + (tapIndex * 3);
+                break;
+            case 1: // TapContext::Volume
+                paramId = kTap1Level + (tapIndex * 3);
+                break;
+            case 2: // TapContext::Pan
+                paramId = kTap1Pan + (tapIndex * 3);
+                break;
+            case 3: // TapContext::FilterCutoff
+                paramId = kTap1FilterCutoff + (tapIndex * 3);
+                break;
+            case 4: // TapContext::FilterResonance
+                paramId = kTap1FilterResonance + (tapIndex * 3);
+                break;
+            case 5: // TapContext::FilterType
+                paramId = kTap1FilterType + (tapIndex * 3);
+                // For filter type, quantize to valid discrete values (0-4)
+                curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                break;
+            case 6: // TapContext::PitchShift
+                paramId = kTap1PitchShift + tapIndex;
+                // For pitch shift, map to bipolar range (-1.0 to +1.0)
+                curveValue = (curveValue * 2.0f) - 1.0f;
+                break;
+            case 7: // TapContext::FeedbackSend
+                paramId = kTap1FeedbackSend + tapIndex;
+                break;
+            default:
+                continue;
+        }
+
+        // Apply the curve value to the parameter
+        if (paramId >= 0) {
+            controller->setParamNormalized(paramId, curveValue);
+            controller->performEdit(paramId, curveValue);
+        }
+    }
+}
+
+const char* MacroCurveSystem::getRainmakerCurveName(int discretePosition) const {
+    if (discretePosition >= 0 && discretePosition < 8) {
+        return sRainmakerCurveNames[discretePosition];
+    }
+    return "Unknown";
 }
 
 //------------------------------------------------------------------------
@@ -666,6 +817,32 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
                            STR16("Macro"));
     parameters.addParameter(STR16("Macro Curve 4 Type"), nullptr, kNumCurveTypes - 1, 0.0,
                            Vst::ParameterInfo::kCanAutomate | Vst::ParameterInfo::kIsList, kMacroCurve4Type, 0,
+                           STR16("Macro"));
+
+    // Macro knob parameters - global curve controls
+    parameters.addParameter(STR16("Macro Knob 1"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob1, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 2"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob2, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 3"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob3, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 4"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob4, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 5"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob5, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 6"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob6, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 7"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob7, 0,
+                           STR16("Macro"));
+    parameters.addParameter(STR16("Macro Knob 8"), STR16("%"), 0, 0.0,
+                           Vst::ParameterInfo::kCanAutomate, kMacroKnob8, 0,
                            STR16("Macro"));
 
     // Randomization and reset control parameters
@@ -1482,6 +1659,11 @@ tresult PLUGIN_API WaterStickController::setParamNormalized(Vst::ParamID id, Vst
         updateDiscreteParameters();
     }
 
+    // Handle macro knob parameter changes for automation support
+    if (id >= kMacroKnob1 && id <= kMacroKnob8) {
+        handleMacroKnobParameterChange(id, value);
+    }
+
     // Update randomization settings
     if (id == kRandomizeSeed) {
         unsigned int seed = static_cast<unsigned int>(value * 4294967295.0); // Max uint32
@@ -1583,6 +1765,15 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
         }
         default:
         {
+            // Handle macro knob parameters
+            if (id >= kMacroKnob1 && id <= kMacroKnob8) {
+                float percentage = valueNormalized * 100.0f;
+                char macroText[128];
+                snprintf(macroText, sizeof(macroText), "%.1f%%", percentage);
+                Steinberg::UString(string, 128).fromAscii(macroText);
+                return kResultTrue;
+            }
+
             // Handle discrete parameters
             if (id >= kDiscrete1 && id <= kDiscrete24) {
                 float percentage = valueNormalized * 100.0f;
@@ -1781,6 +1972,29 @@ void WaterStickController::updateCurveTypes()
         MacroCurveTypes curveType = static_cast<MacroCurveTypes>(curveTypeIndex);
         mMacroCurveSystem.setCurveType(i, curveType);
     }
+}
+
+void WaterStickController::handleMacroKnobParameterChange(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
+{
+    // Convert parameter ID to macro knob index (0-7)
+    int macroKnobIndex = static_cast<int>(paramId - kMacroKnob1);
+    if (macroKnobIndex < 0 || macroKnobIndex >= 8) return;
+
+    // For DAW automation, we need to trigger the global macro curve application
+    // Since we don't have direct access to current GUI context here, we could:
+    // 1. Store the last context and apply to that context
+    // 2. Apply to all contexts (less desirable)
+    // 3. Apply only when a specific context is set
+    // For now, we'll apply to the Volume context as a default for automation
+
+    // Note: The specific curve type is determined by the discrete position in the new system
+
+    // Convert normalized value (0.0-1.0) to discrete position (0-7)
+    int discretePosition = static_cast<int>(value * 7.0f + 0.5f);
+    if (discretePosition > 7) discretePosition = 7;
+
+    // Apply to Volume context (TapContext::Volume = 1) as default for automation
+    mMacroCurveSystem.applyGlobalMacroCurve(discretePosition, 1, this);
 }
 
 void WaterStickController::updateDiscreteParameters()

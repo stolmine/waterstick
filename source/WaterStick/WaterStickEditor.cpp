@@ -1,4 +1,5 @@
 #include "WaterStickEditor.h"
+#include "WaterStickController.h"
 #include "WaterStickParameters.h"
 #include "WaterStickLogger.h"
 #include "ControlFactory.h"
@@ -2401,7 +2402,7 @@ void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
 
         // Create Macro Knob (Triangle Top)
         VSTGUI::CRect macroRect(macroKnobX, macroKnobY, macroKnobX + macroKnobSize, macroKnobY + macroKnobSize);
-        macroKnobs[i] = new MacroKnobControl(macroRect, this, -1); // Temporary tag, will be updated
+        macroKnobs[i] = new MacroKnobControl(macroRect, this, kMacroKnob1 + i);
         container->addView(macroKnobs[i]);
 
         // Create Randomize Button (Triangle Bottom Left)
@@ -2429,14 +2430,25 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     if (!knob) return;
 
     int discretePos = knob->getDiscretePosition();
-
-    // Map discrete position to tap indices for this column
-    // Column 0 affects taps 1&9, Column 1 affects taps 2&10, etc.
-    int topRowTap = columnIndex;      // Taps 0-7 (display as 1-8)
-    int bottomRowTap = columnIndex + 8; // Taps 8-15 (display as 9-16)
-
-    // Apply macro value to both taps in this column based on current context
     TapContext currentCtx = getCurrentContext();
+
+    // Check if this is the global macro knob (column 0) or a regular column knob
+    if (columnIndex == 0) {
+        // Apply Rainmaker-style global macro curve across all 16 taps
+        handleGlobalMacroKnobChange(discretePos, currentCtx);
+        return;
+    }
+
+    // Legacy column-based behavior for columns 1-7
+    // Map discrete position to tap indices for this column
+    // Column 1 affects taps 1&9, Column 2 affects taps 2&10, etc.
+    int topRowTap = columnIndex - 1;      // Taps 0-6 (display as 1-7)
+    int bottomRowTap = columnIndex + 7;   // Taps 8-14 (display as 9-15)
+
+    // Ensure valid tap indices
+    if (topRowTap < 0 || topRowTap >= 16 || bottomRowTap < 0 || bottomRowTap >= 16) {
+        return;
+    }
 
     // Get normalized value for the discrete position (0-7 maps to 0.0-1.0)
     float normalizedValue = static_cast<float>(discretePos) / 7.0f;
@@ -2481,118 +2493,134 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     }
 }
 
+void WaterStickEditor::handleGlobalMacroKnobChange(int discretePosition, TapContext currentCtx)
+{
+    auto controller = getController();
+    if (!controller) return;
+
+    auto waterStickController = dynamic_cast<WaterStickController*>(controller);
+    if (!waterStickController) return;
+
+    // Apply Rainmaker-style global macro curve using the MacroCurveSystem
+    auto& macroCurveSystem = waterStickController->getMacroCurveSystem();
+    macroCurveSystem.applyGlobalMacroCurve(discretePosition, static_cast<int>(currentCtx), waterStickController);
+
+    // Update all tap button visuals to reflect the curve application
+    for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
+        if (tapButtons[tapIndex]) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
+
+            // Get the curve value for this tap
+            float curveValue = macroCurveSystem.getGlobalCurveValueForTap(discretePosition, tapIndex);
+
+            // Apply context-specific value adjustments for display
+            switch (currentCtx) {
+                case TapContext::FilterType:
+                    // For filter type, quantize to valid discrete values (0-4)
+                    curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                    break;
+                case TapContext::PitchShift:
+                    // For pitch shift, map to bipolar range (-1.0 to +1.0)
+                    curveValue = (curveValue * 2.0f) - 1.0f;
+                    break;
+                default:
+                    // Other contexts use the curve value directly
+                    break;
+            }
+
+            // Update the tap button's context value and display
+            tapButton->setContextValue(currentCtx, curveValue);
+            if (tapButton->getContext() == currentCtx) {
+                tapButton->setValue(curveValue);
+                tapButton->invalid();
+            }
+        }
+    }
+
+    // Update all macro knobs to show the global curve has been applied
+    // Set non-global knobs to neutral position to indicate global mode
+    for (int i = 1; i < 8; i++) {
+        if (macroKnobs[i]) {
+            macroKnobs[i]->setValue(0.5f); // Neutral position
+            macroKnobs[i]->invalid();
+        }
+    }
+}
+
 void WaterStickEditor::handleRandomizeAction(int columnIndex)
 {
-    if (columnIndex < 0 || columnIndex >= 8) return;
-
-    // Randomize both taps in this column for the current context
+    // Global randomization across all 16 taps in current context
     TapContext currentCtx = getCurrentContext();
-    int topRowTap = columnIndex;
-    int bottomRowTap = columnIndex + 8;
 
-    // Generate random values for both taps
-    float topRandomValue = generateRandomValue();
-    float bottomRandomValue = generateRandomValue();
+    float totalRandomValue = 0.0f;
 
-    // Update top row tap
-    if (tapButtons[topRowTap]) {
-        auto topTapButton = static_cast<TapButton*>(tapButtons[topRowTap]);
-        topTapButton->setContextValue(currentCtx, topRandomValue);
-        if (topTapButton->getContext() == currentCtx) {
-            topTapButton->setValue(topRandomValue);
-            topTapButton->invalid();
-        }
+    // Randomize all 16 taps
+    for (int tapIndex = 0; tapIndex < 16; ++tapIndex) {
+        float randomValue = generateRandomValue();
+        totalRandomValue += randomValue;
 
-        int paramId = getTapParameterIdForContext(topRowTap, currentCtx);
-        if (paramId >= 0) {
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(paramId, topRandomValue);
-                controller->performEdit(paramId, topRandomValue);
+        if (tapButtons[tapIndex]) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
+            tapButton->setContextValue(currentCtx, randomValue);
+            if (tapButton->getContext() == currentCtx) {
+                tapButton->setValue(randomValue);
+                tapButton->invalid();
+            }
+
+            int paramId = getTapParameterIdForContext(tapIndex, currentCtx);
+            if (paramId >= 0) {
+                auto controller = getController();
+                if (controller) {
+                    controller->setParamNormalized(paramId, randomValue);
+                    controller->performEdit(paramId, randomValue);
+                }
             }
         }
     }
 
-    // Update bottom row tap
-    if (tapButtons[bottomRowTap]) {
-        auto bottomTapButton = static_cast<TapButton*>(tapButtons[bottomRowTap]);
-        bottomTapButton->setContextValue(currentCtx, bottomRandomValue);
-        if (bottomTapButton->getContext() == currentCtx) {
-            bottomTapButton->setValue(bottomRandomValue);
-            bottomTapButton->invalid();
+    // Update all macro knobs to reflect the global average
+    float globalAverageValue = totalRandomValue / 16.0f;
+    for (int i = 0; i < 8; ++i) {
+        if (macroKnobs[i]) {
+            macroKnobs[i]->setValue(globalAverageValue);
+            macroKnobs[i]->invalid();
         }
-
-        int paramId = getTapParameterIdForContext(bottomRowTap, currentCtx);
-        if (paramId >= 0) {
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(paramId, bottomRandomValue);
-                controller->performEdit(paramId, bottomRandomValue);
-            }
-        }
-    }
-
-    // Update the macro knob to reflect the average of the randomized values
-    float averageValue = (topRandomValue + bottomRandomValue) / 2.0f;
-    if (macroKnobs[columnIndex]) {
-        macroKnobs[columnIndex]->setValue(averageValue);
-        macroKnobs[columnIndex]->invalid();
     }
 }
 
 void WaterStickEditor::handleResetAction(int columnIndex)
 {
-    if (columnIndex < 0 || columnIndex >= 8) return;
-
-    // Reset both taps in this column to default values for current context
+    // Global reset across all 16 taps to default values for current context
     TapContext currentCtx = getCurrentContext();
     float defaultValue = getContextDefaultValue(currentCtx);
 
-    int topRowTap = columnIndex;
-    int bottomRowTap = columnIndex + 8;
+    // Reset all 16 taps
+    for (int tapIndex = 0; tapIndex < 16; ++tapIndex) {
+        if (tapButtons[tapIndex]) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
+            tapButton->setContextValue(currentCtx, defaultValue);
+            if (tapButton->getContext() == currentCtx) {
+                tapButton->setValue(defaultValue);
+                tapButton->invalid();
+            }
 
-    // Reset top row tap
-    if (tapButtons[topRowTap]) {
-        auto topTapButton = static_cast<TapButton*>(tapButtons[topRowTap]);
-        topTapButton->setContextValue(currentCtx, defaultValue);
-        if (topTapButton->getContext() == currentCtx) {
-            topTapButton->setValue(defaultValue);
-            topTapButton->invalid();
-        }
-
-        int paramId = getTapParameterIdForContext(topRowTap, currentCtx);
-        if (paramId >= 0) {
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(paramId, defaultValue);
-                controller->performEdit(paramId, defaultValue);
+            int paramId = getTapParameterIdForContext(tapIndex, currentCtx);
+            if (paramId >= 0) {
+                auto controller = getController();
+                if (controller) {
+                    controller->setParamNormalized(paramId, defaultValue);
+                    controller->performEdit(paramId, defaultValue);
+                }
             }
         }
     }
 
-    // Reset bottom row tap
-    if (tapButtons[bottomRowTap]) {
-        auto bottomTapButton = static_cast<TapButton*>(tapButtons[bottomRowTap]);
-        bottomTapButton->setContextValue(currentCtx, defaultValue);
-        if (bottomTapButton->getContext() == currentCtx) {
-            bottomTapButton->setValue(defaultValue);
-            bottomTapButton->invalid();
+    // Update all macro knobs to reflect the global default value
+    for (int i = 0; i < 8; ++i) {
+        if (macroKnobs[i]) {
+            macroKnobs[i]->setValue(defaultValue);
+            macroKnobs[i]->invalid();
         }
-
-        int paramId = getTapParameterIdForContext(bottomRowTap, currentCtx);
-        if (paramId >= 0) {
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(paramId, defaultValue);
-                controller->performEdit(paramId, defaultValue);
-            }
-        }
-    }
-
-    // Update the macro knob to reflect the default value
-    if (macroKnobs[columnIndex]) {
-        macroKnobs[columnIndex]->setValue(defaultValue);
-        macroKnobs[columnIndex]->invalid();
     }
 }
 

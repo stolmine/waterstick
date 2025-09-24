@@ -9,8 +9,9 @@
 
 namespace WaterStick {
 
-// Forward declaration
+// Forward declarations
 class WaterStickEditor;
+class WaterStickController;
 
 // Enum for different tap contexts
 enum class TapContext {
@@ -255,6 +256,7 @@ public:
 
     // Smart Hierarchy helper methods (public for ActionButton access)
     void handleMacroKnobChange(int columnIndex, float value);
+    void handleGlobalMacroKnobChange(int discretePosition, TapContext currentCtx);
     void handleRandomizeAction(int columnIndex);
     void handleResetAction(int columnIndex);
     float generateRandomValue();
