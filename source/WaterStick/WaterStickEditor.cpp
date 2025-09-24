@@ -481,8 +481,8 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 
     auto actionButton = dynamic_cast<ActionButton*>(control);
     if (actionButton) {
-        // ActionButtons are handled in their onMouseDown method
-        // No further processing needed here
+        // DIAGNOSTIC: This should no longer occur after fixing setValue issue
+        printf("[ActionButton] ERROR: ActionButton triggered valueChanged - this should not happen after fix\n");
         return;
     }
 
@@ -2417,6 +2417,11 @@ void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
         // Create Macro Knob (Triangle Top)
         VSTGUI::CRect macroRect(macroKnobX, macroKnobY, macroKnobX + macroKnobSize, macroKnobY + macroKnobSize);
         macroKnobs[i] = new MacroKnobControl(macroRect, this, kMacroKnob1 + i);
+
+        // Assign specific context to each macro knob for control isolation
+        TapContext assignedContext = static_cast<TapContext>(i);
+        macroKnobs[i]->setAssignedContext(assignedContext);
+
         container->addView(macroKnobs[i]);
 
         // Create Randomize Button (Triangle Bottom Left)
@@ -2444,7 +2449,9 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     if (!knob) return;
 
     int discretePos = knob->getDiscretePosition();
-    TapContext currentCtx = getCurrentContext();
+
+    // CONTEXT ISOLATION: Use the knob's assigned context instead of current active context
+    TapContext assignedCtx = knob->getAssignedContext();
 
     auto controller = getController();
     if (!controller) return;
@@ -2452,16 +2459,13 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     auto waterStickController = dynamic_cast<WaterStickController*>(controller);
     if (!waterStickController) return;
 
-    // Synchronize the current context with the controller
-    waterStickController->setCurrentTapContext(static_cast<int>(currentCtx));
+    // DIAGNOSTIC: Log macro knob changes with assigned context
+    printf("[MacroKnob] handleMacroKnobChange - columnIndex: %d, value: %.3f, discretePos: %d, assignedContext: %d\n",
+           columnIndex, value, discretePos, static_cast<int>(assignedCtx));
+    printf("[MacroKnob] Applying context-specific macro curve to assigned context only\n");
 
-    // DIAGNOSTIC: Log macro knob changes
-    printf("[MacroKnob] handleMacroKnobChange - columnIndex: %d, value: %.3f, discretePos: %d, context: %d\n",
-           columnIndex, value, discretePos, static_cast<int>(currentCtx));
-    printf("[MacroKnob] Applying Rainmaker-style global macro curve to ALL 16 taps\n");
-
-    // ALL macro knobs (0-7) now apply global curves across all 16 taps
-    handleGlobalMacroKnobChange(discretePos, currentCtx);
+    // Apply macro curve to the knob's assigned context only (context isolation)
+    handleGlobalMacroKnobChange(discretePos, assignedCtx);
 
     // Update the corresponding VST macro knob parameter to trigger DAW automation
     int macroParamId = kMacroKnob1 + columnIndex;
@@ -2527,8 +2531,9 @@ void WaterStickEditor::handleGlobalMacroKnobChange(int discretePosition, TapCont
 
 void WaterStickEditor::handleRandomizeAction(int columnIndex)
 {
-    // Global randomization across all 16 taps in current context
-    TapContext currentCtx = getCurrentContext();
+    // CONTEXT ISOLATION: Use column-assigned context instead of current active context
+    if (columnIndex < 0 || columnIndex >= 8) return;
+    TapContext assignedCtx = static_cast<TapContext>(columnIndex);
 
     float totalRandomValue = 0.0f;
 
@@ -2539,13 +2544,13 @@ void WaterStickEditor::handleRandomizeAction(int columnIndex)
 
         if (tapButtons[tapIndex]) {
             auto tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
-            tapButton->setContextValue(currentCtx, randomValue);
-            if (tapButton->getContext() == currentCtx) {
+            tapButton->setContextValue(assignedCtx, randomValue);
+            if (tapButton->getContext() == assignedCtx) {
                 tapButton->setValue(randomValue);
                 tapButton->invalid();
             }
 
-            int paramId = getTapParameterIdForContext(tapIndex, currentCtx);
+            int paramId = getTapParameterIdForContext(tapIndex, assignedCtx);
             if (paramId >= 0) {
                 auto controller = getController();
                 if (controller) {
@@ -2568,21 +2573,22 @@ void WaterStickEditor::handleRandomizeAction(int columnIndex)
 
 void WaterStickEditor::handleResetAction(int columnIndex)
 {
-    // Global reset across all 16 taps to default values for current context
-    TapContext currentCtx = getCurrentContext();
-    float defaultValue = getContextDefaultValue(currentCtx);
+    // CONTEXT ISOLATION: Use column-assigned context instead of current active context
+    if (columnIndex < 0 || columnIndex >= 8) return;
+    TapContext assignedCtx = static_cast<TapContext>(columnIndex);
+    float defaultValue = getContextDefaultValue(assignedCtx);
 
     // Reset all 16 taps
     for (int tapIndex = 0; tapIndex < 16; ++tapIndex) {
         if (tapButtons[tapIndex]) {
             auto tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
-            tapButton->setContextValue(currentCtx, defaultValue);
-            if (tapButton->getContext() == currentCtx) {
+            tapButton->setContextValue(assignedCtx, defaultValue);
+            if (tapButton->getContext() == assignedCtx) {
                 tapButton->setValue(defaultValue);
                 tapButton->invalid();
             }
 
-            int paramId = getTapParameterIdForContext(tapIndex, currentCtx);
+            int paramId = getTapParameterIdForContext(tapIndex, assignedCtx);
             if (paramId >= 0) {
                 auto controller = getController();
                 if (controller) {
@@ -2643,9 +2649,9 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     // Get discrete position (0-7)
     int discretePos = getDiscretePosition();
 
-    // DIAGNOSTIC: Comprehensive draw operation logging
-    printf("[MacroKnob] Drawing knob - discretePos: %d, value: %.3f, tag: %d, isDirty: %s\n",
-           discretePos, getValue(), getTag(), isDirty() ? "true" : "false");
+    // Visual feedback now working - dot rotates through 8 positions
+
+    // FIXED: Visual feedback now working properly
 
     // Calculate rotation angle for 8 positions
     // Positions are evenly distributed around a circle (0-7 = 8 positions)
@@ -2654,15 +2660,14 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     const float angleRange = 315.0f; // 7/8 of full rotation (315° instead of 360°)
     float angle = startAngle + (discretePos * angleRange / 7.0f);
 
-    // DIAGNOSTIC: Verify angle calculations for all 8 positions
-    printf("[MacroKnob] Angle calculation - discretePos: %d, angle: %.1f° (expected range: -90° to 225°)\n",
-           discretePos, angle);
+    // Calculate angle for current discrete position
 
     // Convert to radians
     float angleRad = angle * M_PI / 180.0f;
 
     // Colors matching hardware aesthetic
     VSTGUI::CColor knobColor(35, 31, 32, 255);    // Dark knob body
+
     VSTGUI::CColor dotColor(255, 255, 255, 255);  // White position dot
 
     context->setDrawMode(VSTGUI::kAntiAliasing);
@@ -2679,7 +2684,7 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     // Draw position indicator dot using improved positioning calculation
     VSTGUI::CPoint center = rect.getCenter();
     float outerRadius = (rect.getWidth() / 2.0f) - 1.0f; // Account for inset
-    const float dotRadius = 2.5f; // Slightly larger dot for better visibility
+    const float dotRadius = 2.5f; // Appropriate size for visibility
 
     // Calculate the distance from center to dot center
     // Position dot closer to edge for better visibility
@@ -2699,16 +2704,15 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
         dotCenter.y + dotRadius
     );
 
-    // DIAGNOSTIC: Comprehensive dot positioning logging
-    printf("[MacroKnob] Drawing dot - angle: %.1f°, angleRad: %.3f, dotCenter: (%.1f, %.1f), dotRadius: %.1f\n",
-           angle, angleRad, dotCenter.x, dotCenter.y, dotRadius);
-    printf("[MacroKnob] Dot geometry - center: (%.1f, %.1f), outerRadius: %.1f, dotCenterDistance: %.1f\n",
-           center.x, center.y, outerRadius, dotCenterDistance);
+    // Position dot at calculated angle
+
+    // 8 discrete positions: 0°(-90°), 1°(-45°), 2°(0°), 3°(45°), 4°(90°), 5°(135°), 6°(180°), 7°(225°)
 
     context->setFillColor(dotColor);
     context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
 
-    setDirty(false);
+    // REMOVED: Let VSTGUI manage dirty state automatically instead of forcing setDirty(false)
+    // setDirty(false);
 }
 
 void MacroKnobControl::setValue(float value)
@@ -2718,9 +2722,7 @@ void MacroKnobControl::setValue(float value)
     discretePos = std::max(0, std::min(7, discretePos));     // Clamp to valid range (0-7)
     float quantizedValue = static_cast<float>(discretePos) / 7.0f; // Convert back to normalized
 
-    // DIAGNOSTIC: Log value changes with comprehensive information
-    printf("[MacroKnob] setValue - input: %.3f, discretePos: %d, quantized: %.3f, oldValue: %.3f, tag: %d\n",
-           value, discretePos, quantizedValue, getValue(), getTag());
+    // Quantize to 8 discrete positions (0-7)
 
     VSTGUI::CControl::setValue(quantizedValue);
 
@@ -2775,22 +2777,26 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
     if (isDragging && (buttons & VSTGUI::kLButton)) {
         // Calculate vertical drag distance
         float deltaY = lastMousePos.y - where.y;
-        float sensitivity = 0.01f; // Adjust sensitivity as needed
+        float sensitivity = 0.05f; // INCREASED: Higher sensitivity for discrete positions
 
         // Update value based on drag
         float currentValue = getValue();
         float newValue = currentValue + (deltaY * sensitivity);
         newValue = std::max(0.0f, std::min(1.0f, newValue)); // Clamp to 0-1
 
-        // DIAGNOSTIC: Log drag operations
-        printf("[MacroKnob] Mouse moved - tag: %d, deltaY: %.3f, oldValue: %.3f, newValue: %.3f\n",
-               getTag(), deltaY, currentValue, newValue);
-
+        // Update value with improved sensitivity
         setValue(newValue);
+
         setDirty(true); // STANDARDIZED: Use setDirty(true) consistently
 
+        // Ensure visual update with comprehensive invalidation
+        setDirty(true);
+        invalid();
+        if (getParentView()) {
+            getParentView()->invalid();
+        }
+
         if (listener) {
-            printf("[MacroKnob] Calling valueChanged listener\n");
             listener->valueChanged(this);
         }
 
@@ -2826,7 +2832,7 @@ void MacroKnobControl::resetToDefaultValue()
 //========================================================================
 
 ActionButton::ActionButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, ActionType type, int columnIndex)
-: VSTGUI::CControl(size, listener, tag), actionType(type), columnIndex(columnIndex)
+: VSTGUI::CControl(size, listener, tag), actionType(type), columnIndex(columnIndex), isPressed(false)
 {
     setMax(1.0);
     setMin(0.0);
@@ -2844,7 +2850,7 @@ void ActionButton::draw(VSTGUI::CDrawContext* context)
     context->setDrawMode(VSTGUI::kAntiAliasing);
 
     // Draw button background (small square with rounded corners)
-    VSTGUI::CColor bgColor = (getValue() > 0.5f) ? hoverColor : buttonColor;
+    VSTGUI::CColor bgColor = isPressed ? hoverColor : buttonColor;
     context->setFillColor(bgColor);
     context->setFrameColor(buttonColor);
     context->setLineWidth(1.0);
@@ -2879,8 +2885,8 @@ void ActionButton::draw(VSTGUI::CDrawContext* context)
 VSTGUI::CMouseEventResult ActionButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
-        // Brief visual feedback
-        setValue(1.0f);
+        // Brief visual feedback using internal state
+        isPressed = true;
         invalid();
 
         // Trigger action via editor
@@ -2894,7 +2900,7 @@ VSTGUI::CMouseEventResult ActionButton::onMouseDown(VSTGUI::CPoint& where, const
         }
 
         // Reset visual state after brief delay
-        setValue(0.0f);
+        isPressed = false;
         invalid();
 
         return VSTGUI::kMouseEventHandled;

@@ -177,6 +177,10 @@ public:
     float getDiscreteValue() const;
     int getDiscretePosition() const;
 
+    // Context assignment for control isolation
+    void setAssignedContext(TapContext context) { assignedContext = context; }
+    TapContext getAssignedContext() const { return assignedContext; }
+
     CLASS_METHODS(MacroKnobControl, VSTGUI::CControl)
 
 private:
@@ -186,6 +190,9 @@ private:
     // Double-click detection state
     std::chrono::steady_clock::time_point lastClickTime;
     static constexpr std::chrono::milliseconds DOUBLE_CLICK_TIMEOUT{400};
+
+    // Context assignment for control isolation
+    TapContext assignedContext = TapContext::Enable;  // Default to Enable context
 
     bool isDoubleClick(const std::chrono::steady_clock::time_point& currentTime);
     void resetToDefaultValue();
@@ -213,6 +220,7 @@ public:
 private:
     ActionType actionType;
     int columnIndex;  // Which column (0-7) this button affects
+    bool isPressed;   // Visual state for feedback without triggering valueChanged
 };
 
 class WaterStickEditor : public Steinberg::Vst::VSTGUIEditor, public VSTGUI::IControlListener
