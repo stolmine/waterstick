@@ -99,7 +99,8 @@
       "WebFetch(domain:wiki.orthogonaldevices.com)",
       "WebFetch(domain:forum.orthogonaldevices.com)",
       "Bash(/Users/why/repos/waterstick/build/VST3/Release/validator WaterStick)",
-      "WebFetch(domain:www.katjaas.nl)"
+      "WebFetch(domain:www.katjaas.nl)",
+      "Bash(build/bin/validator:*)"
     ],
     "deny": [],
     "ask": []

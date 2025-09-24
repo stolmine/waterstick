@@ -118,19 +118,40 @@ private:
         float pitchRatio;      // Playback speed ratio for this grain
         float grainStart;      // Start position in delay buffer (floating-point)
         float readPosition;    // Current floating-point read position in buffer
+
+        // Fade-out state for smooth grain termination
+        bool fadingOut;        // True when grain is fading out
+        int fadeOutRemaining;  // Samples remaining in fade-out
+        int fadeOutTotal;      // Total fade-out length for calculation
+        float fadeOutGain;     // Current fade-out gain (1.0 to 0.0)
+
+        // Transition state for enhanced windowing
+        float spawnSampleCount; // Sample count when grain was spawned
+        bool isTransitionGrain; // True if grain was spawned during parameter transition
     };
 
     static const int NUM_GRAINS = 6;    // Increased for better upward pitch shifting
     static const int GRAIN_SIZE = 2048;  // ~46ms at 44.1kHz
     static const int GRAIN_OVERLAP = GRAIN_SIZE * 3 / 4;  // 75% overlap
     static const int LOOKAHEAD_BUFFER = GRAIN_SIZE * 2;  // Extra buffer for upward shifts
+    static const int GRAIN_FADEOUT_LENGTH = 2205;  // ~50ms fade-out at 44.1kHz (1 grain overlap period)
 
     Grain mGrains[NUM_GRAINS];
     int mPitchSemitones;      // -12 to +12
-    float mPitchRatio;        // Calculated from semitones
+    float mPitchRatio;        // Current smoothed pitch ratio
+    float mTargetPitchRatio;  // Target pitch ratio for smoothing
+    float mSmoothingCoeff;    // Smoothing coefficient (α)
     float mNextGrainSample;   // When to start next grain (floating-point)
     float mSampleCount;       // Running sample counter (floating-point for precision)
     float mAdaptiveSpacing;   // Dynamically calculated grain spacing
+
+    // Transition state detection for parameter-aware windowing
+    float mLastPitchRatio;           // Previous pitch ratio for change detection
+    float mTransitionIntensity;      // Current transition intensity (0.0 to 1.0)
+    float mTransitionDecayRate;      // Rate at which transition intensity decays
+    int mTransitionSamples;          // Samples since last parameter change
+    static const int TRANSITION_WINDOW = 2205;  // ~50ms at 44.1kHz - time window for enhanced transitions
+    static const float PITCH_CHANGE_THRESHOLD;  // Threshold for detecting significant pitch changes
 
     // Pitch shifting buffers (separate from delay buffers)
     std::vector<float> mPitchBufferA;
@@ -146,12 +167,22 @@ private:
     static const int UPWARD_FADE_LENGTH = 256;   // Reduced fade-in length (~6ms at 44.1kHz)
     static const int WARMUP_BUFFER_SIZE = GRAIN_SIZE / 4;  // Reduced from full grain size
 
+    // Dynamic gain compensation for parameter transitions
+    float mGainCompensation;           // Current gain compensation (1.0 to 1.8)
+    float mTargetGainCompensation;     // Target gain compensation for smoothing
+    float mGainSmoothingCoeff;         // Smoothing coefficient for gain changes
+    float mLastPitchRatioForGain;      // Previous pitch ratio for transition detection
+    static const float MAX_GAIN_COMPENSATION; // Maximum allowed gain compensation (1.8x)
+
     void initializeGrains();
     void updateGrains();
     void startNewGrain();
-    float calculateHannWindow(float phase);
+    float calculateHannWindow(float phase, bool isStarting = false, bool isEnding = false, float transitionIntensity = 0.0f);
     float processPitchShifting(float input);
     void updatePitchRatio();
+    void updateSmoothingCoeff();
+    void updatePitchRatioSmoothing();
+    void updateTransitionState();
     void calculateAdaptiveSpacing();
     float interpolateBuffer(const std::vector<float>& buffer, float position) const;
     bool isBufferPositionValid(const std::vector<float>& buffer, float position) const;
@@ -159,6 +190,7 @@ private:
     void updateUpwardPitchFadeIn();
     bool isUpwardPitchBufferReady() const;
     void updateGrainActivation();
+    void updateGainCompensation();
 };
 
 class STKDelayLine {
