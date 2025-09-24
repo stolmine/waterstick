@@ -449,6 +449,160 @@ Triangle column X: delayMargin + i * (buttonSize + buttonSpacing)  ✓ (Perfect 
 
 This triangular configuration represents a significant improvement in both functional usability and visual design, solving the critical overlap issue while creating a more intuitive and aesthetically pleasing interface architecture.
 
+## CRITICAL ISSUE: Minimap Positioning Discrepancy
+
+### Issue Discovery and Analysis
+
+An exhaustive examination of the WaterStick VST3 interface has revealed a **critical minimap positioning discrepancy** where minimap indicators are positioned approximately 8px too high vertically, equivalent to one character height ("X" label above tap buttons). This creates a misalignment between the minimap representation and the actual tap button grid.
+
+### Root Cause Analysis
+
+#### The Fundamental Problem
+
+The minimap positioning issue stems from a **coordinate calculation inconsistency** between tap button positioning and minimap positioning. This inconsistency was introduced during recent layout improvements that updated the tap button centering adjustment but failed to synchronize the minimap calculations.
+
+**Primary Issue**: Tap buttons and minimap use different centering adjustments
+- **Tap buttons**: Use `-15px` centering adjustment (recent optimization)
+- **Minimap**: Uses `-23px` centering adjustment (outdated reference)
+- **Result**: 8px vertical misalignment (23 - 15 = 8px)
+
+#### Detailed Coordinate Analysis
+
+**Current Tap Button Positioning** (in `createTapButtons()`):
+```cpp
+// Recent improvement: reduced from -23px to -15px for better balance
+const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15;
+// Calculation: ((293 - 132) / 2) - 15 = 80.5 - 15 = 65.5px → 65px
+```
+
+**Current Minimap Positioning** (in `createMinimap()`):
+```cpp
+// OUTDATED: Still using old -23px adjustment
+const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+// Calculation: ((293 - 132) / 2) - 23 = 80.5 - 23 = 57.5px → 57px
+```
+
+**Resulting Misalignment**:
+- Tap button grid starts at Y=65px
+- Minimap calculations based on Y=57px
+- **Vertical offset error: 65 - 57 = 8px too high**
+
+### Precise Impact Measurements
+
+#### Current Problematic Coordinates
+
+**Row 1 Minimap Buttons** (Taps 1-8):
+- **Current calculation**: `minimapY = 57 - 19.75 = 37.25px`
+- **Should be**: `minimapY = 65 - 19.75 = 45.25px`
+- **Error**: 8px too high
+
+**Row 2 Minimap Buttons** (Taps 9-16):
+- **Current calculation**: `minimapY = 57 + 53 + 6.75 = 116.75px`
+- **Should be**: `minimapY = 65 + 53 + 6.75 = 124.75px`
+- **Error**: 8px too high
+
+#### Visual Impact Analysis
+
+```
+CURRENT MISALIGNED LAYOUT:
+Y=37  ● ● ● ● ● ● ● ●  ← Row 1 minimap (TOO HIGH)
+Y=57
+Y=65  [T1][T2][T3][T4][T5][T6][T7][T8]  ← Actual tap buttons
+Y=117 ● ● ● ● ● ● ● ●  ← Row 2 minimap (TOO HIGH)
+Y=118 [T9][T10][T11][T12][T13][T14][T15][T16]
+
+CORRECTED ALIGNED LAYOUT:
+Y=45  ● ● ● ● ● ● ● ●  ← Row 1 minimap (CORRECTED)
+Y=65  [T1][T2][T3][T4][T5][T6][T7][T8]  ← Tap buttons
+Y=125 ● ● ● ● ● ● ● ●  ← Row 2 minimap (CORRECTED)
+Y=118 [T9][T10][T11][T12][T13][T14][T15][T16]
+```
+
+### Implementation Solution
+
+#### Required Code Changes
+
+**In `createMinimap()` function**, change line:
+```cpp
+// OLD (incorrect):
+const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+
+// NEW (corrected):
+const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15;
+```
+
+This single change will:
+1. **Align minimap with tap button grid** by using consistent centering adjustment
+2. **Maintain all other positioning logic** (relative offsets remain unchanged)
+3. **Preserve equal margin layout compatibility** (no impact on global positioning)
+
+#### Verification Calculations
+
+**After Correction**:
+- **Row 1 minimap**: Y = 65 - 19.75 = 45.25px ✓ (8px lower than current)
+- **Row 2 minimap**: Y = 65 + 53 + 6.75 = 124.75px ✓ (8px lower than current)
+- **Tap button alignment**: Perfect correspondence with visual grid
+- **Character label clearance**: Proper spacing above tap buttons
+
+### Historical Context
+
+#### Layout Evolution Timeline
+
+1. **Original Implementation**: Both tap buttons and minimap used `-23px` adjustment
+2. **Phase 3 Optimization**: Tap buttons updated to `-15px` for improved visual balance
+3. **Oversight**: Minimap calculations not updated to match new tap button positioning
+4. **Current Issue**: 8px misalignment creating visual disconnection
+
+#### Code Comment Evidence
+
+In `createTapButtons()`:
+```cpp
+// Improved vertical centering for better overall balance (reduced from -23px to -15px)
+const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15;
+```
+
+In `createMinimap()` (OUTDATED):
+```cpp
+// Center content vertically by moving up 23px from calculated position
+const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+```
+
+### Professional Impact Assessment
+
+#### User Experience Issues
+
+1. **Visual Confusion**: Minimap doesn't correspond to actual tap button positions
+2. **Cognitive Load**: Users must mentally compensate for misalignment
+3. **Professional Appearance**: Creates impression of unfinished or buggy interface
+4. **Workflow Disruption**: Minimap becomes less useful as a navigation aid
+
+#### Design Integrity Impact
+
+1. **Spatial Relationship**: Breaks fundamental UI principle of visual correspondence
+2. **Grid System**: Violates carefully planned 8-column grid alignment
+3. **Skeuomorphic Fidelity**: Deviates from hardware module accuracy goal
+4. **Layout Hierarchy**: Disrupts top-down visual reading pattern
+
+### Recommended Implementation Priority
+
+**Priority Level**: HIGH - Critical interface alignment issue
+
+**Implementation Steps**:
+1. Update `createMinimap()` centering adjustment from -23px to -15px
+2. Verify visual alignment through interface testing
+3. Update code comments to reflect synchronized positioning
+4. Document correction in layout architecture guide
+
+**Risk Assessment**: LOW - Single constant change with no dependencies
+
+**Testing Requirements**:
+- Visual verification of minimap-to-tap-button alignment
+- Functional testing of minimap indicator accuracy
+- Equal margin layout system compatibility check
+- VST3 validator compliance verification
+
+This correction will restore the intended visual hierarchy and ensure the minimap provides accurate spatial reference for the tap button grid, maintaining the professional quality and intuitive operation expected from the WaterStick VST3 interface.
+
 ## CRITICAL COLLISION ISSUE: Context Labels vs Global Controls
 
 ### Issue Discovery

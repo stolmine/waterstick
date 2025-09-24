@@ -123,12 +123,12 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     // Calculate total grid dimensions
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Position grid in left section (2/3 of window width) with margin
+    // Position grid in left section (2/3 of window width) with margin and improved centering
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
     const int gridLeft = delayMargin;  // Align to left margin within delay section
-    // Center content vertically by moving up 23px from calculated position
-    const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+    // Improved vertical centering for better overall balance (reduced from -23px to -15px)
+    const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15;
 
     for (int i = 0; i < 16; i++) {
         int row = i / 8;
@@ -197,12 +197,12 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     // Calculate total grid dimensions
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
 
-    // Match the tap button positioning
+    // Match the tap button positioning with improved centering
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
     const int gridLeft = delayMargin;  // Match repositioned tap buttons
-    // Center content vertically by moving up 23px from calculated position
-    const int tapGridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+    // Improved vertical centering for better overall balance (reduced from -23px to -15px)
+    const int tapGridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15;
 
     // Calculate mode button position with improved spacing
     // Place with increased spacing below the tap button grid for better visual hierarchy
@@ -269,17 +269,17 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
 void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 {
-    // Center content vertically by moving up 23px from calculated position
-    const int bottomThirdTop = ((kEditorHeight * 2) / 3) - 23;
+    // Improved spacing calculation with better centering and visual hierarchy
+    const int bottomThirdTop = ((kEditorHeight * 2) / 3);
     const int knobSize = 53;
     const int buttonSize = 53;
-    const int buttonSpacing = buttonSize / 2;
+    const int buttonSpacing = buttonSize / 2; // 26.5px base spacing
     const int gridWidth = 8;
     const int delayMargin = 30;
     const int tapGridLeft = delayMargin;
-    // Increase spacing between context buttons and global controls for better visual separation
-    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 2.8);
-    const int knobY = bottomThirdTop + modeButtonSpacing;
+    // Refined spacing: fine-tuned for optimal visual balance between context labels and global controls
+    const int modeButtonSpacing = static_cast<int>(buttonSpacing * 3.05); // Precise spacing for ~6.5px gap
+    const int knobY = bottomThirdTop + modeButtonSpacing - 10; // Slight adjustment for centering
 
     ControlFactory factory(this, container);
 
@@ -1925,8 +1925,8 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int delayMargin = 30;
     const int gridLeft = delayMargin;
-    // Center content vertically by moving up 23px from calculated position
-    const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+    // Center content vertically by moving up 15px from calculated position (synchronized with tap button positioning)
+    const int gridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15;
 
     // Create minimap buttons positioned relative to their corresponding tap buttons
     for (int i = 0; i < 16; i++) {
@@ -2360,10 +2360,10 @@ void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
     const int gridLeft = delayMargin;    // Align to existing grid
     const int gridHeight = 2;           // 2 rows for tap buttons
 
-    // Calculate positioning relative to existing layout system
+    // Calculate positioning relative to existing layout system with improved centering
     const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
     const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
-    const int tapGridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
+    const int tapGridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 15; // Improved centering
 
     // Calculate the space between tap grid and mode buttons (INCREASED SPACING)
     const int tapGridBottom = tapGridTop + (gridHeight * buttonSize) + buttonSpacing;
