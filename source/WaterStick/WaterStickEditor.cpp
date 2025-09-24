@@ -206,7 +206,7 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 
     // Calculate mode button position with improved spacing
     // Place with increased spacing below the tap button grid for better visual hierarchy
-    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 2.2);
+    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 3.0);
 
     // Calculate expanded view bounds to accommodate the rectangle (scaled by 1.75x)
     // Circle size: 53px - 5px stroke = 48px (keeping 5px stroke width)
@@ -2332,6 +2332,13 @@ void WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
     moveView(outputGainValue);
     moveView(globalDryWetValue);
 
+    // Move Smart Hierarchy controls
+    for (int i = 0; i < 8; i++) {
+        moveView(macroKnobs[i]);
+        moveView(randomizeButtons[i]);
+        moveView(resetButtons[i]);
+    }
+
     // Include Smart Hierarchy controls in layout calculation
     for (int i = 0; i < 8; i++) {
         expandBounds(macroKnobs[i]);
@@ -2345,42 +2352,65 @@ void WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
 
 void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
 {
-    // Smart Hierarchy positioning configuration
+    // TRIANGULAR LAYOUT: Smart Hierarchy positioning configuration
+    // Each column has triangular arrangement: Macro knob at top, R/X buttons at bottom corners
     const int buttonSize = 53;           // Match tap button size for consistent spacing
     const int buttonSpacing = buttonSize / 2;  // Half diameter spacing
     const int delayMargin = 30;          // Match existing layout
     const int gridLeft = delayMargin;    // Align to existing grid
+    const int gridHeight = 2;           // 2 rows for tap buttons
 
-    // Y positions for the three Smart Hierarchy rows
-    const int macroKnobY = 208;         // Exact specification
-    const int randomizeButtonY = 238;   // Exact specification
-    const int resetButtonY = 258;       // Exact specification
+    // Calculate positioning relative to existing layout system
+    const int upperTwoThirdsHeight = (kEditorHeight * 2) / 3;
+    const int totalGridHeight = (gridHeight * buttonSize) + ((gridHeight - 1) * buttonSpacing);
+    const int tapGridTop = ((upperTwoThirdsHeight - totalGridHeight) / 2) - 23;
 
-    // Control dimensions
+    // Calculate the space between tap grid and mode buttons (INCREASED SPACING)
+    const int tapGridBottom = tapGridTop + (gridHeight * buttonSize) + buttonSpacing;
+    const int modeButtonY = tapGridTop + (gridHeight * buttonSize) + buttonSpacing + (buttonSpacing * 3.0);  // Increased from 2.4 to 3.0
+    const int availableSpace = static_cast<int>(modeButtonY - tapGridBottom);  // Now 78px (was 62px)
+
+    // Triangular layout design specifications
+    const int triangleHeight = 50;       // Total height of each triangle
+    const int triangleBaseWidth = 40;    // Width of triangle base
     const int macroKnobSize = 24;       // Exact specification
     const int actionButtonSize = 14;    // Exact specification for R/× buttons
 
-    // Create 8 columns of Smart Hierarchy controls
+    // Position triangles in center of available space
+    const int triangleStartY = tapGridBottom + ((availableSpace - triangleHeight) / 2);
+
+    // Y-coordinates for triangular layout
+    const int macroKnobY = triangleStartY;  // Macro knob at triangle top
+    const int actionButtonsY = triangleStartY + triangleHeight - actionButtonSize;  // R/X buttons at triangle bottom
+
+    // Create 8 columns of triangular Smart Hierarchy controls
     for (int i = 0; i < 8; i++) {
-        // Calculate X position for this column (aligned with tap button columns)
+        // Calculate base X position for this column (aligned with tap button columns)
         int columnX = gridLeft + i * (buttonSize + buttonSpacing);
 
-        // Center controls within the column width
+        // TRIANGULAR POSITIONING:
+        // - Macro knob at top center of triangle
         int macroKnobX = columnX + (buttonSize - macroKnobSize) / 2;
-        int actionButtonX = columnX + (buttonSize - actionButtonSize) / 2;
 
-        // Create Macro Knob (Row 1)
+        // - R button at bottom left corner of triangle
+        int triangleLeftOffset = (buttonSize - triangleBaseWidth) / 2;
+        int rButtonX = columnX + triangleLeftOffset;
+
+        // - X button at bottom right corner of triangle
+        int xButtonX = columnX + triangleLeftOffset + triangleBaseWidth - actionButtonSize;
+
+        // Create Macro Knob (Triangle Top)
         VSTGUI::CRect macroRect(macroKnobX, macroKnobY, macroKnobX + macroKnobSize, macroKnobY + macroKnobSize);
         macroKnobs[i] = new MacroKnobControl(macroRect, this, -1); // Temporary tag, will be updated
         container->addView(macroKnobs[i]);
 
-        // Create Randomize Button (Row 2)
-        VSTGUI::CRect randomizeRect(actionButtonX, randomizeButtonY, actionButtonX + actionButtonSize, randomizeButtonY + actionButtonSize);
+        // Create Randomize Button (Triangle Bottom Left)
+        VSTGUI::CRect randomizeRect(rButtonX, actionButtonsY, rButtonX + actionButtonSize, actionButtonsY + actionButtonSize);
         randomizeButtons[i] = new ActionButton(randomizeRect, this, -1, ActionButton::Randomize, i);
         container->addView(randomizeButtons[i]);
 
-        // Create Reset Button (Row 3)
-        VSTGUI::CRect resetRect(actionButtonX, resetButtonY, actionButtonX + actionButtonSize, resetButtonY + actionButtonSize);
+        // Create Reset Button (Triangle Bottom Right)
+        VSTGUI::CRect resetRect(xButtonX, actionButtonsY, xButtonX + actionButtonSize, actionButtonsY + actionButtonSize);
         resetButtons[i] = new ActionButton(resetRect, this, -1, ActionButton::Reset, i);
         container->addView(resetButtons[i]);
     }
@@ -2767,20 +2797,22 @@ void ActionButton::draw(VSTGUI::CDrawContext* context)
     context->setFrameColor(buttonColor);
     context->setLineWidth(1.0);
 
-    // Draw rounded rectangle
-    const float cornerRadius = 2.0f;
-    context->drawRoundRect(rect, cornerRadius);
-    context->fillRoundRect(rect, cornerRadius);
+    // Draw rectangle (VSTGUI doesn't have rounded rectangle methods)
+    context->drawRect(rect, VSTGUI::kDrawStroked);
+    context->drawRect(rect, VSTGUI::kDrawFilled);
 
     // Draw symbol/text centered in button
     context->setFontColor(textColor);
 
     // Use a small, bold font
     auto editor = static_cast<WaterStickEditor*>(listener);
-    auto font = editor ? editor->getWorkSansFont(10.0f) : VSTGUI::kNormalFontSmall;
-
-    if (font) {
-        context->setFont(font);
+    if (editor) {
+        auto font = editor->getWorkSansFont(10.0f);
+        if (font) {
+            context->setFont(font);
+        }
+    } else {
+        context->setFont(VSTGUI::kNormalFontSmall);
     }
 
     // Draw appropriate symbol

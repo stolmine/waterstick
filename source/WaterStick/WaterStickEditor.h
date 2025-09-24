@@ -253,6 +253,13 @@ public:
     // VST3 lifecycle compliance
     void forceParameterSynchronization();
 
+    // Smart Hierarchy helper methods (public for ActionButton access)
+    void handleMacroKnobChange(int columnIndex, float value);
+    void handleRandomizeAction(int columnIndex);
+    void handleResetAction(int columnIndex);
+    float generateRandomValue();
+    float getContextDefaultValue(TapContext context);
+
 private:
     static constexpr int kEditorWidth = 670;   // Optimized to eliminate excess whitespace while maintaining 30px margins
     static constexpr int kEditorHeight = 440;  // Professional tight layout with proper content fit
@@ -323,12 +330,6 @@ private:
     void createGlobalControls(VSTGUI::CViewContainer* container);
     void applyEqualMarginLayout(VSTGUI::CViewContainer* container);
 
-    // Smart Hierarchy helper methods
-    void handleMacroKnobChange(int columnIndex, float value);
-    void handleRandomizeAction(int columnIndex);
-    void handleResetAction(int columnIndex);
-    float generateRandomValue();
-    float getContextDefaultValue(TapContext context);
 };
 
 } // namespace WaterStick
