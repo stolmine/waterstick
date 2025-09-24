@@ -163,6 +163,10 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
             auto pitchShiftValue = controller->getParamNormalized(pitchShiftParamId);
             button->setContextValue(TapContext::PitchShift, pitchShiftValue);
 
+            int feedbackSendParamId = getTapParameterIdForContext(i, TapContext::FeedbackSend);
+            auto feedbackSendValue = controller->getParamNormalized(feedbackSendParamId);
+            button->setContextValue(TapContext::FeedbackSend, feedbackSendValue);
+
             button->setValue(enableValue);
         }
 
@@ -224,7 +228,7 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     }
 
     // Add labels below mode buttons
-    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "PITCH", "X"};
+    const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "PITCH", "FB SEND"};
     const int labelHeight = 20; // Match global control labels
     const int labelY = modeButtonY + buttonSize + 15; // Increased gap to clear selection rectangle
 
@@ -582,7 +586,7 @@ void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
 
 void WaterStickEditor::switchToContext(TapContext newContext)
 {
-    std::string contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift"};
+    std::string contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
     std::string oldContextName = (currentContext < TapContext::COUNT) ? contextNames[static_cast<int>(currentContext)] : "Unknown";
     std::string newContextName = (newContext < TapContext::COUNT) ? contextNames[static_cast<int>(newContext)] : "Unknown";
 
@@ -713,6 +717,11 @@ int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext
         {
             // Pitch shift parameters are sequential: kTap1PitchShift to kTap16PitchShift
             return kTap1PitchShift + (tapNumber - 1);  // Pitch shift parameter
+        }
+        case TapContext::FeedbackSend:
+        {
+            // Feedback send parameters are sequential: kTap1FeedbackSend to kTap16FeedbackSend
+            return kTap1FeedbackSend + (tapNumber - 1);  // Feedback send parameter
         }
         default:
             // Calculate base parameter offset for tap control (each tap has 3 params: Enable, Level, Pan)
@@ -1124,6 +1133,54 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
             break;
         }
 
+        case TapContext::FeedbackSend:
+        {
+            // FeedbackSend context: reuse Volume visualization (circular fill from bottom)
+            // Display 0-100% feedback send levels in tap buttons
+            if (currentValue > 0.0) {
+                // Apply intelligent scaling curve for better visual-to-audio correlation
+                double scaledValue = currentValue;
+
+                // Apply a subtle curve to prevent visual "100%" until truly at max
+                if (currentValue < 1.0) {
+                    scaledValue = currentValue * 0.95 + (currentValue * currentValue * 0.05);
+                }
+
+                // Calculate the circular area and fill height
+                VSTGUI::CPoint center = drawRect.getCenter();
+                double radius = std::min(drawRect.getWidth(), drawRect.getHeight()) / 2.0;
+                double fillHeight = drawRect.getHeight() * scaledValue;
+                double fillTop = drawRect.bottom - fillHeight;
+
+                // Draw horizontal lines to create the fill effect within the circle
+                context->setFillColor(VSTGUI::kBlackCColor);
+
+                for (double y = fillTop; y <= drawRect.bottom; y += 0.5) {
+                    // Calculate the width of the circle at this Y position
+                    double yFromCenter = y - center.y;
+                    double distanceFromCenter = std::abs(yFromCenter);
+
+                    if (distanceFromCenter < radius) {
+                        // Calculate line width using circle equation: x² + y² = r²
+                        double halfLineWidth = std::sqrt(radius * radius - distanceFromCenter * distanceFromCenter);
+
+                        VSTGUI::CRect lineRect(
+                            center.x - halfLineWidth,
+                            y,
+                            center.x + halfLineWidth,
+                            y + 0.5
+                        );
+
+                        context->drawRect(lineRect, VSTGUI::kDrawFilled);
+                    }
+                }
+            }
+
+            // Always draw the circle stroke on top
+            context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+            break;
+        }
+
         default:
         {
             // Future contexts: for now, just draw outline
@@ -1152,7 +1209,8 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
 
         if (currentContext == TapContext::Volume || currentContext == TapContext::Pan ||
             currentContext == TapContext::FilterCutoff || currentContext == TapContext::FilterResonance ||
-            currentContext == TapContext::FilterType || currentContext == TapContext::PitchShift) {
+            currentContext == TapContext::FilterType || currentContext == TapContext::PitchShift ||
+            currentContext == TapContext::FeedbackSend) {
             // Volume, Pan, Filter Cutoff, Filter Resonance, Filter Type, and Pitch Shift contexts: Handle continuous control
             isVolumeInteracting = true;
             initialClickPoint = where;
@@ -1223,8 +1281,8 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
 
                     double newValue;
                     if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff ||
-                        currentContext == TapContext::FilterType) {
-                        // Volume, Filter Cutoff, Filter Type: bottom = 0.0, top = 1.0
+                        currentContext == TapContext::FilterType || currentContext == TapContext::FeedbackSend) {
+                        // Volume, Filter Cutoff, Filter Type, FeedbackSend: bottom = 0.0, top = 1.0
                         double relativeY = (targetDrawRect.bottom - localPoint.y) / targetDrawRect.getHeight();
                         newValue = std::max(0.0, std::min(1.0, relativeY));
                     } else { // TapContext::Pan, TapContext::FilterResonance, or TapContext::PitchShift
@@ -1293,8 +1351,8 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
 
             double newValue;
             if (currentContext == TapContext::Volume || currentContext == TapContext::FilterCutoff ||
-                currentContext == TapContext::FilterType) {
-                // Volume, Filter Cutoff, Filter Type: bottom = 0.0, top = 1.0
+                currentContext == TapContext::FilterType || currentContext == TapContext::FeedbackSend) {
+                // Volume, Filter Cutoff, Filter Type, FeedbackSend: bottom = 0.0, top = 1.0
                 double relativeY = (drawRect.bottom - where.y) / drawRect.getHeight();
                 newValue = std::max(0.0, std::min(1.0, relativeY));
             } else { // TapContext::Pan, TapContext::FilterResonance, or TapContext::PitchShift
@@ -1399,6 +1457,8 @@ float TapButton::getContextDefaultValue() const
             return 0.0f; // Bypass filter
         case TapContext::PitchShift:
             return 0.5f; // 0 semitones (no pitch shift)
+        case TapContext::FeedbackSend:
+            return 0.0f; // No feedback send (0%)
         case TapContext::Enable:
         default:
             return 0.0f; // Not used for Enable context
@@ -1908,6 +1968,10 @@ void WaterStickEditor::forceParameterSynchronization()
                         break;
                     case TapContext::FilterCutoff:
                         paramName << "Tap" << (i+1) << "FilterCutoff";
+                        WS_LOG_PARAM_CONTEXT(contextStr.str(), paramId, paramName.str(), paramValue);
+                        break;
+                    case TapContext::FeedbackSend:
+                        paramName << "Tap" << (i+1) << "FeedbackSend";
                         WS_LOG_PARAM_CONTEXT(contextStr.str(), paramId, paramName.str(), paramValue);
                         break;
                     default:

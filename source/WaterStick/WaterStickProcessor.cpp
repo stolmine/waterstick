@@ -74,6 +74,7 @@ struct TapParameterProcessor {
     static const TapParameterRange kTapBasicRange;
     static const TapParameterRange kTapFilterRange;
     static const TapParameterRange kTapPitchRange;
+    static const TapParameterRange kTapFeedbackRange;
 
     static void processTapParameter(Vst::ParamID paramId, Vst::ParamValue value, WaterStickProcessor* processor) {
         if (kTapBasicRange.contains(paramId)) {
@@ -111,6 +112,16 @@ struct TapParameterProcessor {
             if (tapIndex < 16) {
                 processor->mTapPitchShift[tapIndex] = ParameterConverter::convertPitchShift(value);
             }
+            return;
+        }
+
+        if (kTapFeedbackRange.contains(paramId)) {
+            int tapIndex, paramType;
+            kTapFeedbackRange.getIndices(paramId, tapIndex, paramType);
+
+            if (tapIndex < 16) {
+                processor->mTapFeedbackSend[tapIndex] = static_cast<float>(value);
+            }
         }
     }
 };
@@ -118,6 +129,7 @@ struct TapParameterProcessor {
 const TapParameterRange TapParameterProcessor::kTapBasicRange = {kTap1Enable, kTap16Pan, 3};
 const TapParameterRange TapParameterProcessor::kTapFilterRange = {kTap1FilterCutoff, kTap16FilterType, 3};
 const TapParameterRange TapParameterProcessor::kTapPitchRange = {kTap1PitchShift, kTap16PitchShift, 1};
+const TapParameterRange TapParameterProcessor::kTapFeedbackRange = {kTap1FeedbackSend, kTap16FeedbackSend, 1};
 
 const char* TempoSync::sDivisionTexts[kNumSyncDivisions] = {
     "1/64", "1/32T", "1/64.", "1/32", "1/16T", "1/32.", "1/16",
@@ -1283,6 +1295,7 @@ WaterStickProcessor::WaterStickProcessor()
         mTapFilterType[i] = kFilterType_Bypass;
 
         mTapPitchShift[i] = 0;  // Default to no pitch shift
+        mTapFeedbackSend[i] = 0.0f;  // Default to no feedback send
 
         mTapFadingOut[i] = false;
         mTapFadeOutRemaining[i] = 0;
@@ -1298,6 +1311,9 @@ WaterStickProcessor::WaterStickProcessor()
     mFeedbackBufferL = 0.0f;
     mFeedbackBufferR = 0.0f;
 
+    mFeedbackSubMixerL = 0.0f;
+    mFeedbackSubMixerR = 0.0f;
+
     // Initialize parameter history with current values
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < PARAM_HISTORY_SIZE; j++) {
@@ -1307,6 +1323,7 @@ WaterStickProcessor::WaterStickProcessor()
             mTapParameterHistory[i][j].filterResonance = mTapFilterResonance[i];
             mTapParameterHistory[i][j].filterType = mTapFilterType[i];
             mTapParameterHistory[i][j].pitchShift = mTapPitchShift[i];
+            mTapParameterHistory[i][j].feedbackSend = mTapFeedbackSend[i];
             mTapParameterHistory[i][j].enabled = mTapEnabled[i];
         }
     }
@@ -1398,6 +1415,10 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     float sumL = 0.0f;
     float sumR = 0.0f;
 
+    // Clear feedback sub-mixer for this sample
+    mFeedbackSubMixerL = 0.0f;
+    mFeedbackSubMixerR = 0.0f;
+
     for (int tap = 0; tap < NUM_TAPS; tap++) {
         bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
@@ -1454,13 +1475,22 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
             float leftGain = 1.0f - pan;
             float rightGain = pan;
 
-            sumL += (tapOutputL * leftGain) + (tapOutputR * leftGain);
-            sumR += (tapOutputL * rightGain) + (tapOutputR * rightGain);
+            // Apply panning for main tap output
+            float tapMainL = (tapOutputL * leftGain) + (tapOutputR * leftGain);
+            float tapMainR = (tapOutputL * rightGain) + (tapOutputR * rightGain);
+            sumL += tapMainL;
+            sumR += tapMainR;
+
+            // Add to feedback sub-mixer based on per-tap send level
+            float feedbackSendLevel = historicParams.feedbackSend;
+            mFeedbackSubMixerL += tapMainL * feedbackSendLevel;
+            mFeedbackSubMixerR += tapMainR * feedbackSendLevel;
         }
     }
 
-    mFeedbackBufferL = sumL;
-    mFeedbackBufferR = sumR;
+    // Store the feedback sub-mixer output (instead of raw tap outputs)
+    mFeedbackBufferL = mFeedbackSubMixerL;
+    mFeedbackBufferR = mFeedbackSubMixerR;
 
     // Delay section is always 100% wet now
     float dryGain = 0.0f;
@@ -1561,6 +1591,7 @@ void WaterStickProcessor::captureCurrentParameters()
         snapshot.filterResonance = mTapFilterResonance[i];
         snapshot.filterType = mTapFilterType[i];
         snapshot.pitchShift = mTapPitchShift[i];
+        snapshot.feedbackSend = mTapFeedbackSend[i];
         snapshot.enabled = mTapEnabled[i];
     }
 
@@ -1578,6 +1609,8 @@ WaterStickProcessor::ParameterSnapshot WaterStickProcessor::getHistoricParameter
         current.filterCutoff = mTapFilterCutoff[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
         current.filterResonance = mTapFilterResonance[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
         current.filterType = mTapFilterType[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.pitchShift = mTapPitchShift[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
+        current.feedbackSend = mTapFeedbackSend[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
         current.enabled = mTapEnabled[tapIndex >= 0 && tapIndex < 16 ? tapIndex : 0];
         return current;
     }
@@ -1825,6 +1858,8 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
         streamer.writeInt32(mTapFilterType[i]);
         // Save pitch shift parameter
         streamer.writeInt32(mTapPitchShift[i]);
+        // Save feedback send parameter
+        streamer.writeFloat(mTapFeedbackSend[i]);
     }
 
     return kResultOk;
@@ -1883,6 +1918,10 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
         streamer.readInt32(mTapFilterType[i]);
         // Load pitch shift parameter
         streamer.readInt32(mTapPitchShift[i]);
+        // Load feedback send parameter (with default fallback for legacy compatibility)
+        if (!streamer.readFloat(mTapFeedbackSend[i])) {
+            mTapFeedbackSend[i] = 0.0f;  // Default to no feedback send for legacy projects
+        }
 
         // Initialize previous state to current state to prevent unwanted buffer clears
         mTapEnabledPrevious[i] = mTapEnabled[i];

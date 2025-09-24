@@ -217,6 +217,24 @@ tresult PLUGIN_API WaterStickController::initialize(FUnknown* context)
     parameters.addParameter(STR16("Tap 15 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap15PitchShift, 0, STR16("Pitch"));
     parameters.addParameter(STR16("Tap 16 Pitch Shift"), STR16("st"), 24, 0.5, Vst::ParameterInfo::kCanAutomate, kTap16PitchShift, 0, STR16("Pitch"));
 
+    // Per-tap feedback send parameters
+    parameters.addParameter(STR16("Tap 1 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap1FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 2 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap2FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 3 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap3FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 4 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap4FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 5 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap5FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 6 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap6FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 7 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap7FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 8 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap8FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 9 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap9FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 10 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap10FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 11 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap11FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 12 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap12FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 13 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap13FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 14 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap14FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 15 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap15FeedbackSend, 0, STR16("Feedback"));
+    parameters.addParameter(STR16("Tap 16 Feedback Send"), STR16("%"), 0, 0.0, Vst::ParameterInfo::kCanAutomate, kTap16FeedbackSend, 0, STR16("Feedback"));
+
     // Global controls
     parameters.addParameter(STR16("Global Dry/Wet"), STR16("%"), 0, 0.5,
                            Vst::ParameterInfo::kCanAutomate, kGlobalDryWet, 0,
@@ -346,6 +364,7 @@ float WaterStickController::getDefaultParameterValue(Vst::ParamID id)
     if (id == kSyncDivision) return static_cast<float>(kSync_1_4) / (kNumSyncDivisions - 1);
     if (id == kGrid) return static_cast<float>(kGrid_4) / (kNumGridValues - 1);
     if (id >= kTap1Enable && id <= kTap16Enable && ((id - kTap1Enable) % 3 == 0)) return 0.0f;
+    if (id >= kTap1FeedbackSend && id <= kTap16FeedbackSend) return 0.0f;  // Feedback sends default to 0%
     if (id == kGlobalDryWet) return 0.5f;
     if (id == kDelayBypass) return 0.0f;
 
@@ -1088,6 +1107,15 @@ tresult PLUGIN_API WaterStickController::getParamStringByValue(Vst::ParamID id, 
                     snprintf(pitchText, sizeof(pitchText), "%d st", semitones);
                 }
                 Steinberg::UString(string, 128).fromAscii(pitchText);
+                return kResultTrue;
+            }
+
+            // Handle per-tap feedback send parameters
+            if (id >= kTap1FeedbackSend && id <= kTap16FeedbackSend) {
+                float percentage = valueNormalized * 100.0f;
+                char feedbackText[128];
+                snprintf(feedbackText, sizeof(feedbackText), "%.1f%%", percentage);
+                Steinberg::UString(string, 128).fromAscii(feedbackText);
                 return kResultTrue;
             }
 

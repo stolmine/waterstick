@@ -342,6 +342,9 @@ private:
     // Per-tap pitch shift parameters
     int mTapPitchShift[16];
 
+    // Per-tap feedback send parameters
+    float mTapFeedbackSend[16];
+
     // Fade-out state for smooth tap disengagement
     bool mTapFadingOut[16];        // True when tap is fading out
     int mTapFadeOutRemaining[16];  // Samples remaining in fade-out
@@ -375,6 +378,10 @@ private:
     float mFeedbackBufferL;
     float mFeedbackBufferR;
 
+    // Feedback sub-mixer for per-tap sends
+    float mFeedbackSubMixerL;
+    float mFeedbackSubMixerR;
+
 
     // Parameter change tracking for tempo sync optimization
     float mLastTempoSyncDelayTime;
@@ -388,6 +395,7 @@ private:
         float filterResonance;
         int filterType;
         int pitchShift;
+        float feedbackSend;
         bool enabled;
     };
 

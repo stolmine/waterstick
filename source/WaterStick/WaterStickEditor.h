@@ -21,7 +21,8 @@ enum class TapContext {
     FilterResonance = 4, // Filter resonance context (mode button 5)
     FilterType = 5,    // Filter type context (mode button 6)
     PitchShift = 6,    // Pitch shift context (mode button 7)
-    COUNT = 7          // Total number of contexts
+    FeedbackSend = 7,  // Feedback send level context (mode button 8)
+    COUNT = 8          // Total number of contexts
 };
 
 // Custom minimap tap button class for always-visible tap mute state
