@@ -467,8 +467,14 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
                 break;
             }
         }
+        // DIAGNOSTIC: Log macro knob events in valueChanged
+        printf("[MacroKnob] valueChanged - control tag: %d, columnIndex: %d, value: %.3f\n",
+               control->getTag(), columnIndex, control->getValue());
+
         if (columnIndex >= 0) {
             handleMacroKnobChange(columnIndex, control->getValue());
+        } else {
+            printf("[MacroKnob] ERROR: Could not find macro knob in array\n");
         }
         return;
     }
@@ -653,6 +659,14 @@ void WaterStickEditor::switchToContext(TapContext newContext)
 
     // Switch to new context
     currentContext = newContext;
+
+    // Synchronize the context with the controller for macro knob coordination
+    auto waterStickController = dynamic_cast<WaterStickController*>(controller);
+    if (waterStickController) {
+        waterStickController->setCurrentTapContext(static_cast<int>(newContext));
+        printf("[Context] Synchronized context with controller: %s (%d)\n",
+               newContextName.c_str(), static_cast<int>(newContext));
+    }
 
 
     // Load new context values from VST parameters
@@ -2432,65 +2446,29 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     int discretePos = knob->getDiscretePosition();
     TapContext currentCtx = getCurrentContext();
 
-    // Check if this is the global macro knob (column 0) or a regular column knob
-    if (columnIndex == 0) {
-        // Apply Rainmaker-style global macro curve across all 16 taps
-        handleGlobalMacroKnobChange(discretePos, currentCtx);
-        return;
-    }
+    auto controller = getController();
+    if (!controller) return;
 
-    // Legacy column-based behavior for columns 1-7
-    // Map discrete position to tap indices for this column
-    // Column 1 affects taps 1&9, Column 2 affects taps 2&10, etc.
-    int topRowTap = columnIndex - 1;      // Taps 0-6 (display as 1-7)
-    int bottomRowTap = columnIndex + 7;   // Taps 8-14 (display as 9-15)
+    auto waterStickController = dynamic_cast<WaterStickController*>(controller);
+    if (!waterStickController) return;
 
-    // Ensure valid tap indices
-    if (topRowTap < 0 || topRowTap >= 16 || bottomRowTap < 0 || bottomRowTap >= 16) {
-        return;
-    }
+    // Synchronize the current context with the controller
+    waterStickController->setCurrentTapContext(static_cast<int>(currentCtx));
 
-    // Get normalized value for the discrete position (0-7 maps to 0.0-1.0)
-    float normalizedValue = static_cast<float>(discretePos) / 7.0f;
+    // DIAGNOSTIC: Log macro knob changes
+    printf("[MacroKnob] handleMacroKnobChange - columnIndex: %d, value: %.3f, discretePos: %d, context: %d\n",
+           columnIndex, value, discretePos, static_cast<int>(currentCtx));
+    printf("[MacroKnob] Applying Rainmaker-style global macro curve to ALL 16 taps\n");
 
-    // Update the tap buttons in this column
-    if (tapButtons[topRowTap]) {
-        auto topTapButton = static_cast<TapButton*>(tapButtons[topRowTap]);
-        topTapButton->setContextValue(currentCtx, normalizedValue);
-        if (topTapButton->getContext() == currentCtx) {
-            topTapButton->setValue(normalizedValue);
-            topTapButton->invalid();
-        }
+    // ALL macro knobs (0-7) now apply global curves across all 16 taps
+    handleGlobalMacroKnobChange(discretePos, currentCtx);
 
-        // Update VST parameter
-        int paramId = getTapParameterIdForContext(topRowTap, currentCtx);
-        if (paramId >= 0) {
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(paramId, normalizedValue);
-                controller->performEdit(paramId, normalizedValue);
-            }
-        }
-    }
+    // Update the corresponding VST macro knob parameter to trigger DAW automation
+    int macroParamId = kMacroKnob1 + columnIndex;
+    controller->setParamNormalized(macroParamId, value);
+    controller->performEdit(macroParamId, value);
 
-    if (tapButtons[bottomRowTap]) {
-        auto bottomTapButton = static_cast<TapButton*>(tapButtons[bottomRowTap]);
-        bottomTapButton->setContextValue(currentCtx, normalizedValue);
-        if (bottomTapButton->getContext() == currentCtx) {
-            bottomTapButton->setValue(normalizedValue);
-            bottomTapButton->invalid();
-        }
-
-        // Update VST parameter
-        int paramId = getTapParameterIdForContext(bottomRowTap, currentCtx);
-        if (paramId >= 0) {
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(paramId, normalizedValue);
-                controller->performEdit(paramId, normalizedValue);
-            }
-        }
-    }
+    printf("[MacroKnob] Updated VST macro parameter %d with value %.3f\n", macroParamId, value);
 }
 
 void WaterStickEditor::handleGlobalMacroKnobChange(int discretePosition, TapContext currentCtx)
@@ -2665,12 +2643,20 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     // Get discrete position (0-7)
     int discretePos = getDiscretePosition();
 
+    // DIAGNOSTIC: Comprehensive draw operation logging
+    printf("[MacroKnob] Drawing knob - discretePos: %d, value: %.3f, tag: %d, isDirty: %s\n",
+           discretePos, getValue(), getTag(), isDirty() ? "true" : "false");
+
     // Calculate rotation angle for 8 positions
     // Positions are evenly distributed around a circle (0-7 = 8 positions)
     // Start at top (-90°) and go clockwise
     const float startAngle = -90.0f; // Start at top
     const float angleRange = 315.0f; // 7/8 of full rotation (315° instead of 360°)
     float angle = startAngle + (discretePos * angleRange / 7.0f);
+
+    // DIAGNOSTIC: Verify angle calculations for all 8 positions
+    printf("[MacroKnob] Angle calculation - discretePos: %d, angle: %.1f° (expected range: -90° to 225°)\n",
+           discretePos, angle);
 
     // Convert to radians
     float angleRad = angle * M_PI / 180.0f;
@@ -2690,16 +2676,34 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     knobRect.inset(1.0, 1.0);  // Slight inset for clean edges
     context->drawEllipse(knobRect, VSTGUI::kDrawFilled);
 
-    // Draw position indicator dot
+    // Draw position indicator dot using improved positioning calculation
     VSTGUI::CPoint center = rect.getCenter();
-    float radius = (rect.getWidth() / 2.0f) - 4.0f; // Dot positioned near edge
+    float outerRadius = (rect.getWidth() / 2.0f) - 1.0f; // Account for inset
+    const float dotRadius = 2.5f; // Slightly larger dot for better visibility
 
-    float dotX = center.x + radius * cos(angleRad);
-    float dotY = center.y + radius * sin(angleRad);
+    // Calculate the distance from center to dot center
+    // Position dot closer to edge for better visibility
+    float dotCenterDistance = outerRadius - dotRadius - 1.0f;
 
-    // Draw dot as small filled circle
-    const float dotRadius = 2.0f;
-    VSTGUI::CRect dotRect(dotX - dotRadius, dotY - dotRadius, dotX + dotRadius, dotY + dotRadius);
+    // Calculate dot position using trigonometry
+    VSTGUI::CPoint dotCenter(
+        center.x + dotCenterDistance * cos(angleRad),
+        center.y + dotCenterDistance * sin(angleRad)
+    );
+
+    // Draw the dot as a filled circle
+    VSTGUI::CRect dotRect(
+        dotCenter.x - dotRadius,
+        dotCenter.y - dotRadius,
+        dotCenter.x + dotRadius,
+        dotCenter.y + dotRadius
+    );
+
+    // DIAGNOSTIC: Comprehensive dot positioning logging
+    printf("[MacroKnob] Drawing dot - angle: %.1f°, angleRad: %.3f, dotCenter: (%.1f, %.1f), dotRadius: %.1f\n",
+           angle, angleRad, dotCenter.x, dotCenter.y, dotRadius);
+    printf("[MacroKnob] Dot geometry - center: (%.1f, %.1f), outerRadius: %.1f, dotCenterDistance: %.1f\n",
+           center.x, center.y, outerRadius, dotCenterDistance);
 
     context->setFillColor(dotColor);
     context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
@@ -2709,9 +2713,19 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
 
 void MacroKnobControl::setValue(float value)
 {
-    // Quantize to discrete positions (0-7 mapped to 0.0-1.0)
-    float quantizedValue = getDiscreteValue();
+    // CRITICAL FIX: Quantize INPUT value directly, not current value (fixes circular logic bug)
+    int discretePos = static_cast<int>(value * 7.0f + 0.5f); // Round to nearest position
+    discretePos = std::max(0, std::min(7, discretePos));     // Clamp to valid range (0-7)
+    float quantizedValue = static_cast<float>(discretePos) / 7.0f; // Convert back to normalized
+
+    // DIAGNOSTIC: Log value changes with comprehensive information
+    printf("[MacroKnob] setValue - input: %.3f, discretePos: %d, quantized: %.3f, oldValue: %.3f, tag: %d\n",
+           value, discretePos, quantizedValue, getValue(), getTag());
+
     VSTGUI::CControl::setValue(quantizedValue);
+
+    // STANDARDIZED: Use setDirty(true) consistently instead of invalid()
+    setDirty(true);
 }
 
 float MacroKnobControl::getDiscreteValue() const
@@ -2734,8 +2748,13 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, c
     if (buttons & VSTGUI::kLButton) {
         auto currentTime = std::chrono::steady_clock::now();
 
+        // DIAGNOSTIC: Log mouse down events
+        printf("[MacroKnob] Mouse down - tag: %d, pos: (%.1f, %.1f), currentValue: %.3f\n",
+               getTag(), where.x, where.y, getValue());
+
         // Check for double-click to reset to default
         if (isDoubleClick(currentTime)) {
+            printf("[MacroKnob] Double-click detected - resetting to default\n");
             resetToDefaultValue();
             if (listener) {
                 listener->valueChanged(this);
@@ -2763,10 +2782,15 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
         float newValue = currentValue + (deltaY * sensitivity);
         newValue = std::max(0.0f, std::min(1.0f, newValue)); // Clamp to 0-1
 
+        // DIAGNOSTIC: Log drag operations
+        printf("[MacroKnob] Mouse moved - tag: %d, deltaY: %.3f, oldValue: %.3f, newValue: %.3f\n",
+               getTag(), deltaY, currentValue, newValue);
+
         setValue(newValue);
-        invalid();
+        setDirty(true); // STANDARDIZED: Use setDirty(true) consistently
 
         if (listener) {
+            printf("[MacroKnob] Calling valueChanged listener\n");
             listener->valueChanged(this);
         }
 
@@ -2794,7 +2818,7 @@ bool MacroKnobControl::isDoubleClick(const std::chrono::steady_clock::time_point
 void MacroKnobControl::resetToDefaultValue()
 {
     setValue(0.0f); // Reset to first position
-    invalid();
+    setDirty(true); // STANDARDIZED: Use setDirty(true) consistently
 }
 
 //========================================================================

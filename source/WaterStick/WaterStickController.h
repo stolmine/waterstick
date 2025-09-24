@@ -193,11 +193,18 @@ private:
     void updateDiscreteParameters();
     void applyParameterSmoothing();
 
+    // Shared context state for macro knob coordination
+    int mCurrentTapContext = 1; // Default to Volume context (TapContext::Volume = 1)
+
 public:
     // Public access for processor integration
     RandomizationEngine& getRandomizationEngine() { return mRandomizationEngine; }
     DefaultResetSystem& getDefaultResetSystem() { return mDefaultResetSystem; }
     MacroCurveSystem& getMacroCurveSystem() { return mMacroCurveSystem; }
+
+    // Shared context state management for macro knob coordination
+    void setCurrentTapContext(int context) { mCurrentTapContext = context; }
+    int getCurrentTapContext() const { return mCurrentTapContext; }
 };
 
 } // namespace WaterStick

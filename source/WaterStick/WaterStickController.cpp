@@ -495,6 +495,14 @@ float MacroCurveSystem::getUniformLevel(int discretePosition) const {
 void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTapContext, WaterStickController* controller) const {
     if (!controller || discretePosition < 0 || discretePosition > 7) return;
 
+    // DIAGNOSTIC: Log global macro curve application
+    const char* contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
+    const char* contextName = (currentTapContext >= 0 && currentTapContext < 8) ? contextNames[currentTapContext] : "Unknown";
+
+    printf("[MacroCurveSystem] applyGlobalMacroCurve START - discretePos: %d, context: %s (%d), applying to ALL 16 taps\n",
+           discretePosition, contextName, currentTapContext);
+    printf("[MacroCurveSystem] Curve pattern: %s\n", getRainmakerCurveName(discretePosition));
+
     // Apply curve to all 16 taps based on current context
     for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
         float curveValue = getGlobalCurveValueForTap(discretePosition, tapIndex);
@@ -539,8 +547,17 @@ void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTa
         if (paramId >= 0) {
             controller->setParamNormalized(paramId, curveValue);
             controller->performEdit(paramId, curveValue);
+
+            // DIAGNOSTIC: Log each tap parameter update
+            printf("[MacroCurveSystem] Tap %d: paramId %d → %.3f\n",
+                   tapIndex + 1, static_cast<int>(paramId), curveValue);
+        } else {
+            printf("[MacroCurveSystem] WARNING: Invalid paramId for tap %d, context %d\n",
+                   tapIndex + 1, currentTapContext);
         }
     }
+
+    printf("[MacroCurveSystem] applyGlobalMacroCurve COMPLETE - Updated %d tap parameters\n", 16);
 }
 
 void MacroCurveSystem::applyGlobalMacroCurveWithType(int discretePosition, int currentTapContext, MacroCurveTypes curveType, WaterStickController* controller) const {
@@ -2040,21 +2057,19 @@ void WaterStickController::handleMacroKnobParameterChange(Steinberg::Vst::ParamI
     int macroKnobIndex = static_cast<int>(paramId - kMacroKnob1);
     if (macroKnobIndex < 0 || macroKnobIndex >= 8) return;
 
-    // For DAW automation, we need to trigger the global macro curve application
-    // Since we don't have direct access to current GUI context here, we could:
-    // 1. Store the last context and apply to that context
-    // 2. Apply to all contexts (less desirable)
-    // 3. Apply only when a specific context is set
-    // For now, we'll apply to the Volume context as a default for automation
-
-    // Note: The specific curve type is determined by the discrete position in the new system
-
     // Convert normalized value (0.0-1.0) to discrete position (0-7)
     int discretePosition = static_cast<int>(value * 7.0f + 0.5f);
     if (discretePosition > 7) discretePosition = 7;
 
-    // Apply to Volume context (TapContext::Volume = 1) as default for automation
-    mMacroCurveSystem.applyGlobalMacroCurve(discretePosition, 1, this);
+    // DIAGNOSTIC: Log macro knob parameter changes from DAW automation
+    printf("[MacroKnobDAW] handleMacroKnobParameterChange - paramId: %d, macroKnobIndex: %d, value: %.3f, discretePos: %d, currentContext: %d\n",
+           static_cast<int>(paramId), macroKnobIndex, value, discretePosition, mCurrentTapContext);
+
+    // Apply Rainmaker-style global macro curve using the current synchronized context
+    // This ensures DAW automation respects the currently active GUI context
+    mMacroCurveSystem.applyGlobalMacroCurve(discretePosition, mCurrentTapContext, this);
+
+    printf("[MacroKnobDAW] Applied global macro curve with context %d\n", mCurrentTapContext);
 }
 
 void WaterStickController::updateDiscreteParameters()
