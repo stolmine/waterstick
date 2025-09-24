@@ -102,7 +102,22 @@
       "WebFetch(domain:www.katjaas.nl)",
       "Bash(g++:*)",
       "Bash(./pitch_verification)",
-      "Bash(build/bin/validator:*)"
+      "Bash(build/bin/validator:*)",
+      "Bash(./bin/Release/validator WaterStick.vst3)",
+      "Bash(__NEW_LINE__ codesign -dv \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\")",
+      "Bash(__NEW_LINE__ spctl -a -t execute -vv \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\")",
+      "Bash(__NEW_LINE__ plutil -lint \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/Info.plist\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n\\nInfo.plist Contents:\")",
+      "Bash(__NEW_LINE__ cat \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/Info.plist\")",
+      "Bash(__NEW_LINE__)",
+      "Bash(__NEW_LINE__ plutil -lint \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/Resources/moduleinfo.json\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n\\nmoduleinfo.json Contents:\")",
+      "Bash(__NEW_LINE__ cat \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/Resources/moduleinfo.json\")",
+      "Bash(__NEW_LINE__ find \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\" -type d)",
+      "Bash(__NEW_LINE__ echo -e \"\\n\\nBundle File Permissions:\")",
+      "Bash(__NEW_LINE__ find \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\" -type f -exec ls -l {} ;)",
+      "Bash(__NEW_LINE__ file \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3/Contents/MacOS/WaterStick\")",
+      "Bash(\"/Users/why/repos/waterstick/build/bin/Release/validator\" \"/Library/Audio/Plug-Ins/VST3/WaterStick.vst3\")"
     ],
     "deny": [],
     "ask": []
