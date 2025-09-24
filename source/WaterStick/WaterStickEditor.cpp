@@ -2561,14 +2561,7 @@ void WaterStickEditor::handleRandomizeAction(int columnIndex)
         }
     }
 
-    // Update all macro knobs to reflect the global average
-    float globalAverageValue = totalRandomValue / 16.0f;
-    for (int i = 0; i < 8; ++i) {
-        if (macroKnobs[i]) {
-            macroKnobs[i]->setValue(globalAverageValue);
-            macroKnobs[i]->invalid();
-        }
-    }
+    // Macro knobs remain visually independent - no visual update needed
 }
 
 void WaterStickEditor::handleResetAction(int columnIndex)
@@ -2599,13 +2592,7 @@ void WaterStickEditor::handleResetAction(int columnIndex)
         }
     }
 
-    // Update all macro knobs to reflect the global default value
-    for (int i = 0; i < 8; ++i) {
-        if (macroKnobs[i]) {
-            macroKnobs[i]->setValue(defaultValue);
-            macroKnobs[i]->invalid();
-        }
-    }
+    // Macro knobs remain visually independent - no visual update needed
 }
 
 float WaterStickEditor::generateRandomValue()
