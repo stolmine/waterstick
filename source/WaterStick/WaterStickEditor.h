@@ -262,7 +262,7 @@ public:
 
 private:
     static constexpr int kEditorWidth = 670;   // Optimized to eliminate excess whitespace while maintaining 30px margins
-    static constexpr int kEditorHeight = 440;  // Professional tight layout with proper content fit
+    static constexpr int kEditorHeight = 480;  // +40px expansion to resolve context labels collision
 
     // Tap button array for easy access
     VSTGUI::CControl* tapButtons[16];

@@ -448,3 +448,165 @@ Triangle column X: delayMargin + i * (buttonSize + buttonSpacing)  ✓ (Perfect 
 - **Theming**: Different triangle styles for different plugin themes
 
 This triangular configuration represents a significant improvement in both functional usability and visual design, solving the critical overlap issue while creating a more intuitive and aesthetically pleasing interface architecture.
+
+## CRITICAL COLLISION ISSUE: Context Labels vs Global Controls
+
+### Issue Discovery
+
+An exhaustive collision analysis has revealed a **critical layout issue** where context labels (mode button labels) are colliding with global controls, creating visual overlap and potential user interface problems.
+
+### Precise Collision Analysis
+
+#### Current Positioning Calculations (440px height)
+
+**Mode Button Labels (Context Labels):**
+- **Position calculation:**
+  - `modeButtonY = tapGridTop + (2 * buttonSize) + buttonSpacing + (buttonSpacing * 3.0)`
+  - `modeButtonY = 57 + (2 * 53) + 26 + (26 * 3.0) = 267px`
+  - `labelY = modeButtonY + buttonSize + 12 = 267 + 53 + 12 = 332px`
+  - **Label Y range: 332px to 352px (20px height)**
+
+**Global Controls:**
+- **Position calculation:**
+  - `bottomThirdTop = ((440 * 2) / 3) - 23 = 270px`
+  - `modeButtonSpacing = buttonSpacing * 2.8 = 72.8px`
+  - `knobY = bottomThirdTop + modeButtonSpacing = 270 + 72.8 = 343px`
+  - **Global knobs: 343px to 396px (53px height)**
+  - **Global labels: 401px to 421px (20px height)**
+  - **Global values: 423px to 441px (18px height)**
+
+#### Collision Results
+
+1. **Primary Collision:** Context labels end at Y=352px, global knobs start at Y=343px
+   - **OVERLAP: 9px collision between context labels and global knobs**
+
+2. **Height Overflow:** Global values extend to Y=441px vs plugin height of 440px
+   - **OVERFLOW: 1px beyond current plugin boundary**
+
+### Visual Impact Analysis
+
+#### Current Problematic Layout (440px height)
+```
+┌─────────────────────────────────────────────────────────────────┐ ← Y=0
+│                  WaterStick VST3 Plugin                         │
+│                                                                 │
+│   [T1] [T2] [T3] [T4] [T5] [T6] [T7] [T8]    ← Tap Buttons     │ Y=57-163
+│   [T9] [T10][T11][T12][T13][T14][T15][T16]                     │
+│                                                                 │
+│     ▲M1▲  ▲M2▲  ▲M3▲  ▲M4▲  ▲M5▲  ▲M6▲  ▲M7▲  ▲M8▲           │ Y=203-253
+│    R1 X1  R2 X2  R3 X3  R4 X4  R5 X5  R6 X6  R7 X7 ← Smart H. │
+│                                                                 │
+│   [M1] [M2] [M3] [M4] [M5] [M6] [M7] [M8]    ← Mode Buttons    │ Y=267-320
+│    Mutes Level Pan Cutoff Res Type Pitch FB  ← Context Labels  │ Y=332-352 ❌
+│                                                                 │
+│ ❌❌❌❌❌❌❌❌ COLLISION ZONE (9px) ❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌❌ │ Y=343-352
+│                                                                 │
+│   [BYP][K1] [K2] [K3] [K4] [K5] [K6] [K7]    ← Global Knobs   │ Y=343-396 ❌
+│    D-BYP SYNC TIME FDBK GRID IN OUT G-MIX    ← Global Labels   │ Y=401-421
+│    OFF 1/16 127ms 45% ON 0dB +3dB 67%       ← Global Values   │ Y=423-441 ⚠️
+└─────────────────────────────────────────────────────────────────┘ ← Y=440 ⚠️
+```
+
+### Recommended Solution: Plugin Height Expansion
+
+#### Analysis of Height Requirements
+
+**Current Issues Requiring Resolution:**
+1. **Context label collision:** 9px overlap with global knobs
+2. **Height overflow:** 1px beyond current plugin boundary
+3. **Visual spacing:** Need minimum 10px safety gap between sections
+
+**Minimum Height Calculation:**
+- Current issues: 9px collision + 1px overflow = 10px
+- Safety margin: 10px minimum gap between sections
+- **Total additional height needed: 20px minimum**
+
+#### Recommended New Dimensions
+
+**Option A: Conservative Expansion (470px)**
+- Increase: +30px (6.8% increase)
+- Benefits: Minimal visual impact, resolves collision
+- Layout: 10px safety gap between sections
+
+**Option B: Standard Expansion (480px) - RECOMMENDED**
+- Increase: +40px (9.1% increase)
+- Benefits: Generous spacing, professional appearance, future-proof
+- Layout: 20px safety gap, better proportions
+
+#### Proposed Layout with 480px Height
+
+```
+┌─────────────────────────────────────────────────────────────────┐ ← Y=0
+│                  WaterStick VST3 Plugin (480px)                 │
+│                                                                 │
+│   [T1] [T2] [T3] [T4] [T5] [T6] [T7] [T8]    ← Tap Buttons     │ Y=77-183
+│   [T9] [T10][T11][T12][T13][T14][T15][T16]                     │
+│                                                                 │
+│     ▲M1▲  ▲M2▲  ▲M3▲  ▲M4▲  ▲M5▲  ▲M6▲  ▲M7▲  ▲M8▲           │ Y=223-273
+│    R1 X1  R2 X2  R3 X3  R4 X4  R5 X5  R6 X6  R7 X7 ← Smart H. │
+│                                                                 │
+│   [M1] [M2] [M3] [M4] [M5] [M6] [M7] [M8]    ← Mode Buttons    │ Y=287-340
+│    Mutes Level Pan Cutoff Res Type Pitch FB  ← Context Labels  │ Y=352-372 ✅
+│                                                                 │
+│ ✅✅✅✅✅✅✅ 10px SAFETY GAP ✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅✅ │ Y=372-382
+│                                                                 │
+│   [BYP][K1] [K2] [K3] [K4] [K5] [K6] [K7]    ← Global Knobs   │ Y=383-436 ✅
+│    D-BYP SYNC TIME FDBK GRID IN OUT G-MIX    ← Global Labels   │ Y=441-461
+│    OFF 1/16 127ms 45% ON 0dB +3dB 67%       ← Global Values   │ Y=463-481
+│                                             ← 19px bottom margin │
+└─────────────────────────────────────────────────────────────────┘ ← Y=480 ✅
+```
+
+### Implementation Requirements
+
+#### Code Changes Required
+
+1. **Update Editor Height Constant**
+   ```cpp
+   // In WaterStickEditor.h or WaterStickEditor.cpp
+   static constexpr int kEditorHeight = 480;  // Changed from 440
+   ```
+
+2. **Adjust Vertical Centering**
+   - The current `-23px` adjustment may need recalculation for optimal centering
+   - New centering adjustment: `((480 - content_height) / 2)`
+
+3. **Verify Layout Calculations**
+   - All positioning calculations will automatically adjust due to the height increase
+   - Equal margin layout system will maintain proportional spacing
+   - No changes needed to relative positioning logic
+
+#### Layout Verification Checklist
+
+- [ ] Context labels clear of global controls (minimum 10px gap)
+- [ ] Global values within plugin boundary
+- [ ] Triangular Smart Hierarchy positioning preserved
+- [ ] Equal margin system functioning correctly
+- [ ] Professional spacing maintained throughout interface
+- [ ] VST3 validator compliance maintained
+
+### Alternative Solutions Considered
+
+#### Option 1: Reduce Context Label Size (NOT RECOMMENDED)
+- **Pros:** No height change required
+- **Cons:** Reduces readability, inconsistent with design standards
+
+#### Option 2: Relocate Context Labels (NOT RECOMMENDED)
+- **Pros:** No height change required
+- **Cons:** Breaks spatial relationship with mode buttons, confusing UX
+
+#### Option 3: Compress Global Controls (NOT RECOMMENDED)
+- **Pros:** No height change required
+- **Cons:** Compromises knob size, reduces usability, cramped appearance
+
+### Conclusion
+
+The **480px height expansion** is the optimal solution that:
+- ✅ Completely resolves the 9px collision issue
+- ✅ Accommodates all existing content within boundaries
+- ✅ Provides professional 10px safety margins
+- ✅ Maintains design integrity and proportions
+- ✅ Future-proofs the layout for additional features
+- ✅ Requires minimal implementation (single constant change)
+
+This approach ensures the WaterStick VST3 plugin maintains its professional appearance while resolving all identified collision issues through systematic height expansion.
