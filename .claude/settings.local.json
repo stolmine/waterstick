@@ -101,7 +101,8 @@
       "Bash(/Users/why/repos/waterstick/build/VST3/Release/validator WaterStick)",
       "WebFetch(domain:www.katjaas.nl)",
       "Bash(g++:*)",
-      "Bash(./pitch_verification)"
+      "Bash(./pitch_verification)",
+      "Bash(build/bin/validator:*)"
     ],
     "deny": [],
     "ask": []
