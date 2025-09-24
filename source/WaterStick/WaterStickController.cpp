@@ -620,6 +620,121 @@ float MacroCurveSystem::getCurveValueForTapWithType(MacroCurveTypes curveType, i
     return evaluateCurve(curveType, normalizedPosition);
 }
 
+// Continuous versions for smooth macro knob control
+void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, int currentTapContext, WaterStickController* controller) const {
+    if (!controller || continuousValue < 0.0f || continuousValue > 1.0f) return;
+
+    // DIAGNOSTIC: Log global macro curve application with continuous value
+    const char* contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
+    const char* contextName = (currentTapContext >= 0 && currentTapContext < 8) ? contextNames[currentTapContext] : "Unknown";
+
+    printf("[MacroCurveSystem] applyGlobalMacroCurveContinuous START - continuousValue: %.3f, context: %s (%d), applying to ALL 16 taps\n",
+           continuousValue, contextName, currentTapContext);
+
+    // Apply continuous curve to all 16 taps based on current context
+    for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
+        float curveValue = getGlobalCurveValueForTapContinuous(continuousValue, tapIndex);
+
+        // Get the appropriate parameter ID based on context and tap index
+        Steinberg::Vst::ParamID paramId = -1;
+
+        switch (currentTapContext) {
+            case 0: // TapContext::Enable
+                paramId = kTap1Enable + (tapIndex * 3);
+                break;
+            case 1: // TapContext::Volume
+                paramId = kTap1Level + (tapIndex * 3);
+                break;
+            case 2: // TapContext::Pan
+                paramId = kTap1Pan + (tapIndex * 3);
+                break;
+            case 3: // TapContext::FilterCutoff
+                paramId = kTap1FilterCutoff + (tapIndex * 3);
+                break;
+            case 4: // TapContext::FilterResonance
+                paramId = kTap1FilterResonance + (tapIndex * 3);
+                break;
+            case 5: // TapContext::FilterType
+                paramId = kTap1FilterType + (tapIndex * 3);
+                // For filter type, quantize to valid discrete values (0-4)
+                curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                break;
+            case 6: // TapContext::PitchShift
+                paramId = kTap1PitchShift + tapIndex;
+                // For pitch shift, map to bipolar range (-1.0 to +1.0)
+                curveValue = (curveValue * 2.0f) - 1.0f;
+                break;
+            case 7: // TapContext::FeedbackSend
+                paramId = kTap1FeedbackSend + tapIndex;
+                break;
+            default:
+                continue;
+        }
+
+        // Apply the curve value to the parameter
+        if (paramId >= 0) {
+            controller->setParamNormalized(paramId, curveValue);
+            controller->performEdit(paramId, curveValue);
+        } else {
+            printf("[MacroCurveSystem] WARNING: Invalid paramId for tap %d, context %d\n",
+                   tapIndex + 1, currentTapContext);
+        }
+    }
+
+    printf("[MacroCurveSystem] applyGlobalMacroCurveContinuous COMPLETE - Updated %d tap parameters\n", 16);
+}
+
+float MacroCurveSystem::getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const {
+    if (tapIndex < 0 || tapIndex >= 16) return 0.0f;
+
+    // Normalize tap index to 0.0-1.0 for curve evaluation
+    const float normalizedPosition = static_cast<float>(tapIndex) / 15.0f; // 0-15 maps to 0.0-1.0
+
+    // Smooth interpolation between different curve types based on continuous value
+    // Map continuous value (0.0-1.0) to curve selection with smooth interpolation
+
+    // Scale continuous value to range [0, 7] for 8 curve positions
+    float scaledValue = continuousValue * 7.0f;
+    int lowerIndex = static_cast<int>(std::floor(scaledValue));
+    int upperIndex = static_cast<int>(std::ceil(scaledValue));
+    float fraction = scaledValue - static_cast<float>(lowerIndex);
+
+    // Clamp indices to valid range
+    lowerIndex = std::max(0, std::min(7, lowerIndex));
+    upperIndex = std::max(0, std::min(7, upperIndex));
+
+    // Get curve values for lower and upper positions
+    float lowerValue = 0.0f;
+    float upperValue = 0.0f;
+
+    // Evaluate lower curve
+    switch (lowerIndex) {
+        case 0: lowerValue = evaluateRampUp(normalizedPosition); break;
+        case 1: lowerValue = evaluateRampDown(normalizedPosition); break;
+        case 2: lowerValue = evaluateSigmoidSCurve(normalizedPosition); break;
+        case 3: lowerValue = evaluateInverseSigmoid(normalizedPosition); break;
+        case 4: lowerValue = evaluateExpUp(normalizedPosition); break;
+        case 5: lowerValue = evaluateExpDown(normalizedPosition); break;
+        case 6: lowerValue = 0.7f; break; // Uniform 70%
+        case 7: lowerValue = 0.9f; break; // Uniform 90%
+    }
+
+    // Evaluate upper curve
+    switch (upperIndex) {
+        case 0: upperValue = evaluateRampUp(normalizedPosition); break;
+        case 1: upperValue = evaluateRampDown(normalizedPosition); break;
+        case 2: upperValue = evaluateSigmoidSCurve(normalizedPosition); break;
+        case 3: upperValue = evaluateInverseSigmoid(normalizedPosition); break;
+        case 4: upperValue = evaluateExpUp(normalizedPosition); break;
+        case 5: upperValue = evaluateExpDown(normalizedPosition); break;
+        case 6: upperValue = 0.7f; break; // Uniform 70%
+        case 7: upperValue = 0.9f; break; // Uniform 90%
+    }
+
+    // Linear interpolation between the two curve values
+    return lowerValue + fraction * (upperValue - lowerValue);
+}
+
 const char* MacroCurveSystem::getRainmakerCurveName(int discretePosition) const {
     if (discretePosition >= 0 && discretePosition < 8) {
         return sRainmakerCurveNames[discretePosition];
@@ -2057,17 +2172,16 @@ void WaterStickController::handleMacroKnobParameterChange(Steinberg::Vst::ParamI
     int macroKnobIndex = static_cast<int>(paramId - kMacroKnob1);
     if (macroKnobIndex < 0 || macroKnobIndex >= 8) return;
 
-    // Convert normalized value (0.0-1.0) to discrete position (0-7)
-    int discretePosition = static_cast<int>(value * 7.0f + 0.5f);
-    if (discretePosition > 7) discretePosition = 7;
+    // Use continuous value directly (0.0-1.0) for smooth control
+    float continuousValue = static_cast<float>(value);
 
     // DIAGNOSTIC: Log macro knob parameter changes from DAW automation
-    printf("[MacroKnobDAW] handleMacroKnobParameterChange - paramId: %d, macroKnobIndex: %d, value: %.3f, discretePos: %d, currentContext: %d\n",
-           static_cast<int>(paramId), macroKnobIndex, value, discretePosition, mCurrentTapContext);
+    printf("[MacroKnobDAW] handleMacroKnobParameterChange - paramId: %d, macroKnobIndex: %d, value: %.3f, continuousValue: %.3f, currentContext: %d\n",
+           static_cast<int>(paramId), macroKnobIndex, value, continuousValue, mCurrentTapContext);
 
     // Apply Rainmaker-style global macro curve using the current synchronized context
     // This ensures DAW automation respects the currently active GUI context
-    mMacroCurveSystem.applyGlobalMacroCurve(discretePosition, mCurrentTapContext, this);
+    mMacroCurveSystem.applyGlobalMacroCurveContinuous(continuousValue, mCurrentTapContext, this);
 
     printf("[MacroKnobDAW] Applied global macro curve with context %d\n", mCurrentTapContext);
 }

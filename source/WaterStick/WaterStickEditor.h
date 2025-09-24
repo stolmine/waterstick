@@ -161,7 +161,7 @@ public:
     CLASS_METHODS(BypassToggle, VSTGUI::CControl)
 };
 
-// Custom macro knob control with 8-position discrete behavior
+// Custom macro knob control with smooth continuous behavior
 class MacroKnobControl : public VSTGUI::CControl
 {
 public:
@@ -172,10 +172,9 @@ public:
     VSTGUI::CMouseEventResult onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
     VSTGUI::CMouseEventResult onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
 
-    // 8-position discrete value management
+    // Continuous value management - override base class behavior to avoid reset issues
     void setValue(float value) SMTG_OVERRIDE;
-    float getDiscreteValue() const;
-    int getDiscretePosition() const;
+    float getValue() const SMTG_OVERRIDE { return internalValue; }
 
     // Context assignment for control isolation
     void setAssignedContext(TapContext context) { assignedContext = context; }
@@ -186,6 +185,9 @@ public:
 private:
     bool isDragging = false;
     VSTGUI::CPoint lastMousePos;
+
+    // Internal value storage to avoid base class reset behavior
+    float internalValue = 0.0f;
 
     // Double-click detection state
     std::chrono::steady_clock::time_point lastClickTime;
@@ -264,7 +266,7 @@ public:
 
     // Smart Hierarchy helper methods (public for ActionButton access)
     void handleMacroKnobChange(int columnIndex, float value);
-    void handleGlobalMacroKnobChange(int discretePosition, TapContext currentCtx);
+    void handleGlobalMacroKnobChange(float continuousValue, TapContext currentCtx);
     void handleRandomizeAction(int columnIndex);
     void handleResetAction(int columnIndex);
     float generateRandomValue();

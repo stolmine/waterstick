@@ -517,8 +517,11 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
                 controller->setParamNormalized(parameterId, control->getValue());
                 controller->performEdit(parameterId, control->getValue());
 
-                // Update minimap if this was a tap enable change
-                if (buttonContext == TapContext::Enable) {
+                // MINIMAP UPDATE FIX: Update minimap for all parameter changes that affect visualization
+                if (buttonContext == TapContext::Enable || buttonContext == TapContext::Volume ||
+                    buttonContext == TapContext::Pan || buttonContext == TapContext::FilterCutoff ||
+                    buttonContext == TapContext::FilterResonance || buttonContext == TapContext::FilterType ||
+                    buttonContext == TapContext::PitchShift) {
                     updateMinimapState();
                 }
             }
@@ -582,6 +585,9 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 
                 // Update value readouts for any global control change
                 updateValueReadouts();
+
+                // MINIMAP UPDATE FIX: Update minimap for global parameter changes that could affect tap visualization
+                updateMinimapState();
             }
         }
     }
@@ -2422,6 +2428,10 @@ void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
         TapContext assignedContext = static_cast<TapContext>(i);
         macroKnobs[i]->setAssignedContext(assignedContext);
 
+        // DIAGNOSTIC: Log macro knob creation to verify consistency
+        printf("[MacroKnob] Created macro knob %d - tag: %d, rect: (%.1f, %.1f, %.1f, %.1f), context: %d\n",
+               i, kMacroKnob1 + i, macroRect.left, macroRect.top, macroRect.right, macroRect.bottom, static_cast<int>(assignedContext));
+
         container->addView(macroKnobs[i]);
 
         // Create Randomize Button (Triangle Bottom Left)
@@ -2444,11 +2454,11 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
 {
     if (columnIndex < 0 || columnIndex >= 8) return;
 
-    // Get the discrete position (0-7) from the normalized value
+    // Get the continuous value (0.0-1.0) from the knob
     MacroKnobControl* knob = macroKnobs[columnIndex];
     if (!knob) return;
 
-    int discretePos = knob->getDiscretePosition();
+    float continuousValue = knob->getValue();
 
     // CONTEXT ISOLATION: Use the knob's assigned context instead of current active context
     TapContext assignedCtx = knob->getAssignedContext();
@@ -2460,12 +2470,12 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     if (!waterStickController) return;
 
     // DIAGNOSTIC: Log macro knob changes with assigned context
-    printf("[MacroKnob] handleMacroKnobChange - columnIndex: %d, value: %.3f, discretePos: %d, assignedContext: %d\n",
-           columnIndex, value, discretePos, static_cast<int>(assignedCtx));
+    printf("[MacroKnob] handleMacroKnobChange - columnIndex: %d, value: %.3f, continuousValue: %.3f, assignedContext: %d\n",
+           columnIndex, value, continuousValue, static_cast<int>(assignedCtx));
     printf("[MacroKnob] Applying context-specific macro curve to assigned context only\n");
 
     // Apply macro curve to the knob's assigned context only (context isolation)
-    handleGlobalMacroKnobChange(discretePos, assignedCtx);
+    handleGlobalMacroKnobChange(continuousValue, assignedCtx);
 
     // Update the corresponding VST macro knob parameter to trigger DAW automation
     int macroParamId = kMacroKnob1 + columnIndex;
@@ -2473,9 +2483,19 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     controller->performEdit(macroParamId, value);
 
     printf("[MacroKnob] Updated VST macro parameter %d with value %.3f\n", macroParamId, value);
+
+    // MACRO KNOB ROTATION FIX: Ensure all macro knobs are marked dirty for consistent visual updates
+    for (int i = 0; i < 8; i++) {
+        if (macroKnobs[i]) {
+            macroKnobs[i]->setDirty(true);
+        }
+    }
+
+    // MINIMAP UPDATE FIX: Update minimap when macro knobs change parameters
+    updateMinimapState();
 }
 
-void WaterStickEditor::handleGlobalMacroKnobChange(int discretePosition, TapContext currentCtx)
+void WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapContext currentCtx)
 {
     auto controller = getController();
     if (!controller) return;
@@ -2485,7 +2505,7 @@ void WaterStickEditor::handleGlobalMacroKnobChange(int discretePosition, TapCont
 
     // Apply Rainmaker-style global macro curve using the MacroCurveSystem
     auto& macroCurveSystem = waterStickController->getMacroCurveSystem();
-    macroCurveSystem.applyGlobalMacroCurve(discretePosition, static_cast<int>(currentCtx), waterStickController);
+    macroCurveSystem.applyGlobalMacroCurveContinuous(continuousValue, static_cast<int>(currentCtx), waterStickController);
 
     // Update all tap button visuals to reflect the curve application
     for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
@@ -2493,7 +2513,7 @@ void WaterStickEditor::handleGlobalMacroKnobChange(int discretePosition, TapCont
             auto tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
 
             // Get the curve value for this tap
-            float curveValue = macroCurveSystem.getGlobalCurveValueForTap(discretePosition, tapIndex);
+            float curveValue = macroCurveSystem.getGlobalCurveValueForTapContinuous(continuousValue, tapIndex);
 
             // Apply context-specific value adjustments for display
             switch (currentCtx) {
@@ -2561,6 +2581,9 @@ void WaterStickEditor::handleRandomizeAction(int columnIndex)
         }
     }
 
+    // MINIMAP RANDOMIZATION FIX: Update minimap to reflect randomized parameter states
+    updateMinimapState();
+
     // Macro knobs remain visually independent - no visual update needed
 }
 
@@ -2592,6 +2615,9 @@ void WaterStickEditor::handleResetAction(int columnIndex)
         }
     }
 
+    // MINIMAP RESET FIX: Update minimap to reflect reset parameter states
+    updateMinimapState();
+
     // Macro knobs remain visually independent - no visual update needed
 }
 
@@ -2622,32 +2648,27 @@ float WaterStickEditor::getContextDefaultValue(TapContext context)
 //========================================================================
 
 MacroKnobControl::MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
-: VSTGUI::CControl(size, listener, tag)
+: VSTGUI::CControl(size, listener, tag), internalValue(0.0f)
 {
     setMax(1.0);
     setMin(0.0);
-    setValue(0.0);  // Default to first position
+    // Initialize internal value directly instead of calling setValue() to avoid issues
+    internalValue = 0.0f;
 }
 
 void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
 
-    // Get discrete position (0-7)
-    int discretePos = getDiscretePosition();
+    // Get continuous value (0.0-1.0)
+    float value = getValue();
 
-    // Visual feedback now working - dot rotates through 8 positions
+    // Calculate rotation angle to match global knobs exactly
+    // Start at 10:30, end at 1:30 (rotated 90 degrees left from standard)
+    float angle = -225.0f + (value * 270.0f); // Same as global knobs: -225° to 45°, 270° range
 
-    // FIXED: Visual feedback now working properly
-
-    // Calculate rotation angle for 8 positions
-    // Positions are evenly distributed around a circle (0-7 = 8 positions)
-    // Start at top (-90°) and go clockwise
-    const float startAngle = -90.0f; // Start at top
-    const float angleRange = 315.0f; // 7/8 of full rotation (315° instead of 360°)
-    float angle = startAngle + (discretePos * angleRange / 7.0f);
-
-    // Calculate angle for current discrete position
+    // DIAGNOSTIC: Log rotation calculation for all macro knobs
+    printf("[MacroKnob] draw() - tag: %d, value: %.3f, angle: %.1f°\n", getTag(), value, angle);
 
     // Convert to radians
     float angleRad = angle * M_PI / 180.0f;
@@ -2693,7 +2714,7 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
 
     // Position dot at calculated angle
 
-    // 8 discrete positions: 0°(-90°), 1°(-45°), 2°(0°), 3°(45°), 4°(90°), 5°(135°), 6°(180°), 7°(225°)
+    // Continuous range: -180° (lower-left) to 135° (lower-right), rotated 90° left from original
 
     context->setFillColor(dotColor);
     context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
@@ -2704,33 +2725,18 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
 
 void MacroKnobControl::setValue(float value)
 {
-    // CRITICAL FIX: Quantize INPUT value directly, not current value (fixes circular logic bug)
-    int discretePos = static_cast<int>(value * 7.0f + 0.5f); // Round to nearest position
-    discretePos = std::max(0, std::min(7, discretePos));     // Clamp to valid range (0-7)
-    float quantizedValue = static_cast<float>(discretePos) / 7.0f; // Convert back to normalized
+    // Continuous control - remove discrete quantization for smooth operation
+    // Clamp input value to valid range [0.0, 1.0]
+    float clampedValue = std::max(0.0f, std::min(1.0f, value));
 
-    // Quantize to 8 discrete positions (0-7)
-
-    VSTGUI::CControl::setValue(quantizedValue);
+    // MACRO KNOB RESET FIX: Use internal storage to avoid base class reset behavior
+    // Base VSTGUI::CControl::setValue() can reset knobs to neutral position
+    internalValue = clampedValue;
 
     // STANDARDIZED: Use setDirty(true) consistently instead of invalid()
     setDirty(true);
 }
 
-float MacroKnobControl::getDiscreteValue() const
-{
-    // Convert current value to discrete position and back to normalized
-    int pos = getDiscretePosition();
-    return static_cast<float>(pos) / 7.0f;
-}
-
-int MacroKnobControl::getDiscretePosition() const
-{
-    // Map normalized value (0.0-1.0) to discrete position (0-7)
-    float normalizedValue = getValue();
-    int pos = static_cast<int>(normalizedValue * 7.0f + 0.5f); // Round to nearest
-    return std::max(0, std::min(7, pos)); // Clamp to valid range
-}
 
 VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {

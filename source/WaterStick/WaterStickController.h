@@ -83,12 +83,15 @@ public:
 
     // Rainmaker-style global macro curve application across all 16 taps
     void applyGlobalMacroCurve(int discretePosition, int currentTapContext, class WaterStickController* controller) const;
+    void applyGlobalMacroCurveContinuous(float continuousValue, int currentTapContext, class WaterStickController* controller) const;
 
     // Enhanced global macro curve application with specific curve type
     void applyGlobalMacroCurveWithType(int discretePosition, int currentTapContext, MacroCurveTypes curveType, class WaterStickController* controller) const;
+    void applyGlobalMacroCurveWithTypeContinuous(float continuousValue, int currentTapContext, MacroCurveTypes curveType, class WaterStickController* controller) const;
 
     // Get curve value for specific tap index in global application (0-15 for 16 taps)
     float getGlobalCurveValueForTap(int discretePosition, int tapIndex) const;
+    float getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const;
 
     // Get curve value for specific tap index using a specific curve type
     float getCurveValueForTapWithType(MacroCurveTypes curveType, int tapIndex) const;
