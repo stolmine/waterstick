@@ -263,7 +263,7 @@ WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
         minimapButtons[i] = nullptr;
     }
 
-    syncModeKnob = nullptr;
+    syncModeToggle = nullptr;
     timeDivisionKnob = nullptr;
     feedbackKnob = nullptr;
     gridKnob = nullptr;
@@ -522,8 +522,24 @@ void WaterStick::WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* 
     delayBypassValue = factory.createLabel(bypassValueRect, "OFF", 9.0f, true);
     container->addView(delayBypassValue);
 
+    // Create sync toggle in second column
+    int syncX = tapGridLeft + (buttonSize + buttonSpacing);
+    int syncY = knobY + (knobSize - knobSize) / 2; // Center vertically with knobs
+    VSTGUI::CRect syncRect(syncX, syncY, syncX + knobSize, syncY + knobSize);
+    syncModeToggle = new SyncToggle(syncRect, this, kTempoSyncMode);
+    container->addView(syncModeToggle);
+
+    // Create sync label
+    VSTGUI::CRect syncLabelRect(syncX, syncY + knobSize + 5, syncX + knobSize, syncY + knobSize + 25);
+    syncModeLabel = factory.createLabel(syncLabelRect, "SYNC", 11.0f, false);
+    container->addView(syncModeLabel);
+
+    // Create sync value display
+    VSTGUI::CRect syncValueRect(syncX, syncLabelRect.bottom + 2, syncX + knobSize, syncLabelRect.bottom + 20);
+    syncModeValue = factory.createLabel(syncValueRect, "FREE", 9.0f, true);
+    container->addView(syncModeValue);
+
     KnobDefinition globalKnobs[] = {
-        {"SYNC", kTempoSyncMode, &syncModeKnob, &syncModeLabel, &syncModeValue, false},
         {"TIME", kDelayTime, &timeDivisionKnob, &timeDivisionLabel, &timeDivisionValue, true},
         {"FEEDBACK", kFeedback, &feedbackKnob, &feedbackLabel, &feedbackValue, false},
         {"GRID", kGrid, &gridKnob, &gridLabel, &gridValue, false},
@@ -532,10 +548,10 @@ void WaterStick::WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* 
         {"G-MIX", kGlobalDryWet, &globalDryWetKnob, &globalDryWetLabel, &globalDryWetValue, false},
     };
 
-    // Create remaining 7 knobs in columns 2-8
-    for (int i = 0; i < 7; i++) {
-        // Calculate X position (skip column 0 which has the bypass toggle)
-        int knobX = tapGridLeft + (i + 1) * (buttonSize + buttonSpacing);
+    // Create remaining 6 knobs in columns 3-8
+    for (int i = 0; i < 6; i++) {
+        // Calculate X position (skip columns 0 and 1 which have the bypass toggle and sync toggle)
+        int knobX = tapGridLeft + (i + 2) * (buttonSize + buttonSpacing);
         factory.createKnobWithLayout(knobX, knobY, knobSize, globalKnobs[i]);
     }
 
@@ -548,14 +564,20 @@ void WaterStick::WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* 
             delayBypassToggle->invalid();
         }
 
+        // Load sync toggle value
+        float syncValue = controller->getParamNormalized(kTempoSyncMode);
+        if (syncModeToggle) {
+            syncModeToggle->setValue(syncValue);
+            syncModeToggle->invalid();
+        }
+
         // Load knob values
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 6; i++) {
             float value = controller->getParamNormalized(globalKnobs[i].tag);
             std::string paramName;
             switch (globalKnobs[i].tag) {
                 case kInputGain: paramName = "InputGain"; break;
                 case kOutputGain: paramName = "OutputGain"; break;
-                case kTempoSyncMode: paramName = "TempoSyncMode"; break;
                 case kDelayTime: paramName = "DelayTime"; break;
                 case kFeedback: paramName = "Feedback"; break;
                 case kGrid: paramName = "Grid"; break;
@@ -649,15 +671,23 @@ void WaterStick::WaterStickEditor::updateValueReadouts()
         delayBypassValue->setText(valueText.c_str());
     }
 
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
-    VSTGUI::CTextLabel* valueLabels[] = {syncModeValue, timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, globalDryWetValue};
+    // Handle sync mode value display separately
+    if (syncModeValue) {
+        float syncValue = controller->getParamNormalized(kTempoSyncMode);
+        std::string syncText = formatParameterValue(kTempoSyncMode, syncValue);
+        syncModeValue->setText(syncText.c_str());
+        syncModeValue->invalid();
+    }
 
-    for (int i = 0; i < 7; i++) {
+    const int knobTags[] = {kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
+    VSTGUI::CTextLabel* valueLabels[] = {timeDivisionValue, feedbackValue, gridValue, inputGainValue, outputGainValue, globalDryWetValue};
+
+    for (int i = 0; i < 6; i++) {
         if (valueLabels[i]) {
             int paramId = knobTags[i];
 
-            // Special handling for time/division knob
-            if (i == 1) {
+            // Special handling for time/division knob (now at index 0)
+            if (i == 0) {
                 float syncMode = controller->getParamNormalized(kTempoSyncMode);
                 if (syncMode > 0.5f) {
                     paramId = kSyncDivision;
@@ -2345,16 +2375,23 @@ void WaterStick::WaterStickEditor::forceParameterSynchronization()
         delayBypassToggle->invalid();
     }
 
-    // Sync all global knobs with current parameter values
-    const int knobTags[] = {kTempoSyncMode, kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
-    KnobControl* knobs[] = {syncModeKnob, timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, globalDryWetKnob};
+    // Sync sync toggle separately
+    if (syncModeToggle) {
+        float syncValue = controller->getParamNormalized(kTempoSyncMode);
+        syncModeToggle->setValue(syncValue);
+        syncModeToggle->invalid();
+    }
 
-    for (int i = 0; i < 7; i++) {
+    // Sync all global knobs with current parameter values
+    const int knobTags[] = {kDelayTime, kFeedback, kGrid, kInputGain, kOutputGain, kGlobalDryWet};
+    KnobControl* knobs[] = {timeDivisionKnob, feedbackKnob, gridKnob, inputGainKnob, outputGainKnob, globalDryWetKnob};
+
+    for (int i = 0; i < 6; i++) {
         if (knobs[i]) {
             int paramId = knobTags[i];
 
-            // Special handling for time/division knob
-            if (i == 1 && knobs[i]->getIsTimeDivisionKnob()) {
+            // Special handling for time/division knob (now at index 0)
+            if (i == 0 && knobs[i]->getIsTimeDivisionKnob()) {
                 float syncMode = controller->getParamNormalized(kTempoSyncMode);
                 if (syncMode > 0.5f) {
                     paramId = kSyncDivision;
@@ -2471,6 +2508,91 @@ VSTGUI::CMouseEventResult WaterStick::BypassToggle::onMouseDown(VSTGUI::CPoint& 
     return VSTGUI::kMouseEventNotHandled;
 }
 
+//========================================================================
+// SyncToggle Implementation
+//========================================================================
+
+WaterStick::SyncToggle::SyncToggle(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+: VSTGUI::CControl(size, listener, tag)
+{
+    setMax(1.0);  // Binary on/off toggle
+    setMin(0.0);
+}
+
+void WaterStick::SyncToggle::draw(VSTGUI::CDrawContext* context)
+{
+    const VSTGUI::CRect& rect = getViewSize();
+    bool isSynced = (getValue() > 0.5);
+
+    // Match mode button approach: use fixed 53px circle with precise centering
+    const double buttonSize = 53.0;
+    VSTGUI::CPoint viewCenter = rect.getCenter();
+    const double halfButtonSize = buttonSize / 2.0;
+
+    VSTGUI::CRect buttonRect(
+        viewCenter.x - halfButtonSize,
+        viewCenter.y - halfButtonSize,
+        viewCenter.x + halfButtonSize,
+        viewCenter.y + halfButtonSize
+    );
+
+    // Set stroke properties (same as mode buttons)
+    context->setLineWidth(5.0);
+    context->setDrawMode(VSTGUI::kAntiAliasing);
+    context->setFrameColor(VSTGUI::CColor(35, 31, 32, 255)); // #231f20 from SVG
+    context->setFillColor(VSTGUI::CColor(35, 31, 32, 255));
+
+    // Apply stroke inset compensation (exactly like mode buttons)
+    VSTGUI::CRect drawRect = buttonRect;
+    const double strokeInset = 2.5; // Half of 5px stroke
+    drawRect.inset(strokeInset, strokeInset);
+
+    // Draw outer circle using stroke-compensated rect
+    context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
+
+    // Draw inner circle using mode button centering technique
+    if (isSynced) {
+        // Use stroke-compensated center for perfect alignment
+        VSTGUI::CPoint center = drawRect.getCenter();
+        // Calculate inner radius with another 10% reduction
+        // Previous: 19.35px, reduced by 10%: 19.35 * 0.9 = 17.415px
+        const double innerRadius = 17.415;
+
+        VSTGUI::CRect innerRect(
+            center.x - innerRadius,
+            center.y - innerRadius,
+            center.x + innerRadius,
+            center.y + innerRadius
+        );
+        context->drawEllipse(innerRect, VSTGUI::kDrawFilled);
+    }
+
+    setDirty(false);
+}
+
+VSTGUI::CMouseEventResult WaterStick::SyncToggle::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+{
+    if (buttons & VSTGUI::kLButton) {
+        // Toggle the value
+        setValue(getValue() > 0.5 ? 0.0 : 1.0);
+        invalid();
+
+        // Notify listener
+        if (listener) {
+            listener->valueChanged(this);
+
+            // Force immediate value display update for sync toggle
+            auto editor = dynamic_cast<WaterStickEditor*>(listener);
+            if (editor) {
+                editor->updateValueReadouts();
+            }
+        }
+
+        return VSTGUI::kMouseEventHandled;
+    }
+    return VSTGUI::kMouseEventNotHandled;
+}
+
 void WaterStick::WaterStickEditor::updateBypassValueDisplay()
 {
     auto controller = getController();
@@ -2523,7 +2645,7 @@ void WaterStick::WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer
 
     // Include global controls
     expandBounds(delayBypassToggle);
-    expandBounds(syncModeKnob);
+    expandBounds(syncModeToggle);
     expandBounds(timeDivisionKnob);
     expandBounds(feedbackKnob);
     expandBounds(gridKnob);
@@ -2604,7 +2726,7 @@ void WaterStick::WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer
 
     // Move global controls
     moveView(delayBypassToggle);
-    moveView(syncModeKnob);
+    moveView(syncModeToggle);
     moveView(timeDivisionKnob);
     moveView(feedbackKnob);
     moveView(gridKnob);

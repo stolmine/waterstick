@@ -236,6 +236,18 @@ public:
     CLASS_METHODS(BypassToggle, VSTGUI::CControl)
 };
 
+// Custom sync toggle button class for tempo sync control
+class SyncToggle : public VSTGUI::CControl
+{
+public:
+    SyncToggle(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag);
+
+    void draw(VSTGUI::CDrawContext* context) SMTG_OVERRIDE;
+    VSTGUI::CMouseEventResult onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons) SMTG_OVERRIDE;
+
+    CLASS_METHODS(SyncToggle, VSTGUI::CControl)
+};
+
 // Custom macro knob control with smooth continuous behavior
 class MacroKnobControl : public VSTGUI::CControl
 {
@@ -367,7 +379,7 @@ private:
     ActionButton* resetButtons[8];          // Row 3: Reset buttons (×)
 
     // Global control knobs
-    KnobControl* syncModeKnob;
+    SyncToggle* syncModeToggle;
     KnobControl* timeDivisionKnob;
     KnobControl* feedbackKnob;
     KnobControl* inputGainKnob;
