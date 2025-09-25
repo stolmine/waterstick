@@ -174,11 +174,12 @@ public:
 
     // Continuous value management - override base class behavior to avoid reset issues
     void setValue(float value) SMTG_OVERRIDE;
-    float getValue() const SMTG_OVERRIDE { return internalValue; }
+    float getValue() const SMTG_OVERRIDE;
 
     // Context assignment for control isolation
     void setAssignedContext(TapContext context) { assignedContext = context; }
     TapContext getAssignedContext() const { return assignedContext; }
+
 
     CLASS_METHODS(MacroKnobControl, VSTGUI::CControl)
 

@@ -467,22 +467,25 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
                 break;
             }
         }
-        // DIAGNOSTIC: Log macro knob events in valueChanged
-        printf("[MacroKnob] valueChanged - control tag: %d, columnIndex: %d, value: %.3f\n",
-               control->getTag(), columnIndex, control->getValue());
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] valueChanged - control tag: " << control->getTag()
+                << ", columnIndex: " << columnIndex << ", value: " << std::fixed << std::setprecision(3)
+                << control->getValue();
+            WS_LOG_INFO(oss.str());
+        }
 
         if (columnIndex >= 0) {
             handleMacroKnobChange(columnIndex, control->getValue());
         } else {
-            printf("[MacroKnob] ERROR: Could not find macro knob in array\n");
+            WS_LOG_ERROR("[MacroKnob] ERROR: Could not find macro knob in array");
         }
         return;
     }
 
     auto actionButton = dynamic_cast<ActionButton*>(control);
     if (actionButton) {
-        // DIAGNOSTIC: This should no longer occur after fixing setValue issue
-        printf("[ActionButton] ERROR: ActionButton triggered valueChanged - this should not happen after fix\n");
+        WS_LOG_ERROR("[ActionButton] ERROR: ActionButton triggered valueChanged - this should not happen after fix");
         return;
     }
 
@@ -670,8 +673,12 @@ void WaterStickEditor::switchToContext(TapContext newContext)
     auto waterStickController = dynamic_cast<WaterStickController*>(controller);
     if (waterStickController) {
         waterStickController->setCurrentTapContext(static_cast<int>(newContext));
-        printf("[Context] Synchronized context with controller: %s (%d)\n",
-               newContextName.c_str(), static_cast<int>(newContext));
+        {
+            std::ostringstream oss;
+            oss << "[Context] Synchronized context with controller: "
+                << newContextName << " (" << static_cast<int>(newContext) << ")";
+            WS_LOG_INFO(oss.str());
+        }
     }
 
 
@@ -2428,9 +2435,38 @@ void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
         TapContext assignedContext = static_cast<TapContext>(i);
         macroKnobs[i]->setAssignedContext(assignedContext);
 
-        // DIAGNOSTIC: Log macro knob creation to verify consistency
-        printf("[MacroKnob] Created macro knob %d - tag: %d, rect: (%.1f, %.1f, %.1f, %.1f), context: %d\n",
-               i, kMacroKnob1 + i, macroRect.left, macroRect.top, macroRect.right, macroRect.bottom, static_cast<int>(assignedContext));
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] === MACRO KNOB " << i << " CREATION ===";
+            WS_LOG_INFO(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Tag: " << (kMacroKnob1 + i) << " (kMacroKnob1=" << kMacroKnob1 << " + i=" << i << ")";
+            WS_LOG_INFO(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Rect: (" << std::fixed << std::setprecision(1) << macroRect.left
+                << ", " << macroRect.top << ", " << macroRect.right << ", " << macroRect.bottom << ")";
+            WS_LOG_INFO(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Assigned context: " << static_cast<int>(assignedContext) << " ("
+                << (assignedContext == TapContext::Enable ? "Enable" :
+                    assignedContext == TapContext::Volume ? "Volume" :
+                    assignedContext == TapContext::Pan ? "Pan" :
+                    assignedContext == TapContext::FilterCutoff ? "FilterCutoff" :
+                    assignedContext == TapContext::FilterResonance ? "FilterResonance" :
+                    assignedContext == TapContext::FilterType ? "FilterType" : "Unknown") << ")";
+            WS_LOG_INFO(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Knob pointer: " << macroKnobs[i];
+            WS_LOG_INFO(oss.str());
+        }
 
         container->addView(macroKnobs[i]);
 
@@ -2469,20 +2505,67 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     auto waterStickController = dynamic_cast<WaterStickController*>(controller);
     if (!waterStickController) return;
 
-    // DIAGNOSTIC: Log macro knob changes with assigned context
-    printf("[MacroKnob] handleMacroKnobChange - columnIndex: %d, value: %.3f, continuousValue: %.3f, assignedContext: %d\n",
-           columnIndex, value, continuousValue, static_cast<int>(assignedCtx));
-    printf("[MacroKnob] Applying context-specific macro curve to assigned context only\n");
+    {
+        WS_LOG_INFO("[MacroKnob] ===== handleMacroKnobChange START =====");
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Column: " << columnIndex << ", Input value: " << std::fixed << std::setprecision(3) << value;
+        WS_LOG_INFO(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Knob pointer: " << knob << ", Tag: " << knob->getTag()
+            << " (expected: " << (kMacroKnob1 + columnIndex) << ")";
+        WS_LOG_INFO(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Continuous value from knob->getValue(): " << std::fixed << std::setprecision(3) << continuousValue;
+        WS_LOG_INFO(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Assigned context: " << static_cast<int>(assignedCtx) << " ("
+            << (assignedCtx == TapContext::Enable ? "Enable" :
+                assignedCtx == TapContext::Volume ? "Volume" :
+                assignedCtx == TapContext::Pan ? "Pan" :
+                assignedCtx == TapContext::FilterCutoff ? "FilterCutoff" :
+                assignedCtx == TapContext::FilterResonance ? "FilterResonance" :
+                assignedCtx == TapContext::FilterType ? "FilterType" : "Unknown") << ")";
+        WS_LOG_INFO(oss.str());
+    }
+    {
+        WS_LOG_INFO("[MacroKnob] Applying context-specific macro curve to assigned context only");
+    }
 
     // Apply macro curve to the knob's assigned context only (context isolation)
     handleGlobalMacroKnobChange(continuousValue, assignedCtx);
 
     // Update the corresponding VST macro knob parameter to trigger DAW automation
     int macroParamId = kMacroKnob1 + columnIndex;
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] About to update VST parameter - ID: " << macroParamId
+            << " (kMacroKnob1=" << kMacroKnob1 << " + columnIndex=" << columnIndex << ")";
+        WS_LOG_INFO(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Calling setParamNormalized(" << macroParamId << ", " << std::fixed << std::setprecision(3) << value << ")";
+        WS_LOG_INFO(oss.str());
+    }
     controller->setParamNormalized(macroParamId, value);
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Calling performEdit(" << macroParamId << ", " << std::fixed << std::setprecision(3) << value << ")";
+        WS_LOG_INFO(oss.str());
+    }
     controller->performEdit(macroParamId, value);
 
-    printf("[MacroKnob] Updated VST macro parameter %d with value %.3f\n", macroParamId, value);
+    {
+        WS_LOG_INFO("[MacroKnob] VST parameter update completed successfully");
+    }
 
     // MACRO KNOB ROTATION FIX: Ensure all macro knobs are marked dirty for consistent visual updates
     for (int i = 0; i < 8; i++) {
@@ -2493,6 +2576,10 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
 
     // MINIMAP UPDATE FIX: Update minimap when macro knobs change parameters
     updateMinimapState();
+
+    {
+        WS_LOG_INFO("[MacroKnob] ===== handleMacroKnobChange END =====");
+    }
 }
 
 void WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapContext currentCtx)
@@ -2654,6 +2741,14 @@ MacroKnobControl::MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlLi
     setMin(0.0);
     // Initialize internal value directly instead of calling setValue() to avoid issues
     internalValue = 0.0f;
+
+    int knobIndex = tag - kMacroKnob1;  // Calculate which knob this is (0-7)
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] CONSTRUCTOR - Knob " << knobIndex << " created with tag " << tag
+            << " (kMacroKnob1=" << kMacroKnob1 << "), initialValue=" << std::fixed << std::setprecision(3) << internalValue;
+        WS_LOG_INFO(oss.str());
+    }
 }
 
 void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
@@ -2667,8 +2762,22 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     // Start at 10:30, end at 1:30 (rotated 90 degrees left from standard)
     float angle = -225.0f + (value * 270.0f); // Same as global knobs: -225° to 45°, 270° range
 
-    // DIAGNOSTIC: Log rotation calculation for all macro knobs
-    printf("[MacroKnob] draw() - tag: %d, value: %.3f, angle: %.1f°\n", getTag(), value, angle);
+    int knobIndex = getTag() - kMacroKnob1;
+    static int drawCount = 0;  // Track draw calls
+    drawCount++;
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] DRAW - Knob " << knobIndex << " (tag " << getTag() << "): value="
+            << std::fixed << std::setprecision(3) << value << ", angle=" << std::setprecision(1) << angle
+            << "°, dirty=" << (isDirty() ? "YES" : "NO") << ", drawCall#=" << drawCount;
+        WS_LOG_DEBUG(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] DRAW - Knob " << knobIndex << " rect: (" << std::fixed << std::setprecision(1)
+            << rect.left << ", " << rect.top << ", " << rect.right << ", " << rect.bottom << ")";
+        WS_LOG_DEBUG(oss.str());
+    }
 
     // Convert to radians
     float angleRad = angle * M_PI / 180.0f;
@@ -2719,22 +2828,56 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     context->setFillColor(dotColor);
     context->drawEllipse(dotRect, VSTGUI::kDrawFilled);
 
-    // REMOVED: Let VSTGUI manage dirty state automatically instead of forcing setDirty(false)
-    // setDirty(false);
+    // Clear dirty state after successful drawing (matches KnobControl behavior)
+    setDirty(false);
 }
 
 void MacroKnobControl::setValue(float value)
 {
+    int knobIndex = getTag() - kMacroKnob1;  // Calculate which knob this is (0-7)
+
+
     // Continuous control - remove discrete quantization for smooth operation
     // Clamp input value to valid range [0.0, 1.0]
     float clampedValue = std::max(0.0f, std::min(1.0f, value));
+
+    float oldValue = internalValue;
+    bool valueChanged = (oldValue != clampedValue);
+
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] setValue - Knob " << knobIndex << " (tag " << getTag() << "): "
+            << std::fixed << std::setprecision(3) << oldValue << " -> " << clampedValue
+            << " (clamped from " << value << "), changed: " << (valueChanged ? "YES" : "NO");
+        WS_LOG_DEBUG(oss.str());
+    }
 
     // MACRO KNOB RESET FIX: Use internal storage to avoid base class reset behavior
     // Base VSTGUI::CControl::setValue() can reset knobs to neutral position
     internalValue = clampedValue;
 
-    // STANDARDIZED: Use setDirty(true) consistently instead of invalid()
-    setDirty(true);
+    if (valueChanged) {
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] setValue - Knob " << knobIndex << " calling setDirty(true) for visual update";
+            WS_LOG_DEBUG(oss.str());
+        }
+        // STANDARDIZED: Use setDirty(true) consistently instead of invalid()
+        setDirty(true);
+    }
+}
+
+float MacroKnobControl::getValue() const
+{
+    int knobIndex = getTag() - kMacroKnob1;  // Calculate which knob this is (0-7)
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] getValue - Knob " << knobIndex << " (tag " << getTag()
+            << ") returning internalValue: " << std::fixed << std::setprecision(3) << internalValue;
+        WS_LOG_DEBUG(oss.str());
+    }
+
+    return internalValue;
 }
 
 
@@ -2743,13 +2886,34 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, c
     if (buttons & VSTGUI::kLButton) {
         auto currentTime = std::chrono::steady_clock::now();
 
-        // DIAGNOSTIC: Log mouse down events
-        printf("[MacroKnob] Mouse down - tag: %d, pos: (%.1f, %.1f), currentValue: %.3f\n",
-               getTag(), where.x, where.y, getValue());
+        int knobIndex = getTag() - kMacroKnob1;
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] === MOUSE DOWN - Knob " << knobIndex << " ===";
+            WS_LOG_DEBUG(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Tag: " << getTag() << ", Position: (" << std::fixed << std::setprecision(1)
+                << where.x << ", " << where.y << ")";
+            WS_LOG_DEBUG(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Current value: " << std::fixed << std::setprecision(3) << getValue()
+                << ", Internal value: " << internalValue;
+            WS_LOG_DEBUG(oss.str());
+        }
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] Button state: " << (int)(buttons & VSTGUI::kLButton)
+                << ", Left button: " << ((buttons & VSTGUI::kLButton) ? "YES" : "NO");
+            WS_LOG_DEBUG(oss.str());
+        }
 
         // Check for double-click to reset to default
         if (isDoubleClick(currentTime)) {
-            printf("[MacroKnob] Double-click detected - resetting to default\n");
+            WS_LOG_DEBUG("[MacroKnob] Double-click detected - resetting to default");
             resetToDefaultValue();
             if (listener) {
                 listener->valueChanged(this);
@@ -2777,6 +2941,15 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
         float newValue = currentValue + (deltaY * sensitivity);
         newValue = std::max(0.0f, std::min(1.0f, newValue)); // Clamp to 0-1
 
+        int knobIndex = getTag() - kMacroKnob1;
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] MOUSE MOVED - Knob " << knobIndex << ": pos=(" << std::fixed << std::setprecision(1)
+                << where.x << "," << where.y << "), deltaY=" << std::setprecision(2) << deltaY
+                << ", currentVal=" << std::setprecision(3) << currentValue << ", newVal=" << newValue;
+            WS_LOG_DEBUG(oss.str());
+        }
+
         // Update value with improved sensitivity
         setValue(newValue);
 
@@ -2790,7 +2963,18 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
         }
 
         if (listener) {
+            {
+                std::ostringstream oss;
+                oss << "[MacroKnob] MOUSE MOVED - Knob " << knobIndex << " calling listener->valueChanged()";
+                WS_LOG_DEBUG(oss.str());
+            }
             listener->valueChanged(this);
+        } else {
+            {
+                std::ostringstream oss;
+                oss << "[MacroKnob] MOUSE MOVED - Knob " << knobIndex << ": NO LISTENER!";
+                WS_LOG_ERROR(oss.str());
+            }
         }
 
         lastMousePos = where;
@@ -2801,8 +2985,32 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
 
 VSTGUI::CMouseEventResult MacroKnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
+    int knobIndex = getTag() - kMacroKnob1;
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] === MOUSE UP - Knob " << knobIndex << " ===";
+        WS_LOG_DEBUG(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Position: (" << std::fixed << std::setprecision(1) << where.x << ", " << where.y
+            << "), Was dragging: " << (isDragging ? "YES" : "NO");
+        WS_LOG_DEBUG(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnob] Final value: " << std::fixed << std::setprecision(3) << getValue()
+            << ", Internal value: " << internalValue;
+        WS_LOG_DEBUG(oss.str());
+    }
+
     if (isDragging) {
         isDragging = false;
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnob] MOUSE UP - Knob " << knobIndex << " drag operation completed";
+            WS_LOG_DEBUG(oss.str());
+        }
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
