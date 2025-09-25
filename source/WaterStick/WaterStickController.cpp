@@ -670,6 +670,12 @@ float MacroCurveSystem::getCurveValueForTapWithType(MacroCurveTypes curveType, i
 void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, int currentTapContext, WaterStickController* controller) const {
     if (!controller) return;
 
+    // VST3 CIRCULAR UPDATE PREVENTION: Check if we're already processing a macro edit to prevent infinite loops
+    if (controller->isProcessingMacroEdit()) {
+        WS_LOG_INFO("[MacroCurveSystem] CIRCULAR UPDATE BLOCKED: Already processing macro edit, skipping curve application");
+        return;
+    }
+
     // Context-aware parameter validation with proper range clamping
     if (currentTapContext < 0 || currentTapContext >= 8) {
         WS_LOG_ERROR("[MacroCurveSystem] Invalid tap context: " + std::to_string(currentTapContext));
@@ -690,6 +696,12 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
             << " (" << currentTapContext << "), applying to ALL 16 taps";
         WS_LOG_INFO(oss.str());
     }
+
+    // VST3 PROFESSIONAL PARAMETER BATCHING: Begin edit session for all parameter changes
+    // This groups all 16+ parameter changes into a single DAW automation event, preventing flooding
+    // Use the first tap parameter for the batch edit session
+    Steinberg::Vst::ParamID batchParamId = -1;
+    bool batchStarted = false;
 
     // Apply continuous curve to all 16 taps based on current context
     for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
@@ -753,6 +765,13 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
 
         // Apply the curve value to the parameter
         if (paramId >= 0) {
+            // VST3 BATCH EDIT: Start edit session with the first valid parameter
+            if (!batchStarted) {
+                batchParamId = paramId;
+                controller->beginEdit(batchParamId);
+                batchStarted = true;
+                WS_LOG_INFO("[MacroCurveSystem] VST3 BATCH: beginEdit() called for parameter batch session");
+            }
             // DETAILED LOGGING: Before setParamNormalized call
             {
                 std::ostringstream oss;
@@ -793,6 +812,12 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
                 WS_LOG_ERROR(oss.str());
             }
         }
+    }
+
+    // VST3 BATCH EDIT: End edit session if one was started
+    if (batchStarted && batchParamId >= 0) {
+        controller->endEdit(batchParamId);
+        WS_LOG_INFO("[MacroCurveSystem] VST3 BATCH: endEdit() called for parameter batch session");
     }
 
     {
@@ -2387,6 +2412,15 @@ void WaterStickController::updateCurveTypes()
 
 void WaterStickController::handleMacroKnobParameterChange(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
 {
+    // VST3 CIRCULAR UPDATE PREVENTION: Block DAW automation if we're processing user interaction
+    if (mIsProcessingMacroEdit && mCurrentEditingMacroParam == paramId) {
+        std::ostringstream oss;
+        oss << "[MacroKnobDAW] CIRCULAR UPDATE BLOCKED: Preventing DAW automation feedback loop for paramId: "
+            << static_cast<int>(paramId) << ", value: " << std::fixed << std::setprecision(6) << value;
+        WS_LOG_INFO(oss.str());
+        return;
+    }
+
     // DETAILED LOGGING: Function entry
     {
         std::ostringstream oss;

@@ -199,6 +199,10 @@ private:
     // Shared context state for macro knob coordination
     int mCurrentTapContext = 1; // Default to Volume context (TapContext::Volume = 1)
 
+    // VST3 Parameter Edit State Management
+    bool mIsProcessingMacroEdit = false;  // Prevents circular parameter updates
+    Steinberg::Vst::ParamID mCurrentEditingMacroParam = -1;  // Track which macro param is being edited
+
 public:
     // Public access for processor integration
     RandomizationEngine& getRandomizationEngine() { return mRandomizationEngine; }
@@ -208,6 +212,14 @@ public:
     // Shared context state management for macro knob coordination
     void setCurrentTapContext(int context) { mCurrentTapContext = context; }
     int getCurrentTapContext() const { return mCurrentTapContext; }
+
+    // VST3 Parameter Edit State Management - Public access for editor
+    bool isProcessingMacroEdit() const { return mIsProcessingMacroEdit; }
+    Steinberg::Vst::ParamID getCurrentEditingMacroParam() const { return mCurrentEditingMacroParam; }
+    void setMacroEditState(bool isEditing, Steinberg::Vst::ParamID paramId = -1) {
+        mIsProcessingMacroEdit = isEditing;
+        mCurrentEditingMacroParam = paramId;
+    }
 };
 
 } // namespace WaterStick

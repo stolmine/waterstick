@@ -21,6 +21,227 @@
 
 namespace WaterStick {
 
+//========================================================================
+// ParameterBlockingSystem Implementation
+//========================================================================
+
+ParameterBlockingSystem::ParameterBlockingSystem()
+    : mLastCleanupTime(std::chrono::steady_clock::now())
+{
+    // Initialize visual update throttling timestamp
+    mLastVisualUpdate.store(std::chrono::steady_clock::now() - VISUAL_UPDATE_INTERVAL);
+}
+
+ParameterBlockingSystem::~ParameterBlockingSystem()
+{
+    cleanup();
+}
+
+void ParameterBlockingSystem::onUserInteractionStart(int32_t controlTag)
+{
+    std::lock_guard<std::mutex> lock(mStateMutex);
+
+    auto now = std::chrono::steady_clock::now();
+    UserInteractionState state;
+    state.startTime = now;
+    state.lastActivity = now;
+    state.isActive = true;
+
+    mActiveInteractions[controlTag] = state;
+    updateUserControlledParameters();
+
+    mTotalInteractions.fetch_add(1, std::memory_order_relaxed);
+}
+
+void ParameterBlockingSystem::onUserInteractionEnd(int32_t controlTag)
+{
+    std::lock_guard<std::mutex> lock(mStateMutex);
+
+    auto it = mActiveInteractions.find(controlTag);
+    if (it != mActiveInteractions.end()) {
+        it->second.isActive = false;
+        it->second.lastActivity = std::chrono::steady_clock::now();
+    }
+
+    // Update controlled parameters after slight delay to allow final parameter updates
+    updateUserControlledParameters();
+}
+
+bool ParameterBlockingSystem::shouldBlockParameterUpdate(int32_t parameterId) const
+{
+    std::lock_guard<std::mutex> lock(mStateMutex);
+
+    // Check if any user is actively controlling a parameter that affects this one
+    bool shouldBlock = mUserControlledParameters.count(parameterId) > 0;
+
+    if (shouldBlock) {
+        mTotalBlockedUpdates.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    return shouldBlock;
+}
+
+bool ParameterBlockingSystem::shouldBlockControlUpdate(int32_t controlTag) const
+{
+    std::lock_guard<std::mutex> lock(mStateMutex);
+
+    auto it = mActiveInteractions.find(controlTag);
+    return it != mActiveInteractions.end() && it->second.isActive;
+}
+
+bool ParameterBlockingSystem::shouldAllowVisualUpdate()
+{
+    auto now = std::chrono::steady_clock::now();
+    auto lastUpdate = mLastVisualUpdate.load(std::memory_order_relaxed);
+
+    auto timeSinceLastUpdate = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastUpdate);
+
+    return timeSinceLastUpdate >= VISUAL_UPDATE_INTERVAL;
+}
+
+void ParameterBlockingSystem::markVisualUpdateComplete()
+{
+    mLastVisualUpdate.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
+}
+
+void ParameterBlockingSystem::queueParameterUpdate(int32_t parameterId, float normalizedValue)
+{
+    std::lock_guard<std::mutex> lock(mQueueMutex);
+
+    // Prevent queue overflow by removing oldest updates if necessary
+    while (mParameterQueue.size() >= MAX_QUEUED_UPDATES) {
+        mParameterQueue.pop();
+    }
+
+    ParameterUpdate update;
+    update.parameterId = parameterId;
+    update.normalizedValue = normalizedValue;
+    update.timestamp = std::chrono::steady_clock::now();
+
+    mParameterQueue.push(update);
+}
+
+void ParameterBlockingSystem::processQueuedUpdates(Steinberg::Vst::EditController* controller)
+{
+    if (!controller) return;
+
+    std::lock_guard<std::mutex> lock(mQueueMutex);
+
+    auto now = std::chrono::steady_clock::now();
+    std::queue<ParameterUpdate> validUpdates;
+
+    // Process queued updates, filtering out stale ones
+    while (!mParameterQueue.empty()) {
+        const auto& update = mParameterQueue.front();
+
+        auto age = std::chrono::duration_cast<std::chrono::milliseconds>(now - update.timestamp);
+        if (age < std::chrono::milliseconds(2000)) { // 2 second max age
+            if (!shouldBlockParameterUpdate(update.parameterId)) {
+                controller->setParamNormalized(update.parameterId, update.normalizedValue);
+            } else {
+                validUpdates.push(update); // Re-queue if still blocked
+            }
+        }
+
+        mParameterQueue.pop();
+    }
+
+    // Replace queue with valid updates that are still blocked
+    mParameterQueue = std::move(validUpdates);
+}
+
+void ParameterBlockingSystem::cleanup()
+{
+    auto now = std::chrono::steady_clock::now();
+
+    // Only perform cleanup periodically to avoid overhead
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - mLastCleanupTime).count() < 5) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(mStateMutex);
+    removeExpiredInteractions();
+    updateUserControlledParameters();
+    mLastCleanupTime = now;
+}
+
+void ParameterBlockingSystem::getPerformanceStats(float& avgBlockingDuration, int& totalBlockedUpdates) const
+{
+    totalBlockedUpdates = mTotalBlockedUpdates.load(std::memory_order_relaxed);
+
+    std::lock_guard<std::mutex> lock(mStateMutex);
+
+    if (mActiveInteractions.empty()) {
+        avgBlockingDuration = 0.0f;
+        return;
+    }
+
+    auto now = std::chrono::steady_clock::now();
+    float totalDuration = 0.0f;
+    int activeCount = 0;
+
+    for (const auto& pair : mActiveInteractions) {
+        const auto& state = pair.second;
+        if (state.isActive) {
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - state.startTime);
+            totalDuration += duration.count();
+            activeCount++;
+        }
+    }
+
+    avgBlockingDuration = activeCount > 0 ? totalDuration / activeCount : 0.0f;
+}
+
+void ParameterBlockingSystem::updateUserControlledParameters()
+{
+    mUserControlledParameters.clear();
+
+    auto now = std::chrono::steady_clock::now();
+
+    for (const auto& pair : mActiveInteractions) {
+        const auto& state = pair.second;
+
+        // Include parameters that are either actively being controlled or recently controlled
+        if (state.isActive || !isInteractionExpired(state)) {
+            int32_t parameterId = getParameterForControl(pair.first);
+            if (parameterId >= 0) {
+                mUserControlledParameters.insert(parameterId);
+            }
+        }
+    }
+}
+
+bool ParameterBlockingSystem::isInteractionExpired(const UserInteractionState& state) const
+{
+    auto now = std::chrono::steady_clock::now();
+    auto timeSinceLastActivity = std::chrono::duration_cast<std::chrono::milliseconds>(now - state.lastActivity);
+
+    return timeSinceLastActivity > USER_CONTROL_TIMEOUT;
+}
+
+void ParameterBlockingSystem::removeExpiredInteractions()
+{
+    auto it = mActiveInteractions.begin();
+    while (it != mActiveInteractions.end()) {
+        if (!it->second.isActive && isInteractionExpired(it->second)) {
+            it = mActiveInteractions.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+int32_t ParameterBlockingSystem::getParameterForControl(int32_t controlTag) const
+{
+    // Map control tags to parameter IDs
+    // Macro knobs use parameter IDs kMacroKnob1 through kMacroKnob8 from WaterStickParameters.h
+    if (controlTag >= kMacroKnob1 && controlTag <= kMacroKnob8) {
+        return controlTag; // Control tags directly map to parameter IDs
+    }
+
+    return -1; // Unknown control
+}
+
 WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
 : VSTGUIEditor(controller)
 {
@@ -454,8 +675,49 @@ void WaterStickEditor::updateValueReadouts()
 
 }
 
+//========================================================================
+// Enhanced Parameter Update Methods
+//========================================================================
+
+void WaterStickEditor::performParameterUpdate(int32_t parameterId, float normalizedValue)
+{
+    auto controller = getController();
+    if (!controller) return;
+
+    // Check if this parameter update should be blocked due to user interaction
+    if (mParameterBlockingSystem.shouldBlockParameterUpdate(parameterId)) {
+        // Queue the update for later processing
+        mParameterBlockingSystem.queueParameterUpdate(parameterId, normalizedValue);
+        return;
+    }
+
+    // Perform immediate parameter update
+    controller->setParamNormalized(parameterId, normalizedValue);
+    controller->performEdit(parameterId, normalizedValue);
+}
+
+bool WaterStickEditor::shouldAllowParameterUpdate(int32_t parameterId) const
+{
+    return !mParameterBlockingSystem.shouldBlockParameterUpdate(parameterId);
+}
+
+void WaterStickEditor::updateParameterBlockingSystem()
+{
+    auto controller = getController();
+    if (!controller) return;
+
+    // Process any queued parameter updates
+    mParameterBlockingSystem.processQueuedUpdates(controller);
+
+    // Perform periodic cleanup
+    mParameterBlockingSystem.cleanup();
+}
+
 void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 {
+    // Update parameter blocking system (cleanup and process queued updates)
+    updateParameterBlockingSystem();
+
     // Check if this is a Smart Hierarchy control
     auto macroKnob = dynamic_cast<MacroKnobControl*>(control);
     if (macroKnob) {
@@ -476,7 +738,11 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
         }
 
         if (columnIndex >= 0) {
-            handleMacroKnobChange(columnIndex, control->getValue());
+            // Only process if visual updates are allowed (throttling)
+            if (mParameterBlockingSystem.shouldAllowVisualUpdate()) {
+                handleMacroKnobChange(columnIndex, control->getValue());
+                mParameterBlockingSystem.markVisualUpdateComplete();
+            }
         } else {
             WS_LOG_ERROR("[MacroKnob] ERROR: Could not find macro knob in array");
         }
@@ -514,18 +780,18 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
             TapContext buttonContext = tapButton->getContext();
             int parameterId = getTapParameterIdForContext(tapButtonIndex, buttonContext);
 
-            // Update parameter in controller
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(parameterId, control->getValue());
-                controller->performEdit(parameterId, control->getValue());
+            // Update parameter using enhanced blocking-aware method
+            performParameterUpdate(parameterId, control->getValue());
 
-                // MINIMAP UPDATE FIX: Update minimap for all parameter changes that affect visualization
-                if (buttonContext == TapContext::Enable || buttonContext == TapContext::Volume ||
-                    buttonContext == TapContext::Pan || buttonContext == TapContext::FilterCutoff ||
-                    buttonContext == TapContext::FilterResonance || buttonContext == TapContext::FilterType ||
-                    buttonContext == TapContext::PitchShift) {
+            // MINIMAP UPDATE FIX: Update minimap for all parameter changes that affect visualization
+            if (buttonContext == TapContext::Enable || buttonContext == TapContext::Volume ||
+                buttonContext == TapContext::Pan || buttonContext == TapContext::FilterCutoff ||
+                buttonContext == TapContext::FilterResonance || buttonContext == TapContext::FilterType ||
+                buttonContext == TapContext::PitchShift) {
+                // Only update minimap if visual updates are allowed (throttling)
+                if (mParameterBlockingSystem.shouldAllowVisualUpdate()) {
                     updateMinimapState();
+                    mParameterBlockingSystem.markVisualUpdateComplete();
                 }
             }
         }
@@ -541,12 +807,10 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 
                 if (syncMode > 0.5f) {
                     // Sync mode: control sync division
-                    controller->setParamNormalized(kSyncDivision, control->getValue());
-                    controller->performEdit(kSyncDivision, control->getValue());
+                    performParameterUpdate(kSyncDivision, control->getValue());
                 } else {
                     // Free mode: control delay time
-                    controller->setParamNormalized(kDelayTime, control->getValue());
-                    controller->performEdit(kDelayTime, control->getValue());
+                    performParameterUpdate(kDelayTime, control->getValue());
                 }
 
                 // Update value readouts for time/division knob
@@ -555,14 +819,12 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
         }
         else {
             // Handle other controls (non-tap, non-mode buttons)
-            auto controller = getController();
-            if (controller) {
-                controller->setParamNormalized(control->getTag(), control->getValue());
-                controller->performEdit(control->getTag(), control->getValue());
+            performParameterUpdate(control->getTag(), control->getValue());
 
-                // Special case: if sync mode changed, update the time/division knob value
-                if (control->getTag() == kTempoSyncMode && timeDivisionKnob) {
-                    float newSyncMode = control->getValue();
+            // Special case: if sync mode changed, update the time/division knob value
+            auto controller = getController();
+            if (controller && control->getTag() == kTempoSyncMode && timeDivisionKnob) {
+                float newSyncMode = control->getValue();
                     if (newSyncMode > 0.5f) {
                         // Switched to sync mode: load sync division value
                         float syncDivValue = controller->getParamNormalized(kSyncDivision);
@@ -2107,6 +2369,16 @@ void WaterStickEditor::forceParameterSynchronization()
         }
     }
 
+    // Sync all macro knobs with current parameter values
+    for (int i = 0; i < 8; i++) {
+        if (macroKnobs[i]) {
+            int paramId = kMacroKnob1 + i;
+            float paramValue = controller->getParamNormalized(paramId);
+            macroKnobs[i]->setValue(paramValue);
+            macroKnobs[i]->invalid();
+        }
+    }
+
     // Force visual updates
     updateValueReadouts();
     updateMinimapState();
@@ -2505,6 +2777,14 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     auto waterStickController = dynamic_cast<WaterStickController*>(controller);
     if (!waterStickController) return;
 
+    // VST3 CIRCULAR UPDATE PREVENTION: Check if we're already processing this macro parameter
+    int macroParamId = kMacroKnob1 + columnIndex;
+    if (waterStickController->isProcessingMacroEdit() &&
+        waterStickController->getCurrentEditingMacroParam() == macroParamId) {
+        WS_LOG_INFO("[MacroKnob] CIRCULAR UPDATE BLOCKED: Already processing this macro knob edit");
+        return;
+    }
+
     {
         WS_LOG_INFO("[MacroKnob] ===== handleMacroKnobChange START =====");
     }
@@ -2539,11 +2819,15 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
         WS_LOG_INFO("[MacroKnob] Applying context-specific macro curve to assigned context only");
     }
 
+    // VST3 PROFESSIONAL EDIT BOUNDARIES: Set edit state before applying curves
+    waterStickController->setMacroEditState(true, macroParamId);
+
+    // VST3 Best Practice: Begin edit for macro knob parameter
+    controller->beginEdit(macroParamId);
+    WS_LOG_INFO("[MacroKnob] VST3: beginEdit() called for macro knob parameter session");
+
     // Apply macro curve to the knob's assigned context only (context isolation)
     handleGlobalMacroKnobChange(continuousValue, assignedCtx);
-
-    // Update the corresponding VST macro knob parameter to trigger DAW automation
-    int macroParamId = kMacroKnob1 + columnIndex;
     {
         std::ostringstream oss;
         oss << "[MacroKnob] About to update VST parameter - ID: " << macroParamId
@@ -2555,13 +2839,21 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
         oss << "[MacroKnob] Calling setParamNormalized(" << macroParamId << ", " << std::fixed << std::setprecision(3) << value << ")";
         WS_LOG_INFO(oss.str());
     }
+    // Update the macro knob parameter value and notify DAW
     controller->setParamNormalized(macroParamId, value);
     {
         std::ostringstream oss;
-        oss << "[MacroKnob] Calling performEdit(" << macroParamId << ", " << std::fixed << std::setprecision(3) << value << ")";
+        oss << "[MacroKnob] VST3: Calling performEdit(" << macroParamId << ", " << std::fixed << std::setprecision(3) << value << ")";
         WS_LOG_INFO(oss.str());
     }
     controller->performEdit(macroParamId, value);
+
+    // VST3 Best Practice: End edit to complete the session
+    controller->endEdit(macroParamId);
+    WS_LOG_INFO("[MacroKnob] VST3: endEdit() called for macro knob parameter session");
+
+    // Clear edit state to allow future macro knob changes
+    waterStickController->setMacroEditState(false, -1);
 
     {
         WS_LOG_INFO("[MacroKnob] VST parameter update completed successfully");
@@ -2632,14 +2924,9 @@ void WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapCon
         }
     }
 
-    // Update all macro knobs to show the global curve has been applied
-    // Set non-global knobs to neutral position to indicate global mode
-    for (int i = 1; i < 8; i++) {
-        if (macroKnobs[i]) {
-            macroKnobs[i]->setValue(0.5f); // Neutral position
-            macroKnobs[i]->invalid();
-        }
-    }
+    // FIXED: Removed forced reset loop that was causing macro knobs 2-8 to snap to center
+    // The MacroCurveSystem backend correctly handles parameter changes, so we don't need
+    // to force visual reset of non-global knobs - they should maintain their actual values
 }
 
 void WaterStickEditor::handleRandomizeAction(int columnIndex)
@@ -2893,6 +3180,13 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, c
         auto currentTime = std::chrono::steady_clock::now();
 
         int knobIndex = getTag() - kMacroKnob1;
+
+        // Notify parameter blocking system of user interaction start
+        auto editor = dynamic_cast<WaterStickEditor*>(listener);
+        if (editor) {
+            editor->getParameterBlockingSystem().onUserInteractionStart(getTag());
+        }
+
         {
             std::ostringstream oss;
             oss << "[MacroKnob] === MOUSE DOWN - Knob " << knobIndex << " ===";
@@ -2992,6 +3286,13 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
 VSTGUI::CMouseEventResult MacroKnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     int knobIndex = getTag() - kMacroKnob1;
+
+    // Notify parameter blocking system of user interaction end
+    auto editor = dynamic_cast<WaterStickEditor*>(listener);
+    if (editor) {
+        editor->getParameterBlockingSystem().onUserInteractionEnd(getTag());
+    }
+
     {
         std::ostringstream oss;
         oss << "[MacroKnob] === MOUSE UP - Knob " << knobIndex << " ===";
