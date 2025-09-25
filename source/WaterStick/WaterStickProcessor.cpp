@@ -1733,7 +1733,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             mOutputGain = ParameterConverter::convertGain(value);
                             break;
                         case kDelayTime:
-                            mDelayTime = static_cast<float>(value * 2.0); // 0-2 seconds
+                            mDelayTime = static_cast<float>(value * 20.0); // 0-20 seconds
                             break;
                         case kFeedback:
                             mFeedback = ParameterConverter::convertFeedback(value);

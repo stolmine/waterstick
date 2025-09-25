@@ -603,9 +603,18 @@ std::string WaterStick::WaterStickEditor::formatParameterValue(int parameterId, 
             return normalizedValue > 0.5f ? "SYNC" : "FREE";
 
         case kDelayTime:
-            // Convert normalized to seconds (0-2s range)
-            oss << std::fixed << std::setprecision(3) << (normalizedValue * 2.0f) << "s";
+        {
+            // Convert normalized to seconds (0-20s range)
+            float timeValue = normalizedValue * 20.0f;
+            if (timeValue >= 10.0f) {
+                // For times >= 10s, show 1 decimal place: "15.3s"
+                oss << std::fixed << std::setprecision(1) << timeValue << "s";
+            } else {
+                // For times < 10s, show 2 decimal places: "2.34s"
+                oss << std::fixed << std::setprecision(2) << timeValue << "s";
+            }
             return oss.str();
+        }
 
         case kSyncDivision:
         {
