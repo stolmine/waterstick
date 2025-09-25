@@ -6,12 +6,87 @@
 #include "vstgui/lib/controls/icontrollistener.h"
 #include <set>
 #include <chrono>
+#include <atomic>
+#include <mutex>
+#include <queue>
+#include <unordered_set>
+#include <unordered_map>
 
 namespace WaterStick {
 
 // Forward declarations
 class WaterStickEditor;
 class WaterStickController;
+
+//========================================================================
+// ParameterBlockingSystem - Prevents circular parameter updates during user interactions
+//========================================================================
+class ParameterBlockingSystem {
+public:
+    ParameterBlockingSystem();
+    ~ParameterBlockingSystem();
+
+    // User interaction detection
+    void onUserInteractionStart(int32_t controlTag);
+    void onUserInteractionEnd(int32_t controlTag);
+
+    // Parameter blocking logic
+    bool shouldBlockParameterUpdate(int32_t parameterId) const;
+    bool shouldBlockControlUpdate(int32_t controlTag) const;
+
+    // Visual update throttling
+    bool shouldAllowVisualUpdate();
+    void markVisualUpdateComplete();
+
+    // Parameter queue management for delayed updates
+    void queueParameterUpdate(int32_t parameterId, float normalizedValue);
+    void processQueuedUpdates(Steinberg::Vst::EditController* controller);
+
+    // Maintenance and diagnostics
+    void cleanup();
+    void getPerformanceStats(float& avgBlockingDuration, int& totalBlockedUpdates) const;
+
+private:
+    struct ParameterUpdate {
+        int32_t parameterId;
+        float normalizedValue;
+        std::chrono::steady_clock::time_point timestamp;
+    };
+
+    struct UserInteractionState {
+        std::chrono::steady_clock::time_point startTime;
+        std::chrono::steady_clock::time_point lastActivity;
+        bool isActive;
+    };
+
+    // Configuration constants
+    static constexpr std::chrono::milliseconds USER_CONTROL_TIMEOUT{1000};  // 1 second timeout
+    static constexpr std::chrono::milliseconds VISUAL_UPDATE_INTERVAL{33};  // ~30Hz (33ms)
+    static constexpr size_t MAX_QUEUED_UPDATES{256};
+
+    // Thread-safe state management
+    mutable std::mutex mStateMutex;
+    std::unordered_map<int32_t, UserInteractionState> mActiveInteractions;
+    std::unordered_set<int32_t> mUserControlledParameters;
+
+    // Visual update throttling
+    std::atomic<std::chrono::steady_clock::time_point> mLastVisualUpdate;
+
+    // Parameter update queue
+    mutable std::mutex mQueueMutex;
+    std::queue<ParameterUpdate> mParameterQueue;
+
+    // Performance tracking
+    mutable std::atomic<int> mTotalBlockedUpdates{0};
+    mutable std::atomic<int> mTotalInteractions{0};
+    std::chrono::steady_clock::time_point mLastCleanupTime;
+
+    // Internal helper methods
+    void updateUserControlledParameters();
+    bool isInteractionExpired(const UserInteractionState& state) const;
+    void removeExpiredInteractions();
+    int32_t getParameterForControl(int32_t controlTag) const;
+};
 
 // Enum for different tap contexts
 enum class TapContext {
@@ -237,6 +312,9 @@ public:
     // IControlListener
     void valueChanged(VSTGUI::CControl* control) SMTG_OVERRIDE;
 
+    // Parameter blocking system access
+    ParameterBlockingSystem& getParameterBlockingSystem() { return mParameterBlockingSystem; }
+
     // Public helper for drag operations
     TapButton* getTapButtonAtPoint(const VSTGUI::CPoint& point);
 
@@ -333,6 +411,14 @@ private:
 
     // Context state management
     TapContext currentContext = TapContext::Enable;
+
+    // Parameter blocking system for preventing circular updates
+    ParameterBlockingSystem mParameterBlockingSystem;
+
+    // Enhanced parameter update handling
+    void performParameterUpdate(int32_t parameterId, float normalizedValue);
+    bool shouldAllowParameterUpdate(int32_t parameterId) const;
+    void updateParameterBlockingSystem();
 
     // Helper methods
     void createTapButtons(VSTGUI::CViewContainer* container);

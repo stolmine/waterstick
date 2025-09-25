@@ -25,19 +25,19 @@ namespace WaterStick {
 // ParameterBlockingSystem Implementation
 //========================================================================
 
-ParameterBlockingSystem::ParameterBlockingSystem()
+WaterStick::ParameterBlockingSystem::ParameterBlockingSystem()
     : mLastCleanupTime(std::chrono::steady_clock::now())
 {
     // Initialize visual update throttling timestamp
     mLastVisualUpdate.store(std::chrono::steady_clock::now() - VISUAL_UPDATE_INTERVAL);
 }
 
-ParameterBlockingSystem::~ParameterBlockingSystem()
+WaterStick::ParameterBlockingSystem::~ParameterBlockingSystem()
 {
     cleanup();
 }
 
-void ParameterBlockingSystem::onUserInteractionStart(int32_t controlTag)
+void WaterStick::ParameterBlockingSystem::onUserInteractionStart(int32_t controlTag)
 {
     std::lock_guard<std::mutex> lock(mStateMutex);
 
@@ -53,7 +53,7 @@ void ParameterBlockingSystem::onUserInteractionStart(int32_t controlTag)
     mTotalInteractions.fetch_add(1, std::memory_order_relaxed);
 }
 
-void ParameterBlockingSystem::onUserInteractionEnd(int32_t controlTag)
+void WaterStick::ParameterBlockingSystem::onUserInteractionEnd(int32_t controlTag)
 {
     std::lock_guard<std::mutex> lock(mStateMutex);
 
@@ -67,7 +67,7 @@ void ParameterBlockingSystem::onUserInteractionEnd(int32_t controlTag)
     updateUserControlledParameters();
 }
 
-bool ParameterBlockingSystem::shouldBlockParameterUpdate(int32_t parameterId) const
+bool WaterStick::ParameterBlockingSystem::shouldBlockParameterUpdate(int32_t parameterId) const
 {
     std::lock_guard<std::mutex> lock(mStateMutex);
 
@@ -81,7 +81,7 @@ bool ParameterBlockingSystem::shouldBlockParameterUpdate(int32_t parameterId) co
     return shouldBlock;
 }
 
-bool ParameterBlockingSystem::shouldBlockControlUpdate(int32_t controlTag) const
+bool WaterStick::ParameterBlockingSystem::shouldBlockControlUpdate(int32_t controlTag) const
 {
     std::lock_guard<std::mutex> lock(mStateMutex);
 
@@ -89,7 +89,7 @@ bool ParameterBlockingSystem::shouldBlockControlUpdate(int32_t controlTag) const
     return it != mActiveInteractions.end() && it->second.isActive;
 }
 
-bool ParameterBlockingSystem::shouldAllowVisualUpdate()
+bool WaterStick::ParameterBlockingSystem::shouldAllowVisualUpdate()
 {
     auto now = std::chrono::steady_clock::now();
     auto lastUpdate = mLastVisualUpdate.load(std::memory_order_relaxed);
@@ -99,12 +99,12 @@ bool ParameterBlockingSystem::shouldAllowVisualUpdate()
     return timeSinceLastUpdate >= VISUAL_UPDATE_INTERVAL;
 }
 
-void ParameterBlockingSystem::markVisualUpdateComplete()
+void WaterStick::ParameterBlockingSystem::markVisualUpdateComplete()
 {
     mLastVisualUpdate.store(std::chrono::steady_clock::now(), std::memory_order_relaxed);
 }
 
-void ParameterBlockingSystem::queueParameterUpdate(int32_t parameterId, float normalizedValue)
+void WaterStick::ParameterBlockingSystem::queueParameterUpdate(int32_t parameterId, float normalizedValue)
 {
     std::lock_guard<std::mutex> lock(mQueueMutex);
 
@@ -121,7 +121,7 @@ void ParameterBlockingSystem::queueParameterUpdate(int32_t parameterId, float no
     mParameterQueue.push(update);
 }
 
-void ParameterBlockingSystem::processQueuedUpdates(Steinberg::Vst::EditController* controller)
+void WaterStick::ParameterBlockingSystem::processQueuedUpdates(Steinberg::Vst::EditController* controller)
 {
     if (!controller) return;
 
@@ -150,7 +150,7 @@ void ParameterBlockingSystem::processQueuedUpdates(Steinberg::Vst::EditControlle
     mParameterQueue = std::move(validUpdates);
 }
 
-void ParameterBlockingSystem::cleanup()
+void WaterStick::ParameterBlockingSystem::cleanup()
 {
     auto now = std::chrono::steady_clock::now();
 
@@ -165,7 +165,7 @@ void ParameterBlockingSystem::cleanup()
     mLastCleanupTime = now;
 }
 
-void ParameterBlockingSystem::getPerformanceStats(float& avgBlockingDuration, int& totalBlockedUpdates) const
+void WaterStick::ParameterBlockingSystem::getPerformanceStats(float& avgBlockingDuration, int& totalBlockedUpdates) const
 {
     totalBlockedUpdates = mTotalBlockedUpdates.load(std::memory_order_relaxed);
 
@@ -192,7 +192,7 @@ void ParameterBlockingSystem::getPerformanceStats(float& avgBlockingDuration, in
     avgBlockingDuration = activeCount > 0 ? totalDuration / activeCount : 0.0f;
 }
 
-void ParameterBlockingSystem::updateUserControlledParameters()
+void WaterStick::ParameterBlockingSystem::updateUserControlledParameters()
 {
     mUserControlledParameters.clear();
 
@@ -211,7 +211,7 @@ void ParameterBlockingSystem::updateUserControlledParameters()
     }
 }
 
-bool ParameterBlockingSystem::isInteractionExpired(const UserInteractionState& state) const
+bool WaterStick::ParameterBlockingSystem::isInteractionExpired(const UserInteractionState& state) const
 {
     auto now = std::chrono::steady_clock::now();
     auto timeSinceLastActivity = std::chrono::duration_cast<std::chrono::milliseconds>(now - state.lastActivity);
@@ -219,7 +219,7 @@ bool ParameterBlockingSystem::isInteractionExpired(const UserInteractionState& s
     return timeSinceLastActivity > USER_CONTROL_TIMEOUT;
 }
 
-void ParameterBlockingSystem::removeExpiredInteractions()
+void WaterStick::ParameterBlockingSystem::removeExpiredInteractions()
 {
     auto it = mActiveInteractions.begin();
     while (it != mActiveInteractions.end()) {
@@ -231,7 +231,7 @@ void ParameterBlockingSystem::removeExpiredInteractions()
     }
 }
 
-int32_t ParameterBlockingSystem::getParameterForControl(int32_t controlTag) const
+int32_t WaterStick::ParameterBlockingSystem::getParameterForControl(int32_t controlTag) const
 {
     // Map control tags to parameter IDs
     // Macro knobs use parameter IDs kMacroKnob1 through kMacroKnob8 from WaterStickParameters.h
@@ -334,7 +334,7 @@ void PLUGIN_API WaterStickEditor::close()
     }
 }
 
-void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
+void WaterStick::WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
 {
     // Button grid configuration (scaled by 1.75x)
     const int buttonSize = 53;           // Button diameter (30 * 1.75 = 52.5, rounded to 53)
@@ -408,7 +408,7 @@ void WaterStickEditor::createTapButtons(VSTGUI::CViewContainer* container)
     }
 }
 
-void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
+void WaterStick::WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
 {
     // Button grid configuration (matching tap buttons, scaled by 1.75x)
     const int buttonSize = 53;           // Button diameter (30 * 1.75 = 52.5, rounded to 53)
@@ -489,7 +489,7 @@ void WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* container)
     }
 }
 
-void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
+void WaterStick::WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
 {
     // Improved spacing calculation with better centering and visual hierarchy
     const int bottomThirdTop = ((kEditorHeight * 2) / 3);
@@ -572,7 +572,7 @@ void WaterStickEditor::createGlobalControls(VSTGUI::CViewContainer* container)
     }
 }
 
-std::string WaterStickEditor::formatParameterValue(int parameterId, float normalizedValue) const
+std::string WaterStick::WaterStickEditor::formatParameterValue(int parameterId, float normalizedValue) const
 {
     std::ostringstream oss;
 
@@ -636,7 +636,7 @@ std::string WaterStickEditor::formatParameterValue(int parameterId, float normal
     }
 }
 
-void WaterStickEditor::updateValueReadouts()
+void WaterStick::WaterStickEditor::updateValueReadouts()
 {
     auto controller = getController();
     if (!controller) return;
@@ -679,7 +679,7 @@ void WaterStickEditor::updateValueReadouts()
 // Enhanced Parameter Update Methods
 //========================================================================
 
-void WaterStickEditor::performParameterUpdate(int32_t parameterId, float normalizedValue)
+void WaterStick::WaterStickEditor::performParameterUpdate(int32_t parameterId, float normalizedValue)
 {
     auto controller = getController();
     if (!controller) return;
@@ -696,12 +696,12 @@ void WaterStickEditor::performParameterUpdate(int32_t parameterId, float normali
     controller->performEdit(parameterId, normalizedValue);
 }
 
-bool WaterStickEditor::shouldAllowParameterUpdate(int32_t parameterId) const
+bool WaterStick::WaterStickEditor::shouldAllowParameterUpdate(int32_t parameterId) const
 {
     return !mParameterBlockingSystem.shouldBlockParameterUpdate(parameterId);
 }
 
-void WaterStickEditor::updateParameterBlockingSystem()
+void WaterStick::WaterStickEditor::updateParameterBlockingSystem()
 {
     auto controller = getController();
     if (!controller) return;
@@ -713,7 +713,7 @@ void WaterStickEditor::updateParameterBlockingSystem()
     mParameterBlockingSystem.cleanup();
 }
 
-void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
+void WaterStick::WaterStickEditor::valueChanged(VSTGUI::CControl* control)
 {
     // Update parameter blocking system (cleanup and process queued updates)
     updateParameterBlockingSystem();
@@ -858,12 +858,12 @@ void WaterStickEditor::valueChanged(VSTGUI::CControl* control)
     }
 }
 
-TapButton* WaterStickEditor::getTapButtonAtPoint(const VSTGUI::CPoint& point)
+WaterStick::TapButton* WaterStick::WaterStickEditor::getTapButtonAtPoint(const VSTGUI::CPoint& point)
 {
     // Check all tap buttons to see if the point is within their bounds
     for (int i = 0; i < 16; i++) {
         if (tapButtons[i]) {
-            auto button = static_cast<TapButton*>(tapButtons[i]);
+            auto button = static_cast<WaterStick::TapButton*>(tapButtons[i]);
             VSTGUI::CRect buttonRect = button->getViewSize();
 
             // Convert button rect to frame coordinates for comparison
@@ -881,7 +881,7 @@ TapButton* WaterStickEditor::getTapButtonAtPoint(const VSTGUI::CPoint& point)
     return nullptr;
 }
 
-void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
+void WaterStick::WaterStickEditor::handleModeButtonSelection(WaterStick::ModeButton* selectedButton)
 {
     // Implement mutual exclusion - only one mode button can be selected at a time
     for (int i = 0; i < 8; i++) {
@@ -899,7 +899,7 @@ void WaterStickEditor::handleModeButtonSelection(ModeButton* selectedButton)
     }
 }
 
-void WaterStickEditor::switchToContext(TapContext newContext)
+void WaterStick::WaterStickEditor::switchToContext(TapContext newContext)
 {
     std::string contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
     std::string oldContextName = (currentContext < TapContext::COUNT) ? contextNames[static_cast<int>(currentContext)] : "Unknown";
@@ -985,7 +985,7 @@ void WaterStickEditor::switchToContext(TapContext newContext)
     }
 }
 
-int WaterStickEditor::getSelectedModeButtonIndex() const
+int WaterStick::WaterStickEditor::getSelectedModeButtonIndex() const
 {
     for (int i = 0; i < 8; i++) {
         if (modeButtons[i] && modeButtons[i]->getValue() > 0.5) {
@@ -995,14 +995,14 @@ int WaterStickEditor::getSelectedModeButtonIndex() const
     return 0; // Default to first button if none selected
 }
 
-VSTGUI::SharedPointer<VSTGUI::CFontDesc> WaterStickEditor::getWorkSansFont(float size) const
+VSTGUI::SharedPointer<VSTGUI::CFontDesc> WaterStick::WaterStickEditor::getWorkSansFont(float size) const
 {
     // Create CFontDesc with the font file path relative to the plugin bundle
     // VSTGUI will handle loading the font from the file system
     return VSTGUI::makeOwned<VSTGUI::CFontDesc>("fonts/WorkSans-Regular.otf", size);
 }
 
-int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext context) const
+int WaterStick::WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext context) const
 {
     // Convert tap button index to tap number (1-16)
     // The grid layout: taps 1-8 are top row (indices 0-7), taps 9-16 are bottom row (indices 8-15)
@@ -1062,7 +1062,7 @@ int WaterStickEditor::getTapParameterIdForContext(int tapButtonIndex, TapContext
     }
 }
 
-int WaterStickEditor::getTapButtonSizeForContext(TapContext context) const
+int WaterStick::WaterStickEditor::getTapButtonSizeForContext(TapContext context) const
 {
     switch (context) {
         case TapContext::PitchShift:
@@ -1080,26 +1080,26 @@ int WaterStickEditor::getTapButtonSizeForContext(TapContext context) const
 //------------------------------------------------------------------------
 
 // Static member definition
-std::set<TapButton*> TapButton::dragAffectedButtons;
+std::set<WaterStick::TapButton*> WaterStick::TapButton::dragAffectedButtons;
 
-TapButton::TapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+WaterStick::TapButton::TapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
 : VSTGUI::CControl(size, listener, tag)
 {
     setMax(1.0);  // Binary on/off button
     setMin(0.0);
 }
 
-bool TapButton::isButtonAlreadyAffected(TapButton* button) const
+bool WaterStick::TapButton::isButtonAlreadyAffected(WaterStick::TapButton* button) const
 {
     return dragAffectedButtons.find(button) != dragAffectedButtons.end();
 }
 
-void TapButton::markButtonAsAffected(TapButton* button)
+void WaterStick::TapButton::markButtonAsAffected(WaterStick::TapButton* button)
 {
     dragAffectedButtons.insert(button);
 }
 
-void TapButton::draw(VSTGUI::CDrawContext* context)
+void WaterStick::TapButton::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
     float currentValue = getValue();
@@ -1529,7 +1529,7 @@ void TapButton::draw(VSTGUI::CDrawContext* context)
     setDirty(false);
 }
 
-VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::TapButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
         auto currentTime = std::chrono::steady_clock::now();
@@ -1575,7 +1575,7 @@ VSTGUI::CMouseEventResult TapButton::onMouseDown(VSTGUI::CPoint& where, const VS
     return VSTGUI::kMouseEventNotHandled;
 }
 
-VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::TapButton::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isVolumeInteracting && (buttons & VSTGUI::kLButton)) {
         // Volume and Pan contexts: Handle continuous dragging
@@ -1675,7 +1675,7 @@ VSTGUI::CMouseEventResult TapButton::onMouseMoved(VSTGUI::CPoint& where, const V
     return VSTGUI::kMouseEventNotHandled;
 }
 
-VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isVolumeInteracting) {
         // Volume and Pan contexts: Check if this was a click or drag
@@ -1726,13 +1726,13 @@ VSTGUI::CMouseEventResult TapButton::onMouseUp(VSTGUI::CPoint& where, const VSTG
 // TapButton Double-Click Helper Methods
 //------------------------------------------------------------------------
 
-bool TapButton::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
+bool WaterStick::TapButton::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
 {
     auto timeSinceLastClick = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastClickTime);
     return timeSinceLastClick <= DOUBLE_CLICK_TIMEOUT && timeSinceLastClick > std::chrono::milliseconds{0};
 }
 
-void TapButton::resetToDefaultValue()
+void WaterStick::TapButton::resetToDefaultValue()
 {
     // Only reset if not in Enable context (per requirements)
     if (currentContext == TapContext::Enable) {
@@ -1749,7 +1749,7 @@ void TapButton::resetToDefaultValue()
     }
 }
 
-void TapButton::updateViewBoundsForContext(TapContext context, WaterStickEditor* editor)
+void WaterStick::TapButton::updateViewBoundsForContext(TapContext context, WaterStickEditor* editor)
 {
     if (!editor) return;
 
@@ -1791,7 +1791,7 @@ void TapButton::updateViewBoundsForContext(TapContext context, WaterStickEditor*
     }
 }
 
-float TapButton::getContextDefaultValue() const
+float WaterStick::TapButton::getContextDefaultValue() const
 {
     switch (currentContext) {
         case TapContext::Volume:
@@ -1818,7 +1818,7 @@ float TapButton::getContextDefaultValue() const
 // ModeButton Implementation
 //------------------------------------------------------------------------
 
-ModeButton::ModeButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+WaterStick::ModeButton::ModeButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
 : VSTGUI::CControl(size, listener, tag)
 {
     setMax(1.0);  // Binary on/off button
@@ -1826,7 +1826,7 @@ ModeButton::ModeButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* list
     setValue(0.0); // Start in unselected state
 }
 
-void ModeButton::draw(VSTGUI::CDrawContext* context)
+void WaterStick::ModeButton::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
     bool isSelected = (getValue() > 0.5);
@@ -1914,7 +1914,7 @@ void ModeButton::draw(VSTGUI::CDrawContext* context)
     setDirty(false);
 }
 
-VSTGUI::CMouseEventResult ModeButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::ModeButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
         // Only allow setting to selected state (1.0), don't allow deselecting
@@ -1937,12 +1937,12 @@ VSTGUI::CMouseEventResult ModeButton::onMouseDown(VSTGUI::CPoint& where, const V
 //------------------------------------------------------------------------
 // KnobControl Implementation
 
-KnobControl::KnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+WaterStick::KnobControl::KnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
 : CControl(size, listener, tag)
 {
 }
 
-void KnobControl::draw(VSTGUI::CDrawContext* context)
+void WaterStick::KnobControl::draw(VSTGUI::CDrawContext* context)
 {
 
     VSTGUI::CRect drawRect = getViewSize();
@@ -1992,7 +1992,7 @@ void KnobControl::draw(VSTGUI::CDrawContext* context)
     setDirty(false);
 }
 
-VSTGUI::CMouseEventResult KnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::KnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
         auto currentTime = std::chrono::steady_clock::now();
@@ -2014,7 +2014,7 @@ VSTGUI::CMouseEventResult KnobControl::onMouseDown(VSTGUI::CPoint& where, const 
     return VSTGUI::kMouseEventNotHandled;
 }
 
-VSTGUI::CMouseEventResult KnobControl::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::KnobControl::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isDragging && (buttons & VSTGUI::kLButton)) {
         // Calculate vertical movement for value change
@@ -2037,7 +2037,7 @@ VSTGUI::CMouseEventResult KnobControl::onMouseMoved(VSTGUI::CPoint& where, const
     return VSTGUI::kMouseEventNotHandled;
 }
 
-VSTGUI::CMouseEventResult KnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::KnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isDragging) {
         isDragging = false;
@@ -2050,13 +2050,13 @@ VSTGUI::CMouseEventResult KnobControl::onMouseUp(VSTGUI::CPoint& where, const VS
 // KnobControl Double-Click Helper Methods
 //------------------------------------------------------------------------
 
-bool KnobControl::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
+bool WaterStick::KnobControl::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
 {
     auto timeSinceLastClick = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastClickTime);
     return timeSinceLastClick <= DOUBLE_CLICK_TIMEOUT && timeSinceLastClick > std::chrono::milliseconds{0};
 }
 
-void KnobControl::resetToDefaultValue()
+void WaterStick::KnobControl::resetToDefaultValue()
 {
     auto editor = dynamic_cast<WaterStickEditor*>(listener);
     if (!editor) return;
@@ -2106,12 +2106,12 @@ void KnobControl::resetToDefaultValue()
 // MinimapTapButton Implementation
 //========================================================================
 
-MinimapTapButton::MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, WaterStickEditor* editor, int tapIndex)
+WaterStick::MinimapTapButton::MinimapTapButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, WaterStick::WaterStickEditor* editor, int tapIndex)
 : VSTGUI::CControl(size, listener, tag), editor(editor), tapIndex(tapIndex)
 {
 }
 
-char MinimapTapButton::getFilterTypeChar(float filterTypeValue) const
+char WaterStick::MinimapTapButton::getFilterTypeChar(float filterTypeValue) const
 {
     // Match the exact mapping from TapButton implementation
     if (filterTypeValue < 0.2) {
@@ -2127,7 +2127,7 @@ char MinimapTapButton::getFilterTypeChar(float filterTypeValue) const
     }
 }
 
-void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
+void WaterStick::MinimapTapButton::draw(VSTGUI::CDrawContext* context)
 {
     // Get the actual drawing rectangle
     VSTGUI::CRect rect = getViewSize();
@@ -2201,7 +2201,7 @@ void MinimapTapButton::draw(VSTGUI::CDrawContext* context)
 // Minimap Implementation
 //========================================================================
 
-void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
+void WaterStick::WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
 {
     // Integrated minimap positioning: Place minimap circles directly above corresponding tap buttons
     const int minimapCircleSize = 13; // Keep existing size
@@ -2261,7 +2261,7 @@ void WaterStickEditor::createMinimap(VSTGUI::CViewContainer* container)
     // No separate minimap container needed - circles are positioned individually
 }
 
-void WaterStickEditor::updateMinimapState()
+void WaterStick::WaterStickEditor::updateMinimapState()
 {
     // Update minimap buttons to reflect current tap enable states
     auto controller = getController();
@@ -2278,7 +2278,7 @@ void WaterStickEditor::updateMinimapState()
     }
 }
 
-void WaterStickEditor::forceParameterSynchronization()
+void WaterStick::WaterStickEditor::forceParameterSynchronization()
 {
     auto controller = getController();
     if (!controller) return;
@@ -2390,14 +2390,14 @@ void WaterStickEditor::forceParameterSynchronization()
 // BypassToggle Implementation
 //========================================================================
 
-BypassToggle::BypassToggle(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+WaterStick::BypassToggle::BypassToggle(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
 : VSTGUI::CControl(size, listener, tag)
 {
     setMax(1.0);  // Binary on/off toggle
     setMin(0.0);
 }
 
-void BypassToggle::draw(VSTGUI::CDrawContext* context)
+void WaterStick::BypassToggle::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
     bool isBypassed = (getValue() > 0.5);
@@ -2448,7 +2448,7 @@ void BypassToggle::draw(VSTGUI::CDrawContext* context)
     setDirty(false);
 }
 
-VSTGUI::CMouseEventResult BypassToggle::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::BypassToggle::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
         // Toggle the value
@@ -2471,7 +2471,7 @@ VSTGUI::CMouseEventResult BypassToggle::onMouseDown(VSTGUI::CPoint& where, const
     return VSTGUI::kMouseEventNotHandled;
 }
 
-void WaterStickEditor::updateBypassValueDisplay()
+void WaterStick::WaterStickEditor::updateBypassValueDisplay()
 {
     auto controller = getController();
     if (delayBypassValue && controller) {
@@ -2482,7 +2482,7 @@ void WaterStickEditor::updateBypassValueDisplay()
     }
 }
 
-void WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
+void WaterStick::WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
 {
     // Calculate the true content bounding box including ALL visual elements
     VSTGUI::CRect contentBounds;
@@ -2650,7 +2650,7 @@ void WaterStickEditor::applyEqualMarginLayout(VSTGUI::CViewContainer* container)
     container->invalid();
 }
 
-void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
+void WaterStick::WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
 {
     // TRIANGULAR LAYOUT: Smart Hierarchy positioning configuration
     // Each column has triangular arrangement: Macro knob at top, R/X buttons at bottom corners
@@ -2758,7 +2758,7 @@ void WaterStickEditor::createSmartHierarchy(VSTGUI::CViewContainer* container)
 // Smart Hierarchy Helper Methods
 //========================================================================
 
-void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
+void WaterStick::WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
 {
     if (columnIndex < 0 || columnIndex >= 8) return;
 
@@ -2874,7 +2874,7 @@ void WaterStickEditor::handleMacroKnobChange(int columnIndex, float value)
     }
 }
 
-void WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapContext currentCtx)
+void WaterStick::WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapContext currentCtx)
 {
     auto controller = getController();
     if (!controller) return;
@@ -2929,7 +2929,7 @@ void WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapCon
     // to force visual reset of non-global knobs - they should maintain their actual values
 }
 
-void WaterStickEditor::handleRandomizeAction(int columnIndex)
+void WaterStick::WaterStickEditor::handleRandomizeAction(int columnIndex)
 {
     // CONTEXT ISOLATION: Use column-assigned context instead of current active context
     if (columnIndex < 0 || columnIndex >= 8) return;
@@ -2967,7 +2967,7 @@ void WaterStickEditor::handleRandomizeAction(int columnIndex)
     // Macro knobs remain visually independent - no visual update needed
 }
 
-void WaterStickEditor::handleResetAction(int columnIndex)
+void WaterStick::WaterStickEditor::handleResetAction(int columnIndex)
 {
     // CONTEXT ISOLATION: Use column-assigned context instead of current active context
     if (columnIndex < 0 || columnIndex >= 8) return;
@@ -3001,13 +3001,13 @@ void WaterStickEditor::handleResetAction(int columnIndex)
     // Macro knobs remain visually independent - no visual update needed
 }
 
-float WaterStickEditor::generateRandomValue()
+float WaterStick::WaterStickEditor::generateRandomValue()
 {
     // Generate random value between 0.0 and 1.0
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
 
-float WaterStickEditor::getContextDefaultValue(TapContext context)
+float WaterStick::WaterStickEditor::getContextDefaultValue(TapContext context)
 {
     // Return appropriate default values for each context - match VST parameter initialization defaults
     switch (context) {
@@ -3027,7 +3027,7 @@ float WaterStickEditor::getContextDefaultValue(TapContext context)
 // MacroKnobControl Implementation
 //========================================================================
 
-MacroKnobControl::MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
+WaterStick::MacroKnobControl::MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag)
 : VSTGUI::CControl(size, listener, tag), internalValue(0.0f)
 {
     setMax(1.0);
@@ -3044,7 +3044,7 @@ MacroKnobControl::MacroKnobControl(const VSTGUI::CRect& size, VSTGUI::IControlLi
     }
 }
 
-void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
+void WaterStick::MacroKnobControl::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
 
@@ -3125,7 +3125,7 @@ void MacroKnobControl::draw(VSTGUI::CDrawContext* context)
     setDirty(false);
 }
 
-void MacroKnobControl::setValue(float value)
+void WaterStick::MacroKnobControl::setValue(float value)
 {
     int knobIndex = getTag() - kMacroKnob1;  // Calculate which knob this is (0-7)
 
@@ -3160,7 +3160,7 @@ void MacroKnobControl::setValue(float value)
     }
 }
 
-float MacroKnobControl::getValue() const
+float WaterStick::MacroKnobControl::getValue() const
 {
     int knobIndex = getTag() - kMacroKnob1;  // Calculate which knob this is (0-7)
     {
@@ -3174,7 +3174,7 @@ float MacroKnobControl::getValue() const
 }
 
 
-VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
         auto currentTime = std::chrono::steady_clock::now();
@@ -3229,7 +3229,7 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseDown(VSTGUI::CPoint& where, c
     return VSTGUI::kMouseEventNotHandled;
 }
 
-VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (isDragging && (buttons & VSTGUI::kLButton)) {
         // Calculate vertical drag distance
@@ -3283,7 +3283,7 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseMoved(VSTGUI::CPoint& where, 
     return VSTGUI::kMouseEventNotHandled;
 }
 
-VSTGUI::CMouseEventResult MacroKnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::MacroKnobControl::onMouseUp(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     int knobIndex = getTag() - kMacroKnob1;
 
@@ -3323,13 +3323,13 @@ VSTGUI::CMouseEventResult MacroKnobControl::onMouseUp(VSTGUI::CPoint& where, con
     return VSTGUI::kMouseEventNotHandled;
 }
 
-bool MacroKnobControl::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
+bool WaterStick::MacroKnobControl::isDoubleClick(const std::chrono::steady_clock::time_point& currentTime)
 {
     auto timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastClickTime);
     return timeDiff <= DOUBLE_CLICK_TIMEOUT;
 }
 
-void MacroKnobControl::resetToDefaultValue()
+void WaterStick::MacroKnobControl::resetToDefaultValue()
 {
     setValue(0.0f); // Reset to first position
     setDirty(true); // STANDARDIZED: Use setDirty(true) consistently
@@ -3339,14 +3339,14 @@ void MacroKnobControl::resetToDefaultValue()
 // ActionButton Implementation
 //========================================================================
 
-ActionButton::ActionButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, ActionType type, int columnIndex)
+WaterStick::ActionButton::ActionButton(const VSTGUI::CRect& size, VSTGUI::IControlListener* listener, int32_t tag, ActionType type, int columnIndex)
 : VSTGUI::CControl(size, listener, tag), actionType(type), columnIndex(columnIndex), isPressed(false)
 {
     setMax(1.0);
     setMin(0.0);
 }
 
-void ActionButton::draw(VSTGUI::CDrawContext* context)
+void WaterStick::ActionButton::draw(VSTGUI::CDrawContext* context)
 {
     const VSTGUI::CRect& rect = getViewSize();
 
@@ -3390,7 +3390,7 @@ void ActionButton::draw(VSTGUI::CDrawContext* context)
     setDirty(false);
 }
 
-VSTGUI::CMouseEventResult ActionButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
+VSTGUI::CMouseEventResult WaterStick::ActionButton::onMouseDown(VSTGUI::CPoint& where, const VSTGUI::CButtonState& buttons)
 {
     if (buttons & VSTGUI::kLButton) {
         // Brief visual feedback using internal state
@@ -3398,7 +3398,7 @@ VSTGUI::CMouseEventResult ActionButton::onMouseDown(VSTGUI::CPoint& where, const
         invalid();
 
         // Trigger action via editor
-        auto editor = static_cast<WaterStickEditor*>(listener);
+        auto editor = static_cast<WaterStick::WaterStickEditor*>(listener);
         if (editor) {
             if (actionType == Randomize) {
                 editor->handleRandomizeAction(columnIndex);
@@ -3416,5 +3416,4 @@ VSTGUI::CMouseEventResult ActionButton::onMouseDown(VSTGUI::CPoint& where, const
     return VSTGUI::kMouseEventNotHandled;
 }
 
-
-} // namespace WaterStick
+// } // namespace WaterStick
