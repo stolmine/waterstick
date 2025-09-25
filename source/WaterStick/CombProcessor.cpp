@@ -1,3 +1,4 @@
+#include "CombProcessor.h"
 #include "WaterStickProcessor.h"
 #include "AdaptiveSmoother.h"
 #include <cmath>

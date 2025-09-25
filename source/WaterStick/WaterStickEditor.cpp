@@ -2606,7 +2606,13 @@ void WaterStickEditor::handleGlobalMacroKnobChange(float continuousValue, TapCon
             switch (currentCtx) {
                 case TapContext::FilterType:
                     // For filter type, quantize to valid discrete values (0-4)
-                    curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                    // Proper 5-step quantization with boundary handling
+                    {
+                        float clampedValue = std::max(0.0f, std::min(1.0f, curveValue));
+                        int filterType = static_cast<int>(std::floor(clampedValue * 5.0f));
+                        if (filterType >= 5) filterType = 4; // Handle boundary case
+                        curveValue = static_cast<float>(filterType) / 4.0f;
+                    }
                     break;
                 case TapContext::PitchShift:
                     // For pitch shift, map to bipolar range (-1.0 to +1.0)

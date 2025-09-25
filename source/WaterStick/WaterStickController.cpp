@@ -416,8 +416,19 @@ float MacroCurveSystem::evaluateInverseSCurve(float x) const {
 }
 
 float MacroCurveSystem::evaluateQuantized(float x) const {
-    // 8 quantized steps
-    int step = static_cast<int>(x * 7.999f); // 0-7
+    // 8 quantized steps with proper boundary handling
+    // Clamp input to [0.0, 1.0] range
+    float clampedX = std::max(0.0f, std::min(1.0f, x));
+
+    // Proper 8-step quantization: map [0.0, 1.0] to {0, 1, 2, 3, 4, 5, 6, 7}
+    int step = static_cast<int>(std::floor(clampedX * 8.0f));
+
+    // Handle boundary case where clampedX = 1.0 exactly
+    if (step >= 8) {
+        step = 7;
+    }
+
+    // Convert back to normalized range [0.0, 1.0]
     return static_cast<float>(step) / 7.0f;
 }
 
@@ -537,7 +548,13 @@ void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTa
             case 5: // TapContext::FilterType
                 paramId = kTap1FilterType + (tapIndex * 3);
                 // For filter type, quantize to valid discrete values (0-4)
-                curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                // Proper 5-step quantization with boundary handling
+                {
+                    float clampedValue = std::max(0.0f, std::min(1.0f, curveValue));
+                    int filterType = static_cast<int>(std::floor(clampedValue * 5.0f));
+                    if (filterType >= 5) filterType = 4; // Handle boundary case
+                    curveValue = static_cast<float>(filterType) / 4.0f;
+                }
                 break;
             case 6: // TapContext::PitchShift
                 paramId = kTap1PitchShift + tapIndex;
@@ -610,7 +627,13 @@ void MacroCurveSystem::applyGlobalMacroCurveWithType(int discretePosition, int c
             case 5: // TapContext::FilterType
                 paramId = kTap1FilterType + (tapIndex * 3);
                 // For filter type, quantize to valid discrete values (0-4)
-                curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                // Proper 5-step quantization with boundary handling
+                {
+                    float clampedValue = std::max(0.0f, std::min(1.0f, curveValue));
+                    int filterType = static_cast<int>(std::floor(clampedValue * 5.0f));
+                    if (filterType >= 5) filterType = 4; // Handle boundary case
+                    curveValue = static_cast<float>(filterType) / 4.0f;
+                }
                 break;
             case 6: // TapContext::PitchShift
                 paramId = kTap1PitchShift + tapIndex;
@@ -645,7 +668,16 @@ float MacroCurveSystem::getCurveValueForTapWithType(MacroCurveTypes curveType, i
 
 // Continuous versions for smooth macro knob control
 void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, int currentTapContext, WaterStickController* controller) const {
-    if (!controller || continuousValue < 0.0f || continuousValue > 1.0f) return;
+    if (!controller) return;
+
+    // Context-aware parameter validation with proper range clamping
+    if (currentTapContext < 0 || currentTapContext >= 8) {
+        WS_LOG_ERROR("[MacroCurveSystem] Invalid tap context: " + std::to_string(currentTapContext));
+        return;
+    }
+
+    // Clamp continuous value to valid range [0.0, 1.0] instead of rejecting
+    float clampedValue = std::max(0.0f, std::min(1.0f, continuousValue));
 
     // DIAGNOSTIC: Log global macro curve application with continuous value
     const char* contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
@@ -654,14 +686,14 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
     {
         std::ostringstream oss;
         oss << "[MacroCurveSystem] applyGlobalMacroCurveContinuous START - continuousValue: "
-            << std::fixed << std::setprecision(3) << continuousValue << ", context: " << contextName
+            << std::fixed << std::setprecision(3) << continuousValue << " (clamped: " << clampedValue << "), context: " << contextName
             << " (" << currentTapContext << "), applying to ALL 16 taps";
         WS_LOG_INFO(oss.str());
     }
 
     // Apply continuous curve to all 16 taps based on current context
     for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
-        float curveValue = getGlobalCurveValueForTapContinuous(continuousValue, tapIndex);
+        float curveValue = getGlobalCurveValueForTapContinuous(clampedValue, tapIndex);
 
         // Get the appropriate parameter ID based on context and tap index
         Steinberg::Vst::ParamID paramId = -1;
@@ -692,7 +724,13 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
                 paramId = kTap1FilterType + (tapIndex * 3);
                 paramType = "FilterType";
                 // For filter type, quantize to valid discrete values (0-4)
-                curveValue = std::floor(curveValue * 4.999f) / 4.0f;
+                // Proper 5-step quantization with boundary handling
+                {
+                    float clampedValue = std::max(0.0f, std::min(1.0f, curveValue));
+                    int filterType = static_cast<int>(std::floor(clampedValue * 5.0f));
+                    if (filterType >= 5) filterType = 4; // Handle boundary case
+                    curveValue = static_cast<float>(filterType) / 4.0f;
+                }
                 break;
             case 6: // TapContext::PitchShift
                 paramId = kTap1PitchShift + tapIndex;
@@ -759,7 +797,9 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
 
     {
         std::ostringstream oss;
-        oss << "[MacroCurveSystem] applyGlobalMacroCurveContinuous COMPLETE - Updated 16 tap parameters";
+        oss << "[MacroCurveSystem] applyGlobalMacroCurveContinuous COMPLETE - Updated 16 tap parameters, context: "
+            << currentTapContext << ", continuousValue: " << std::fixed << std::setprecision(6) << continuousValue
+            << " (clamped: " << clampedValue << ")";
         WS_LOG_INFO(oss.str());
     }
 }
@@ -767,19 +807,27 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
 float MacroCurveSystem::getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const {
     if (tapIndex < 0 || tapIndex >= 16) return 0.0f;
 
+    // Clamp input to valid range [0.0, 1.0] with proper boundary handling
+    float clampedValue = std::max(0.0f, std::min(1.0f, continuousValue));
+
     // Normalize tap index to 0.0-1.0 for curve evaluation
     const float normalizedPosition = static_cast<float>(tapIndex) / 15.0f; // 0-15 maps to 0.0-1.0
 
     // Smooth interpolation between different curve types based on continuous value
     // Map continuous value (0.0-1.0) to curve selection with smooth interpolation
 
-    // Scale continuous value to range [0, 7] for 8 curve positions
-    float scaledValue = continuousValue * 7.0f;
+    // Scale continuous value to range [0, 7] for 8 curve positions with boundary handling
+    float scaledValue = clampedValue * 7.0f;
     int lowerIndex = static_cast<int>(std::floor(scaledValue));
     int upperIndex = static_cast<int>(std::ceil(scaledValue));
+
+    // Handle boundary case where clampedValue = 1.0 exactly
+    if (lowerIndex >= 7) lowerIndex = 7;
+    if (upperIndex >= 8) upperIndex = 7;
+
     float fraction = scaledValue - static_cast<float>(lowerIndex);
 
-    // Clamp indices to valid range
+    // Ensure indices are within valid range [0, 7]
     lowerIndex = std::max(0, std::min(7, lowerIndex));
     upperIndex = std::max(0, std::min(7, upperIndex));
 
