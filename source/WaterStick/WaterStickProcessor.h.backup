@@ -8,7 +8,6 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-#include <memory>
 
 namespace WaterStick {
 
@@ -99,13 +98,10 @@ protected:
     int calculateCrossfadeLength(float delayTime);
 };
 
-// Forward declaration for embedded GranularPitchShifter
-class GranularPitchShifter;
-
-class MSpitchDelayLine : public DualDelayLine {
+class PitchShiftingDelayLine : public DualDelayLine {
 public:
-    MSpitchDelayLine();
-    ~MSpitchDelayLine();
+    PitchShiftingDelayLine();
+    ~PitchShiftingDelayLine();
 
     void initialize(double sampleRate, double maxDelaySeconds);
     void processSample(float input, float& output);
@@ -115,18 +111,86 @@ public:
     bool isPitchShiftActive() const { return mPitchSemitones != 0; }
 
 private:
-    int mPitchSemitones;      // -12 to +12 semitones
+    struct Grain {
+        bool active;
+        float position;         // Current read position in grain (floating-point for precision)
+        float phase;           // 0.0 to 1.0 for windowing
+        float pitchRatio;      // Playback speed ratio for this grain
+        float grainStart;      // Start position in delay buffer (floating-point)
+        float readPosition;    // Current floating-point read position in buffer
+
+        // Fade-out state for smooth grain termination
+        bool fadingOut;        // True when grain is fading out
+        int fadeOutRemaining;  // Samples remaining in fade-out
+        int fadeOutTotal;      // Total fade-out length for calculation
+        float fadeOutGain;     // Current fade-out gain (1.0 to 0.0)
+
+        // Transition state for enhanced windowing
+        float spawnSampleCount; // Sample count when grain was spawned
+        bool isTransitionGrain; // True if grain was spawned during parameter transition
+    };
+
+    static const int NUM_GRAINS = 6;    // Increased for better upward pitch shifting
+    static const int GRAIN_SIZE = 2048;  // ~46ms at 44.1kHz
+    static const int GRAIN_OVERLAP = GRAIN_SIZE * 3 / 4;  // 75% overlap
+    static const int LOOKAHEAD_BUFFER = GRAIN_SIZE * 2;  // Extra buffer for upward shifts
+    static const int GRAIN_FADEOUT_LENGTH = 2205;  // ~50ms fade-out at 44.1kHz (1 grain overlap period)
+
+    Grain mGrains[NUM_GRAINS];
+    int mPitchSemitones;      // -12 to +12
     float mPitchRatio;        // Current smoothed pitch ratio
     float mTargetPitchRatio;  // Target pitch ratio for smoothing
-    float mSmoothingCoeff;    // Smoothing coefficient for parameter automation
+    float mSmoothingCoeff;    // Smoothing coefficient (α)
+    float mNextGrainSample;   // When to start next grain (floating-point)
+    float mSampleCount;       // Running sample counter (floating-point for precision)
+    float mAdaptiveSpacing;   // Dynamically calculated grain spacing
 
-    // Embedded MSpitchAlgo implementation
-    std::unique_ptr<GranularPitchShifter> mPitchShifter;
+    // Transition state detection for parameter-aware windowing
+    float mLastPitchRatio;           // Previous pitch ratio for change detection
+    float mTransitionIntensity;      // Current transition intensity (0.0 to 1.0)
+    float mTransitionDecayRate;      // Rate at which transition intensity decays
+    int mTransitionSamples;          // Samples since last parameter change
+    static const int TRANSITION_WINDOW = 2205;  // ~50ms at 44.1kHz - time window for enhanced transitions
+    static const float PITCH_CHANGE_THRESHOLD;  // Threshold for detecting significant pitch changes
 
-    // VST parameter smoothing
+    // Pitch shifting buffers (separate from delay buffers)
+    std::vector<float> mPitchBufferA;
+    std::vector<float> mPitchBufferB;
+
+    // Buffer readiness tracking for upward pitch shifting
+    float mBufferReadinessSamples;     // Samples of real content accumulated
+    float mMinBufferForUpward;         // Minimum buffer content needed for upward pitch
+    bool mUpwardPitchReady;            // True when buffer has enough content for upward pitch
+    float mUpwardFadeInGain;           // Fade-in gain for upward pitch activation (0.0 to 1.0)
+    int mUpwardFadeInSamples;          // Samples remaining in upward pitch fade-in
+    int mActiveGrainCount;             // Number of grains to activate during warmup
+    static const int UPWARD_FADE_LENGTH = 256;   // Reduced fade-in length (~6ms at 44.1kHz)
+    static const int WARMUP_BUFFER_SIZE = GRAIN_SIZE / 4;  // Reduced from full grain size
+
+    // Dynamic gain compensation for parameter transitions
+    float mGainCompensation;           // Current gain compensation (1.0 to 1.8)
+    float mTargetGainCompensation;     // Target gain compensation for smoothing
+    float mGainSmoothingCoeff;         // Smoothing coefficient for gain changes
+    float mLastPitchRatioForGain;      // Previous pitch ratio for transition detection
+    static const float MAX_GAIN_COMPENSATION; // Maximum allowed gain compensation (1.8x)
+
+    void initializeGrains();
+    void updateGrains();
+    void startNewGrain();
+    float calculateHannWindow(float phase, bool isStarting = false, bool isEnding = false, float transitionIntensity = 0.0f);
+    float processPitchShifting(float input);
     void updatePitchRatio();
     void updateSmoothingCoeff();
     void updatePitchRatioSmoothing();
+    void updateTransitionState();
+    void calculateAdaptiveSpacing();
+    float interpolateBuffer(const std::vector<float>& buffer, float position) const;
+    bool isBufferPositionValid(const std::vector<float>& buffer, float position) const;
+    void updateBufferReadiness(float input);
+    void updateUpwardPitchFadeIn();
+    bool isUpwardPitchBufferReady() const;
+    void updateGrainActivation();
+    void updateGainCompensation();
 };
 
 class STKDelayLine {
@@ -307,8 +371,8 @@ private:
 
     // Multi-tap delay lines (16 taps, stereo)
     static const int NUM_TAPS = 16;
-    MSpitchDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
-    MSpitchDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
+    PitchShiftingDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
+    PitchShiftingDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
 
     TempoSync mTempoSync;
     TapDistribution mTapDistribution;

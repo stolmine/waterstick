@@ -9,264 +9,9 @@ using namespace Steinberg;
 
 namespace WaterStick {
 
-// Embedded GranularPitchShifter class from MSpitchAlgo.cpp
-class GranularPitchShifter {
-public:
-    // Configuration constants
-    static constexpr float BUFFER_SIZE_SECONDS = 4.0f;
-    static constexpr float MIN_GRAIN_SIZE_MS = 5.0f;
-    static constexpr float MAX_GRAIN_SIZE_MS = 2000.0f;
-    static constexpr float CROSSFADE_RATIO = 0.1f;  // 10% crossfade overlap
-    static constexpr int ZERO_CROSSING_SEARCH_SAMPLES = 256;
-
-    struct GrainReader {
-        double position = 0.0;          // Current read position in samples
-        double phase = 0.0;             // Phase within current grain (0-1)
-        double grainDuration = 0.0;     // Duration of current grain in samples
-        double fadeInTime = 0.0;        // Fade in duration
-        double fadeOutTime = 0.0;       // Fade out duration
-        bool active = false;            // Is this grain currently playing
-        double startPosition = 0.0;     // Where this grain started
-        double endPosition = 0.0;       // Where this grain will end
-    };
-
-    GranularPitchShifter(float sampleRate)
-        : sampleRate(sampleRate) {
-
-        bufferSize = static_cast<int>(BUFFER_SIZE_SECONDS * sampleRate);
-        delayBuffer.resize(bufferSize, 0.0f);
-
-        // Initialize write position
-        writePosition = 0;
-    }
-
-    /**
-     * Main processing function
-     * @param input Input sample to write to delay buffer
-     * @param pitchSemitones Pitch shift in semitones (-24 to +24)
-     * @param positionMs Position in delay buffer (ms)
-     * @param segmentMs Size of segment to loop (ms)
-     * @return Pitch-shifted output sample
-     */
-    float processSample(float input, float pitchSemitones, float positionMs, float segmentMs) {
-        // Write input to delay buffer
-        delayBuffer[writePosition] = input;
-        writePosition = (writePosition + 1) % bufferSize;
-
-        // Calculate pitch ratio (2^(semitones/12))
-        float pitchRatio = std::pow(2.0f, pitchSemitones / 12.0f);
-
-        // Convert parameters to samples
-        double positionSamples = (positionMs / 1000.0) * sampleRate;
-        double segmentSamples = (segmentMs / 1000.0) * sampleRate;
-
-        // Ensure segment is within valid range
-        segmentSamples = std::max(MIN_GRAIN_SIZE_MS * sampleRate / 1000.0,
-                                  std::min(segmentSamples, MAX_GRAIN_SIZE_MS * sampleRate / 1000.0));
-
-        // Calculate grain duration based on pitch ratio
-        // Higher pitch = shorter grains, lower pitch = longer grains
-        double grainDuration = segmentSamples / pitchRatio;
-
-        // Update grain readers
-        updateGrainReaders(positionSamples, segmentSamples, pitchRatio, grainDuration);
-
-        // Mix active grains
-        float output = 0.0f;
-
-        if (grain1.active) {
-            output += readGrain(grain1, pitchRatio);
-        }
-
-        if (grain2.active) {
-            output += readGrain(grain2, pitchRatio);
-        }
-
-        return output;
-    }
-
-private:
-    float sampleRate;
-    int bufferSize;
-    std::vector<float> delayBuffer;
-    int writePosition;
-
-    GrainReader grain1;
-    GrainReader grain2;
-
-    /**
-     * Update grain reader states and trigger new grains as needed
-     */
-    void updateGrainReaders(double positionSamples, double segmentSamples,
-                           float pitchRatio, double grainDuration) {
-
-        if (!grain1.active && !grain2.active) {
-            // No grains active, start grain 1
-            startGrain(grain1, positionSamples, segmentSamples, pitchRatio, grainDuration);
-        }
-        else if (grain1.active && !grain2.active) {
-            // Check if grain1 is in its fade-out phase
-            if (grain1.phase > (1.0 - CROSSFADE_RATIO)) {
-                // Start grain2 to crossfade with grain1
-                startGrain(grain2, positionSamples, segmentSamples, pitchRatio, grainDuration);
-            }
-        }
-        else if (!grain1.active && grain2.active) {
-            // Check if grain2 is in its fade-out phase
-            if (grain2.phase > (1.0 - CROSSFADE_RATIO)) {
-                // Start grain1 to crossfade with grain2
-                startGrain(grain1, positionSamples, segmentSamples, pitchRatio, grainDuration);
-            }
-        }
-    }
-
-    /**
-     * Start a new grain with zero-crossing detection
-     */
-    void startGrain(GrainReader& grain, double positionSamples, double segmentSamples,
-                   float /*pitchRatio*/, double grainDuration) {
-
-        // Find nearest zero crossing for clean grain boundary
-        double startPos = findNearestZeroCrossing(positionSamples);
-
-        grain.position = startPos;
-        grain.startPosition = startPos;
-        grain.endPosition = startPos + segmentSamples;
-        grain.phase = 0.0;
-        grain.grainDuration = grainDuration;
-        grain.fadeInTime = grainDuration * CROSSFADE_RATIO;
-        grain.fadeOutTime = grainDuration * CROSSFADE_RATIO;
-        grain.active = true;
-    }
-
-    /**
-     * Read a sample from an active grain with interpolation and windowing
-     */
-    float readGrain(GrainReader& grain, float pitchRatio) {
-        // Read sample with cubic interpolation
-        float sample = readDelayBufferWithInterpolation(grain.position);
-
-        // Apply window envelope
-        float windowGain = calculateWindow(grain.phase);
-        sample *= windowGain;
-
-        // Advance grain position
-        grain.position += pitchRatio;
-
-        // Wrap around if we exceed segment boundary
-        if (grain.position >= grain.endPosition) {
-            grain.position = grain.startPosition + std::fmod(grain.position - grain.startPosition,
-                                                            grain.endPosition - grain.startPosition);
-        }
-
-        // Advance phase
-        grain.phase += 1.0 / grain.grainDuration;
-
-        // Check if grain is complete
-        if (grain.phase >= 1.0) {
-            grain.active = false;
-        }
-
-        return sample;
-    }
-
-    /**
-     * Dynamic window function with smooth fade in/out
-     */
-    float calculateWindow(double phase) {
-        if (phase < CROSSFADE_RATIO) {
-            // Fade in (raised cosine)
-            double fadePhase = phase / CROSSFADE_RATIO;
-            return 0.5f * (1.0f - std::cos(M_PI * fadePhase));
-        }
-        else if (phase > (1.0 - CROSSFADE_RATIO)) {
-            // Fade out (raised cosine)
-            double fadePhase = (phase - (1.0 - CROSSFADE_RATIO)) / CROSSFADE_RATIO;
-            return 0.5f * (1.0f + std::cos(M_PI * fadePhase));
-        }
-        else {
-            // Sustain
-            return 1.0f;
-        }
-    }
-
-    /**
-     * Find nearest zero crossing to minimize clicks at grain boundaries
-     */
-    double findNearestZeroCrossing(double targetPosition) {
-        int searchStart = static_cast<int>(targetPosition - ZERO_CROSSING_SEARCH_SAMPLES/2);
-        int searchEnd = static_cast<int>(targetPosition + ZERO_CROSSING_SEARCH_SAMPLES/2);
-
-        double nearestPosition = targetPosition;
-        double minAbsValue = std::abs(getDelayBufferSample(targetPosition));
-
-        for (int i = searchStart; i < searchEnd; i++) {
-            float currentSample = getDelayBufferSample(i);
-            float nextSample = getDelayBufferSample(i + 1);
-
-            // Check for zero crossing
-            if ((currentSample <= 0 && nextSample > 0) ||
-                (currentSample >= 0 && nextSample < 0)) {
-
-                // Interpolate exact crossing point
-                double crossingPoint = i - currentSample / (nextSample - currentSample);
-                double absValue = std::abs(getDelayBufferSample(crossingPoint));
-
-                if (absValue < minAbsValue) {
-                    minAbsValue = absValue;
-                    nearestPosition = crossingPoint;
-                }
-            }
-        }
-
-        return nearestPosition;
-    }
-
-    /**
-     * Read from delay buffer with cubic interpolation
-     */
-    float readDelayBufferWithInterpolation(double position) {
-        // Calculate read position relative to write position
-        double delayInSamples = writePosition - position;
-        while (delayInSamples < 0) delayInSamples += bufferSize;
-        while (delayInSamples >= bufferSize) delayInSamples -= bufferSize;
-
-        // Get integer and fractional parts
-        int index = static_cast<int>(delayInSamples);
-        double frac = delayInSamples - index;
-
-        // Get four points for cubic interpolation
-        float y0 = delayBuffer[(index - 1 + bufferSize) % bufferSize];
-        float y1 = delayBuffer[index % bufferSize];
-        float y2 = delayBuffer[(index + 1) % bufferSize];
-        float y3 = delayBuffer[(index + 2) % bufferSize];
-
-        // Cubic interpolation (Catmull-Rom spline)
-        float a0 = -0.5f * y0 + 1.5f * y1 - 1.5f * y2 + 0.5f * y3;
-        float a1 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
-        float a2 = -0.5f * y0 + 0.5f * y2;
-        float a3 = y1;
-
-        return a0 * frac * frac * frac + a1 * frac * frac + a2 * frac + a3;
-    }
-
-    /**
-     * Simple linear interpolation helper for zero-crossing detection
-     */
-    float getDelayBufferSample(double position) {
-        double delayInSamples = writePosition - position;
-        while (delayInSamples < 0) delayInSamples += bufferSize;
-        while (delayInSamples >= bufferSize) delayInSamples -= bufferSize;
-
-        int index = static_cast<int>(delayInSamples);
-        double frac = delayInSamples - index;
-
-        float sample1 = delayBuffer[index % bufferSize];
-        float sample2 = delayBuffer[(index + 1) % bufferSize];
-
-        return sample1 * (1.0f - frac) + sample2 * frac;
-    }
-};
+// Static constant definition for PitchShiftingDelayLine
+const float PitchShiftingDelayLine::PITCH_CHANGE_THRESHOLD = 0.01f;
+const float PitchShiftingDelayLine::MAX_GAIN_COMPENSATION = 1.8f;
 
 struct ParameterConverter {
     static float convertFilterCutoff(double value) {
@@ -921,88 +666,86 @@ void STKDelayLine::reset()
     mNextOutput = 0.0f;
 }
 
-MSpitchDelayLine::MSpitchDelayLine()
+PitchShiftingDelayLine::PitchShiftingDelayLine()
 : DualDelayLine()
 , mPitchSemitones(0)
 , mPitchRatio(1.0f)
 , mTargetPitchRatio(1.0f)
 , mSmoothingCoeff(1.0f)
+, mNextGrainSample(0.0f)
+, mSampleCount(0.0f)
+, mAdaptiveSpacing(static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP))
+, mLastPitchRatio(1.0f)
+, mTransitionIntensity(0.0f)
+, mTransitionDecayRate(0.0f)
+, mTransitionSamples(0)
+, mBufferReadinessSamples(0.0f)
+, mMinBufferForUpward(0.0f)
+, mUpwardPitchReady(false)
+, mUpwardFadeInGain(0.0f)
+, mUpwardFadeInSamples(0)
+, mActiveGrainCount(0)
+, mGainCompensation(1.0f)
+, mTargetGainCompensation(1.0f)
+, mGainSmoothingCoeff(1.0f)
+, mLastPitchRatioForGain(1.0f)
+{
+    initializeGrains();
+}
+
+PitchShiftingDelayLine::~PitchShiftingDelayLine()
 {
 }
 
-MSpitchDelayLine::~MSpitchDelayLine()
-{
-}
-
-void MSpitchDelayLine::initialize(double sampleRate, double maxDelaySeconds)
+void PitchShiftingDelayLine::initialize(double sampleRate, double maxDelaySeconds)
 {
     DualDelayLine::initialize(sampleRate, maxDelaySeconds);
 
-    // Initialize the embedded GranularPitchShifter
-    mPitchShifter = std::make_unique<GranularPitchShifter>(static_cast<float>(sampleRate));
+    // Increased buffer size for upward pitch shifting lookahead
+    int pitchBufferSize = mBufferSize + LOOKAHEAD_BUFFER;
+    mPitchBufferA.resize(pitchBufferSize, 0.0f);
+    mPitchBufferB.resize(pitchBufferSize, 0.0f);
 
-    // Initialize VST parameter smoothing
+    // Initialize buffer readiness tracking - reduced warmup time
+    mBufferReadinessSamples = 0.0f;
+    mMinBufferForUpward = static_cast<float>(WARMUP_BUFFER_SIZE);  // Reduced to 1/4 grain size
+    mUpwardPitchReady = false;
+    mUpwardFadeInGain = 0.0f;
+    mUpwardFadeInSamples = 0;
+    mActiveGrainCount = 1;  // Start with one grain during warmup
+
+    initializeGrains();
+    mSampleCount = 0.0f;
+    mNextGrainSample = 0.0f;
     updateSmoothingCoeff();
+    calculateAdaptiveSpacing();
+
+    // Initialize gain compensation smoothing coefficient (15ms time constant at 44.1kHz)
+    float timeFactor = std::max(1.0f, static_cast<float>(sampleRate) / 44100.0f);
+    mGainSmoothingCoeff = exp(-1.0f / (0.015f * sampleRate));
+    mGainCompensation = 1.0f;
+    mTargetGainCompensation = 1.0f;
+    mLastPitchRatioForGain = 1.0f;
 }
 
-void MSpitchDelayLine::setPitchShift(int semitones)
+void PitchShiftingDelayLine::setPitchShift(int semitones)
 {
     if (mPitchSemitones != semitones) {
         mPitchSemitones = std::max(-12, std::min(12, semitones));
 
-        // Calculate target pitch ratio for VST parameter smoothing
+        // Calculate target pitch ratio
         if (mPitchSemitones == 0) {
             mTargetPitchRatio = 1.0f;
         } else {
             mTargetPitchRatio = powf(2.0f, static_cast<float>(mPitchSemitones) / 12.0f);
         }
+
+        // Don't immediately reinitialize grains - let smoothing handle the transition
+        // This prevents popping artifacts during parameter changes
     }
 }
 
-void MSpitchDelayLine::processSample(float input, float& output)
-{
-    // Update parameter smoothing for VST automation
-    updatePitchRatioSmoothing();
-
-    if (mPitchSemitones == 0 || !mPitchShifter) {
-        // Bypass pitch shifting - use regular delay processing
-        DualDelayLine::processSample(input, output);
-        return;
-    }
-
-    // First process through the delay line to get delayed input
-    float delayedInput;
-    DualDelayLine::processSample(input, delayedInput);
-
-    // Then apply pitch shifting to the delayed signal
-    // Convert current delay time to milliseconds for MSpitchAlgo
-    float delayTimeMs = mCurrentDelayTime * 1000.0f; // Convert seconds to ms
-
-    // Use a fixed grain size of ~50ms for stable pitch shifting
-    float grainSizeMs = 50.0f;
-
-    // Apply pitch shifting using smoothed ratio for artifact-free automation
-    float pitchSemitones = (mPitchRatio == 1.0f) ? 0.0f :
-                          (12.0f * log2f(mPitchRatio));
-
-    output = mPitchShifter->processSample(delayedInput, pitchSemitones, delayTimeMs, grainSizeMs);
-}
-
-void MSpitchDelayLine::reset()
-{
-    DualDelayLine::reset();
-
-    // Reset pitch shifting state
-    mPitchRatio = 1.0f;
-    mTargetPitchRatio = 1.0f;
-
-    // Reinitialize pitch shifter if it exists
-    if (mPitchShifter) {
-        mPitchShifter = std::make_unique<GranularPitchShifter>(static_cast<float>(mSampleRate));
-    }
-}
-
-void MSpitchDelayLine::updatePitchRatio()
+void PitchShiftingDelayLine::updatePitchRatio()
 {
     if (mPitchSemitones == 0) {
         mPitchRatio = 1.0f;
@@ -1012,22 +755,512 @@ void MSpitchDelayLine::updatePitchRatio()
     }
 }
 
-void MSpitchDelayLine::updateSmoothingCoeff()
+void PitchShiftingDelayLine::updateSmoothingCoeff()
 {
-    // 15ms smoothing time constant for artifact-free parameter automation
+    // 15ms smoothing time constant - optimal for click elimination + responsiveness
     const float timeConstantMs = 15.0f;
     const float timeConstantSec = timeConstantMs / 1000.0f;
 
-    // First-order IIR filter coefficient: α = exp(-1/(timeConstant × sampleRate))
+    // Coefficient calculation: α = exp(-1/(timeConstant × sampleRate))
+    // This gives us a first-order IIR filter: y[n] = α·y[n-1] + (1-α)·x[n]
     mSmoothingCoeff = expf(-1.0f / (timeConstantSec * static_cast<float>(mSampleRate)));
 }
 
-void MSpitchDelayLine::updatePitchRatioSmoothing()
+void PitchShiftingDelayLine::updatePitchRatioSmoothing()
 {
-    // Apply VST parameter smoothing for artifact-free automation
+    // First-order IIR exponential smoothing
     // y[n] = α·y[n-1] + (1-α)·x[n]
     mPitchRatio = mSmoothingCoeff * mPitchRatio + (1.0f - mSmoothingCoeff) * mTargetPitchRatio;
 }
+
+void PitchShiftingDelayLine::updateTransitionState()
+{
+    // Detect significant pitch ratio changes
+    float pitchDelta = fabsf(mPitchRatio - mLastPitchRatio);
+    if (pitchDelta > PITCH_CHANGE_THRESHOLD) {
+        // Reset transition state on parameter change
+        mTransitionIntensity = 1.0f;
+        mTransitionSamples = 0;
+        // Calculate decay rate so that transition intensity reaches 0.01 at TRANSITION_WINDOW samples
+        // Using exponential decay: intensity = exp(-decay_rate * time)
+        // 0.01 = exp(-decay_rate * TRANSITION_WINDOW), so decay_rate = -ln(0.01) / TRANSITION_WINDOW
+        mTransitionDecayRate = 4.605f / static_cast<float>(TRANSITION_WINDOW); // -ln(0.01) ≈ 4.605
+    } else if (mTransitionSamples < TRANSITION_WINDOW) {
+        // Decay transition intensity exponentially
+        mTransitionSamples++;
+        mTransitionIntensity = expf(-mTransitionDecayRate * static_cast<float>(mTransitionSamples));
+        if (mTransitionIntensity < 0.01f) {
+            mTransitionIntensity = 0.0f;
+        }
+    } else {
+        mTransitionIntensity = 0.0f;
+    }
+
+    mLastPitchRatio = mPitchRatio;
+}
+
+void PitchShiftingDelayLine::initializeGrains()
+{
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        mGrains[i].active = false;
+        mGrains[i].position = 0.0f;
+        mGrains[i].phase = 0.0f;
+        mGrains[i].pitchRatio = mPitchRatio;
+        mGrains[i].grainStart = 0.0f;
+        mGrains[i].readPosition = 0.0f;
+
+        // Initialize fade-out state
+        mGrains[i].fadingOut = false;
+        mGrains[i].fadeOutRemaining = 0;
+        mGrains[i].fadeOutTotal = 0;
+        mGrains[i].fadeOutGain = 1.0f;
+
+        // Initialize transition state
+        mGrains[i].spawnSampleCount = 0.0f;
+        mGrains[i].isTransitionGrain = false;
+    }
+}
+
+float PitchShiftingDelayLine::calculateHannWindow(float phase, bool isStarting, bool isEnding, float transitionIntensity)
+{
+    // Base Hann window calculation
+    float baseWindow = 0.5f * (1.0f - cosf(2.0f * 3.14159265f * phase));
+
+    // Apply enhanced windowing during parameter transitions
+    if (transitionIntensity > 0.0f) {
+        if (isStarting) {
+            // Enhanced fade-in: Apply 4x faster attack for newly spawned grains during transitions
+            float enhancedPhase = std::min(1.0f, phase * 4.0f);
+            float enhancedWindow = 0.5f * (1.0f - cosf(2.0f * 3.14159265f * enhancedPhase));
+
+            // Blend between base and enhanced window based on transition intensity
+            return baseWindow * (1.0f - transitionIntensity) + enhancedWindow * transitionIntensity;
+        }
+        else if (isEnding) {
+            // Enhanced fade-out: Apply 4x faster release for ending grains
+            float enhancedPhase = std::max(0.0f, (phase - 0.75f) * 4.0f);
+            if (enhancedPhase > 0.0f) {
+                float enhancedWindow = 0.5f * (1.0f - cosf(2.0f * 3.14159265f * enhancedPhase));
+                enhancedWindow = 1.0f - enhancedWindow; // Invert for fade-out
+
+                // Blend between base and enhanced window based on transition intensity
+                return baseWindow * (1.0f - transitionIntensity) + enhancedWindow * transitionIntensity;
+            }
+        }
+    }
+
+    return baseWindow;
+}
+
+void PitchShiftingDelayLine::startNewGrain()
+{
+    // Limit active grains during warmup for upward pitch shifting
+    int maxGrains = (mPitchRatio > 1.0f && !mUpwardPitchReady) ? mActiveGrainCount : NUM_GRAINS;
+
+    for (int i = 0; i < maxGrains; i++) {
+        if (!mGrains[i].active) {
+            mGrains[i].active = true;
+            mGrains[i].position = 0.0f;
+            mGrains[i].phase = 0.0f;
+            mGrains[i].pitchRatio = mPitchRatio;
+
+            // Initialize fade-out state for new grain
+            mGrains[i].fadingOut = false;
+            mGrains[i].fadeOutRemaining = 0;
+            mGrains[i].fadeOutTotal = 0;
+            mGrains[i].fadeOutGain = 1.0f;
+
+            // Initialize transition state for new grain
+            mGrains[i].spawnSampleCount = mSampleCount;
+            mGrains[i].isTransitionGrain = (mTransitionIntensity > 0.0f);
+
+            // Set grain start position correctly for pitch shifting
+            if (mPitchRatio > 1.0f) {
+                // For upward pitch shifting, start grain behind current position
+                float startOffset = mUpwardPitchReady ? (GRAIN_SIZE / (mPitchRatio * 2.0f)) : (WARMUP_BUFFER_SIZE / 4.0f);
+                mGrains[i].grainStart = std::max(0.0f, mSampleCount - startOffset);
+                mGrains[i].readPosition = mGrains[i].grainStart;  // Initialize read position to grain start
+            } else {
+                // For downward pitch shifting or no shift, start at current position
+                mGrains[i].grainStart = mSampleCount;
+                mGrains[i].readPosition = mSampleCount;
+            }
+            break;
+        }
+    }
+}
+
+void PitchShiftingDelayLine::updateGrains()
+{
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        if (mGrains[i].active) {
+            // Handle fade-out processing
+            if (mGrains[i].fadingOut) {
+                mGrains[i].fadeOutRemaining--;
+                if (mGrains[i].fadeOutRemaining <= 0) {
+                    // Fade-out completed, deactivate grain
+                    mGrains[i].active = false;
+                    mGrains[i].fadingOut = false;
+                    continue;
+                } else {
+                    // Calculate exponential fade-out curve: gain = exp(-6.0 * progress)
+                    float progress = 1.0f - (static_cast<float>(mGrains[i].fadeOutRemaining) / static_cast<float>(mGrains[i].fadeOutTotal));
+                    mGrains[i].fadeOutGain = expf(-6.0f * progress);
+                }
+            }
+
+            // Skip grain processing if pitch shift is disabled and not fading out
+            if (mPitchSemitones == 0 && !mGrains[i].fadingOut) {
+                continue;
+            }
+
+            // Use floating-point advancement for smooth pitch shifting
+            mGrains[i].position += mGrains[i].pitchRatio;
+            mGrains[i].phase = mGrains[i].position / static_cast<float>(GRAIN_SIZE);
+
+            // Update read position for buffer access
+            mGrains[i].readPosition += mGrains[i].pitchRatio;
+
+            // Check for grain completion (natural end or fade-out completion)
+            if (mGrains[i].phase >= 1.0f && !mGrains[i].fadingOut) {
+                mGrains[i].active = false;
+            }
+        }
+    }
+}
+
+float PitchShiftingDelayLine::processPitchShifting(float input)
+{
+    // Update pitch ratio smoothing first - this handles parameter changes smoothly
+    updatePitchRatioSmoothing();
+
+    // Update transition state detection for parameter-aware windowing
+    updateTransitionState();
+
+    // Update dynamic gain compensation for parameter transitions
+    updateGainCompensation();
+
+    if (mPitchSemitones == 0 && fabsf(mPitchRatio - 1.0f) < 1e-6f) {
+        return input;
+    }
+
+    // Update buffer readiness tracking
+    updateBufferReadiness(input);
+
+    // Store input in pitch buffer
+    std::vector<float>& currentPitchBuffer = mUsingLineA ? mPitchBufferA : mPitchBufferB;
+    int bufferIndex = static_cast<int>(mSampleCount) % static_cast<int>(currentPitchBuffer.size());
+    currentPitchBuffer[bufferIndex] = input;
+
+    // Recalculate adaptive spacing with smoothed pitch ratio
+    calculateAdaptiveSpacing();
+
+    // Check if we need to start grains for the first time (transition from no pitch shift)
+    bool hasActiveGrains = false;
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        if (mGrains[i].active) {
+            hasActiveGrains = true;
+            break;
+        }
+    }
+
+    // If pitch ratio has moved away from 1.0 and we have no active grains, initialize them
+    if (!hasActiveGrains && fabsf(mPitchRatio - 1.0f) > 0.01f) {
+        if (mPitchRatio <= 1.0f) {
+            // Downward pitch shifting - can start immediately
+            mUpwardFadeInGain = 1.0f;
+            mUpwardFadeInSamples = 0;
+        } else {
+            // Upward pitch shifting - start with fade-in
+            mUpwardFadeInGain = 0.0f;
+            mUpwardFadeInSamples = UPWARD_FADE_LENGTH;
+            mActiveGrainCount = 1;
+        }
+    }
+
+    // If pitch ratio is very close to 1.0, initiate fade-out for grains to avoid popping
+    if (hasActiveGrains && fabsf(mPitchRatio - 1.0f) < 0.001f) {
+        for (int i = 0; i < NUM_GRAINS; i++) {
+            if (mGrains[i].active && !mGrains[i].fadingOut) {
+                // Initiate fade-out instead of immediate deactivation
+                mGrains[i].fadingOut = true;
+                mGrains[i].fadeOutRemaining = GRAIN_FADEOUT_LENGTH;
+                mGrains[i].fadeOutTotal = GRAIN_FADEOUT_LENGTH;
+                mGrains[i].fadeOutGain = 1.0f;  // Start at full volume
+            }
+        }
+        mUpwardFadeInGain = 0.0f;
+        mUpwardFadeInSamples = 0;
+    }
+
+    // Track if we're in warmup phase for upward pitch shifting
+    bool isUpwardWarmup = (mPitchRatio > 1.0f && !mUpwardPitchReady);
+
+    // Update fade-in state for upward pitch shifting
+    if (mPitchRatio > 1.0f) {
+        updateUpwardPitchFadeIn();
+    }
+
+    // Use adaptive grain spacing for better quality
+    if (mSampleCount >= mNextGrainSample) {
+        // Start grains progressively - always allow at least one grain
+        if (mPitchRatio <= 1.0f || mSampleCount >= static_cast<float>(WARMUP_BUFFER_SIZE / 2)) {
+            startNewGrain();
+        }
+        mNextGrainSample = mSampleCount + mAdaptiveSpacing;
+    }
+
+    float output = 0.0f;
+    int activeGrains = 0;
+    int validGrains = 0;
+
+    for (int i = 0; i < NUM_GRAINS; i++) {
+        if (mGrains[i].active) {
+            activeGrains++;
+            // Calculate floating-point read position with bounds checking
+            float absoluteReadPos = mGrains[i].grainStart + mGrains[i].position;
+
+            // Ensure we don't read beyond buffer bounds
+            if (isBufferPositionValid(currentPitchBuffer, absoluteReadPos)) {
+                validGrains++;
+                float sample = interpolateBuffer(currentPitchBuffer, absoluteReadPos);
+
+                // Determine transition windowing parameters
+                bool isStarting = (mGrains[i].isTransitionGrain && mGrains[i].phase < 0.25f);
+                bool isEnding = (mGrains[i].fadingOut || (mGrains[i].phase > 0.75f && mTransitionIntensity > 0.0f));
+                float transitionIntensity = mTransitionIntensity;
+
+                // Apply parameter-aware windowing
+                float window = calculateHannWindow(mGrains[i].phase, isStarting, isEnding, transitionIntensity);
+
+                // Apply fade-out gain if grain is fading out
+                float finalGain = window;
+                if (mGrains[i].fadingOut) {
+                    finalGain *= mGrains[i].fadeOutGain;
+                }
+
+                output += sample * finalGain;
+            }
+        }
+    }
+
+
+    updateGrains();
+    mSampleCount += 1.0f;
+
+    // Normalize by active grains and apply gain compensation
+    if (activeGrains > 0) {
+        output /= static_cast<float>(activeGrains);
+
+        // Compensate for energy loss in upward pitch shifting
+        if (mPitchRatio > 1.0f) {
+            output *= std::min(1.5f, 1.0f + (mPitchRatio - 1.0f) * 0.3f);
+            // Apply fade-in gain for smooth transition
+            output *= mUpwardFadeInGain;
+        }
+
+        // Apply dynamic gain compensation after grain mixing but before final output
+        output *= mGainCompensation;
+
+        // During warmup phase, blend grain output with passthrough for smooth transition
+        if (isUpwardWarmup) {
+            float passthroughGain = 0.3f;  // Reduced passthrough during grain processing
+            return output + (input * passthroughGain);
+        }
+
+        return output;
+    }
+
+    // Fallback: return attenuated passthrough when no grains are active
+    if (isUpwardWarmup) {
+        return input * 0.6f;  // Attenuated passthrough during warmup
+    }
+
+    return input;
+}
+
+void PitchShiftingDelayLine::processSample(float input, float& output)
+{
+    if (mPitchSemitones == 0) {
+        DualDelayLine::processSample(input, output);
+    } else {
+        float delayedInput;
+        DualDelayLine::processSample(input, delayedInput);
+        output = processPitchShifting(delayedInput);
+    }
+}
+
+void PitchShiftingDelayLine::calculateAdaptiveSpacing()
+{
+    // Adapt grain spacing based on pitch ratio for consistent grain density
+    if (mPitchRatio > 1.0f) {
+        // For upward pitch shifting, reduce spacing to maintain grain density
+        mAdaptiveSpacing = static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP) / mPitchRatio;
+    } else if (mPitchRatio < 1.0f) {
+        // For downward pitch shifting, increase spacing slightly
+        mAdaptiveSpacing = static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP) * (2.0f - mPitchRatio);
+    } else {
+        // No pitch shift
+        mAdaptiveSpacing = static_cast<float>(GRAIN_SIZE - GRAIN_OVERLAP);
+    }
+
+    // Ensure minimum and maximum spacing bounds
+    mAdaptiveSpacing = std::max(64.0f, std::min(mAdaptiveSpacing, static_cast<float>(GRAIN_SIZE)));
+}
+
+float PitchShiftingDelayLine::interpolateBuffer(const std::vector<float>& buffer, float position) const
+{
+    // Linear interpolation for fractional sample positions
+    int intPos = static_cast<int>(std::floor(position));
+    float fracPos = position - static_cast<float>(intPos);
+
+    // Ensure we're within buffer bounds
+    int bufferSize = static_cast<int>(buffer.size());
+    intPos = ((intPos % bufferSize) + bufferSize) % bufferSize;
+    int nextPos = (intPos + 1) % bufferSize;
+
+    // Linear interpolation
+    return buffer[intPos] * (1.0f - fracPos) + buffer[nextPos] * fracPos;
+}
+
+bool PitchShiftingDelayLine::isBufferPositionValid(const std::vector<float>& buffer, float position) const
+{
+    // Check if the position is within reasonable bounds for reading
+    float currentWritePos = mSampleCount;
+
+    // For upward pitch shifting, grains need to read ahead in the buffer
+    if (mPitchRatio > 1.0f) {
+        if (!mUpwardPitchReady) {
+            // During warmup, allow reading with sufficient lookahead for upward pitch
+            float warmupReadRange = static_cast<float>(WARMUP_BUFFER_SIZE * 2);  // More generous range
+            float maxValidPos = currentWritePos + static_cast<float>(LOOKAHEAD_BUFFER / 2);  // Allow reading ahead
+            float minValidPos = std::max(0.0f, currentWritePos - warmupReadRange);
+            return (position >= minValidPos && position <= maxValidPos);
+        } else {
+            // After warmup, allow full range with generous lookahead for upward pitch
+            float maxValidPos = currentWritePos + static_cast<float>(LOOKAHEAD_BUFFER);  // Full lookahead buffer
+            float minValidPos = std::max(0.0f, currentWritePos - static_cast<float>(buffer.size()) + static_cast<float>(LOOKAHEAD_BUFFER));
+            return (position >= minValidPos && position <= maxValidPos);
+        }
+    } else {
+        // For downward pitch shifting, use moderate lookahead
+        float maxReadAhead = static_cast<float>(LOOKAHEAD_BUFFER / 4);
+        float maxValidPos = currentWritePos + maxReadAhead;
+        float minValidPos = currentWritePos - static_cast<float>(buffer.size()) + maxReadAhead;
+        return (position >= minValidPos && position <= maxValidPos);
+    }
+}
+
+void PitchShiftingDelayLine::updateBufferReadiness(float input)
+{
+    // Track accumulation of all audio samples for buffer readiness
+    mBufferReadinessSamples += 1.0f;
+
+    // Check if we have enough content for upward pitch shifting
+    bool wasReady = mUpwardPitchReady;
+    mUpwardPitchReady = (mBufferReadinessSamples >= mMinBufferForUpward);
+
+    // Progressive grain activation during warmup
+    if (mPitchRatio > 1.0f && !mUpwardPitchReady) {
+        // Gradually increase active grains as buffer builds
+        float bufferProgress = mBufferReadinessSamples / mMinBufferForUpward;
+        mActiveGrainCount = std::max(1, static_cast<int>(bufferProgress * NUM_GRAINS));
+    } else if (mUpwardPitchReady) {
+        mActiveGrainCount = NUM_GRAINS;  // Full grain count when ready
+    }
+
+    // If we just became ready and have upward pitch shifting requested, enhance fade-in
+    if (!wasReady && mUpwardPitchReady && mPitchRatio > 1.0f && mPitchSemitones != 0) {
+        // Buffer is now ready for full upward pitch shifting
+        if (mUpwardFadeInSamples <= 0) {
+            // Start fade-in if not already active
+            mUpwardFadeInGain = std::max(0.5f, mUpwardFadeInGain);  // Start from current or 50%
+            mUpwardFadeInSamples = UPWARD_FADE_LENGTH / 2;  // Shorter fade since we're already partway
+        }
+    }
+}
+
+void PitchShiftingDelayLine::updateUpwardPitchFadeIn()
+{
+    if (mUpwardFadeInSamples > 0) {
+        mUpwardFadeInSamples--;
+        // Smooth fade-in curve using cosine
+        float fadeLength = static_cast<float>(UPWARD_FADE_LENGTH);
+        float fadeProgress = 1.0f - (static_cast<float>(mUpwardFadeInSamples) / fadeLength);
+        mUpwardFadeInGain = 0.5f * (1.0f - std::cos(fadeProgress * 3.14159265f));
+    } else if (mPitchRatio > 1.0f) {
+        // Always provide some output for upward pitch shifting, even before full readiness
+        if (mUpwardPitchReady) {
+            mUpwardFadeInGain = 1.0f;
+        } else {
+            // Provide partial gain during warmup based on buffer progress
+            float bufferProgress = mBufferReadinessSamples / mMinBufferForUpward;
+            mUpwardFadeInGain = std::min(0.8f, 0.3f + (bufferProgress * 0.5f));
+        }
+    }
+}
+
+bool PitchShiftingDelayLine::isUpwardPitchBufferReady() const
+{
+    return mUpwardPitchReady;
+}
+
+void PitchShiftingDelayLine::updateGainCompensation()
+{
+    // Calculate base compensation based on pitch ratio deviation from 1.0
+    float basePitchDeviation = fabsf(mPitchRatio - 1.0f);
+    float baseCompensation = 1.0f + (basePitchDeviation * 0.15f);
+
+    // Calculate transition compensation based on rate of pitch ratio change
+    float pitchRatioChange = fabsf(mPitchRatio - mLastPitchRatioForGain);
+    float transitionCompensation = 1.0f;
+
+    if (pitchRatioChange > PITCH_CHANGE_THRESHOLD) {
+        // Extra compensation during parameter transitions
+        // Scale compensation based on magnitude of change and current transition intensity
+        float changeIntensity = std::min(1.0f, pitchRatioChange * 10.0f);  // Scale to 0-1 range
+        float transitionFactor = mTransitionIntensity * changeIntensity;
+        transitionCompensation = 1.0f + (transitionFactor * 0.25f);  // Up to 25% extra during transitions
+    }
+
+    // Combine base and transition compensation
+    float totalCompensation = baseCompensation * transitionCompensation;
+
+    // Apply maximum gain limit to prevent excessive boosting
+    mTargetGainCompensation = std::min(MAX_GAIN_COMPENSATION, totalCompensation);
+
+    // Apply exponential smoothing to avoid level jumps
+    mGainCompensation = mTargetGainCompensation + (mGainCompensation - mTargetGainCompensation) * mGainSmoothingCoeff;
+
+    // Update previous pitch ratio for next frame's transition detection
+    mLastPitchRatioForGain = mPitchRatio;
+}
+
+void PitchShiftingDelayLine::reset()
+{
+    DualDelayLine::reset();
+
+    std::fill(mPitchBufferA.begin(), mPitchBufferA.end(), 0.0f);
+    std::fill(mPitchBufferB.begin(), mPitchBufferB.end(), 0.0f);
+
+    // Reset buffer readiness tracking
+    mBufferReadinessSamples = 0.0f;
+    mUpwardPitchReady = false;
+    mUpwardFadeInGain = 0.0f;
+    mUpwardFadeInSamples = 0;
+    mActiveGrainCount = 1;  // Start with one grain
+
+    mSampleCount = 0.0f;
+    mNextGrainSample = 0.0f;
+    initializeGrains();
+    calculateAdaptiveSpacing();
+
+    // Reset gain compensation to neutral state
+    mGainCompensation = 1.0f;
+    mTargetGainCompensation = 1.0f;
+    mLastPitchRatioForGain = 1.0f;
+}
+
 
 
 WaterStickProcessor::WaterStickProcessor()
