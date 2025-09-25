@@ -121,7 +121,13 @@
       "Bash(git log:*)",
       "Bash(xcodebuild:*)",
       "Bash(/Users/why/repos/waterstick/build/bin/Release/moduleinfotool:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:forum.intellijel.com)",
+      "WebFetch(domain:www.soundonsound.com)",
+      "WebFetch(domain:cycling74.com)",
+      "Bash(sed:*)",
+      "Bash(./test_macro_knob_angles)",
+      "Bash(ulimit:*)"
     ],
     "deny": [],
     "ask": []

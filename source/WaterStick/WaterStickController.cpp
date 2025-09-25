@@ -499,9 +499,17 @@ void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTa
     const char* contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
     const char* contextName = (currentTapContext >= 0 && currentTapContext < 8) ? contextNames[currentTapContext] : "Unknown";
 
-    printf("[MacroCurveSystem] applyGlobalMacroCurve START - discretePos: %d, context: %s (%d), applying to ALL 16 taps\n",
-           discretePosition, contextName, currentTapContext);
-    printf("[MacroCurveSystem] Curve pattern: %s\n", getRainmakerCurveName(discretePosition));
+    {
+        std::ostringstream oss;
+        oss << "[MacroCurveSystem] applyGlobalMacroCurve START - discretePos: " << discretePosition
+            << ", context: " << contextName << " (" << currentTapContext << "), applying to ALL 16 taps";
+        WS_LOG_INFO(oss.str());
+    }
+    {
+        std::ostringstream oss;
+        oss << "[MacroCurveSystem] Curve pattern: " << getRainmakerCurveName(discretePosition);
+        WS_LOG_INFO(oss.str());
+    }
 
     // Apply curve to all 16 taps based on current context
     for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
@@ -533,8 +541,8 @@ void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTa
                 break;
             case 6: // TapContext::PitchShift
                 paramId = kTap1PitchShift + tapIndex;
-                // For pitch shift, map to bipolar range (-1.0 to +1.0)
-                curveValue = (curveValue * 2.0f) - 1.0f;
+                // PitchShift parameter already normalized to [0.0-1.0] representing -12 to +12 semitones
+                // No transformation needed - curveValue is already in correct VST3 range
                 break;
             case 7: // TapContext::FeedbackSend
                 paramId = kTap1FeedbackSend + tapIndex;
@@ -543,21 +551,34 @@ void MacroCurveSystem::applyGlobalMacroCurve(int discretePosition, int currentTa
                 continue;
         }
 
-        // Apply the curve value to the parameter
+        // Apply the curve value to the parameter with validation and clamping
         if (paramId >= 0) {
+            // Ensure parameter value is within valid VST3 normalized range [0.0, 1.0]
+            curveValue = std::max(0.0f, std::min(1.0f, curveValue));
             controller->setParamNormalized(paramId, curveValue);
             controller->performEdit(paramId, curveValue);
 
-            // DIAGNOSTIC: Log each tap parameter update
-            printf("[MacroCurveSystem] Tap %d: paramId %d → %.3f\n",
-                   tapIndex + 1, static_cast<int>(paramId), curveValue);
+            {
+                std::ostringstream oss;
+                oss << "[MacroCurveSystem] Tap " << (tapIndex + 1) << ": paramId " << static_cast<int>(paramId)
+                    << " → " << std::fixed << std::setprecision(3) << curveValue;
+                WS_LOG_INFO(oss.str());
+            }
         } else {
-            printf("[MacroCurveSystem] WARNING: Invalid paramId for tap %d, context %d\n",
-                   tapIndex + 1, currentTapContext);
+            {
+                std::ostringstream oss;
+                oss << "[MacroCurveSystem] WARNING: Invalid paramId for tap " << (tapIndex + 1)
+                    << ", context " << currentTapContext;
+                WS_LOG_ERROR(oss.str());
+            }
         }
     }
 
-    printf("[MacroCurveSystem] applyGlobalMacroCurve COMPLETE - Updated %d tap parameters\n", 16);
+    {
+        std::ostringstream oss;
+        oss << "[MacroCurveSystem] applyGlobalMacroCurve COMPLETE - Updated 16 tap parameters";
+        WS_LOG_INFO(oss.str());
+    }
 }
 
 void MacroCurveSystem::applyGlobalMacroCurveWithType(int discretePosition, int currentTapContext, MacroCurveTypes curveType, WaterStickController* controller) const {
@@ -593,8 +614,8 @@ void MacroCurveSystem::applyGlobalMacroCurveWithType(int discretePosition, int c
                 break;
             case 6: // TapContext::PitchShift
                 paramId = kTap1PitchShift + tapIndex;
-                // For pitch shift, map to bipolar range (-1.0 to +1.0)
-                curveValue = (curveValue * 2.0f) - 1.0f;
+                // PitchShift parameter already normalized to [0.0-1.0] representing -12 to +12 semitones
+                // No transformation needed - curveValue is already in correct VST3 range
                 break;
             case 7: // TapContext::FeedbackSend
                 paramId = kTap1FeedbackSend + tapIndex;
@@ -603,8 +624,10 @@ void MacroCurveSystem::applyGlobalMacroCurveWithType(int discretePosition, int c
                 continue;
         }
 
-        // Apply the curve value to the parameter
+        // Apply the curve value to the parameter with validation and clamping
         if (paramId >= 0) {
+            // Ensure parameter value is within valid VST3 normalized range [0.0, 1.0]
+            curveValue = std::max(0.0f, std::min(1.0f, curveValue));
             controller->setParamNormalized(paramId, curveValue);
             controller->performEdit(paramId, curveValue);
         }
@@ -628,8 +651,13 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
     const char* contextNames[] = {"Enable", "Volume", "Pan", "FilterCutoff", "FilterResonance", "FilterType", "PitchShift", "FeedbackSend"};
     const char* contextName = (currentTapContext >= 0 && currentTapContext < 8) ? contextNames[currentTapContext] : "Unknown";
 
-    printf("[MacroCurveSystem] applyGlobalMacroCurveContinuous START - continuousValue: %.3f, context: %s (%d), applying to ALL 16 taps\n",
-           continuousValue, contextName, currentTapContext);
+    {
+        std::ostringstream oss;
+        oss << "[MacroCurveSystem] applyGlobalMacroCurveContinuous START - continuousValue: "
+            << std::fixed << std::setprecision(3) << continuousValue << ", context: " << contextName
+            << " (" << currentTapContext << "), applying to ALL 16 taps";
+        WS_LOG_INFO(oss.str());
+    }
 
     // Apply continuous curve to all 16 taps based on current context
     for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
@@ -637,51 +665,103 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
 
         // Get the appropriate parameter ID based on context and tap index
         Steinberg::Vst::ParamID paramId = -1;
+        std::string paramType = "Unknown";
 
         switch (currentTapContext) {
             case 0: // TapContext::Enable
                 paramId = kTap1Enable + (tapIndex * 3);
+                paramType = "Enable";
                 break;
             case 1: // TapContext::Volume
                 paramId = kTap1Level + (tapIndex * 3);
+                paramType = "Level";
                 break;
             case 2: // TapContext::Pan
                 paramId = kTap1Pan + (tapIndex * 3);
+                paramType = "Pan";
                 break;
             case 3: // TapContext::FilterCutoff
                 paramId = kTap1FilterCutoff + (tapIndex * 3);
+                paramType = "FilterCutoff";
                 break;
             case 4: // TapContext::FilterResonance
                 paramId = kTap1FilterResonance + (tapIndex * 3);
+                paramType = "FilterResonance";
                 break;
             case 5: // TapContext::FilterType
                 paramId = kTap1FilterType + (tapIndex * 3);
+                paramType = "FilterType";
                 // For filter type, quantize to valid discrete values (0-4)
                 curveValue = std::floor(curveValue * 4.999f) / 4.0f;
                 break;
             case 6: // TapContext::PitchShift
                 paramId = kTap1PitchShift + tapIndex;
-                // For pitch shift, map to bipolar range (-1.0 to +1.0)
-                curveValue = (curveValue * 2.0f) - 1.0f;
+                paramType = "PitchShift";
+                // PitchShift parameter already normalized to [0.0-1.0] representing -12 to +12 semitones
+                // No transformation needed - curveValue is already in correct VST3 range
                 break;
             case 7: // TapContext::FeedbackSend
                 paramId = kTap1FeedbackSend + tapIndex;
+                paramType = "FeedbackSend";
                 break;
             default:
+                {
+                    std::ostringstream oss;
+                    oss << "[MacroCurveSystem] ERROR: Invalid tap context " << currentTapContext << " for tap " << (tapIndex + 1);
+                    WS_LOG_ERROR(oss.str());
+                }
                 continue;
         }
 
         // Apply the curve value to the parameter
         if (paramId >= 0) {
+            // DETAILED LOGGING: Before setParamNormalized call
+            {
+                std::ostringstream oss;
+                oss << "[MacroCurveSystem] BEFORE setParamNormalized - Tap" << (tapIndex + 1)
+                    << " " << paramType << ", paramId=" << static_cast<int>(paramId)
+                    << ", curveValue=" << std::fixed << std::setprecision(6) << curveValue
+                    << ", continuousValue=" << continuousValue << ", context=" << currentTapContext;
+                WS_LOG_PARAM_CONTEXT("MACRO_CURVE_BEFORE", static_cast<int>(paramId), oss.str(), curveValue);
+            }
+
+            // Ensure parameter value is within valid VST3 normalized range [0.0, 1.0]
+            curveValue = std::max(0.0f, std::min(1.0f, curveValue));
             controller->setParamNormalized(paramId, curveValue);
+
+            // DETAILED LOGGING: After setParamNormalized call
+            {
+                std::ostringstream oss;
+                oss << "[MacroCurveSystem] AFTER setParamNormalized - Tap" << (tapIndex + 1)
+                    << " " << paramType << ", paramId=" << static_cast<int>(paramId)
+                    << ", curveValue=" << std::fixed << std::setprecision(6) << curveValue;
+                WS_LOG_PARAM_CONTEXT("MACRO_CURVE_AFTER", static_cast<int>(paramId), oss.str(), curveValue);
+            }
+
             controller->performEdit(paramId, curveValue);
+
+            // DETAILED LOGGING: After performEdit call
+            {
+                std::ostringstream oss;
+                oss << "[MacroCurveSystem] performEdit completed - Tap" << (tapIndex + 1)
+                    << " " << paramType << ", paramId=" << static_cast<int>(paramId);
+                WS_LOG_PARAM_CONTEXT("MACRO_CURVE_EDIT_COMPLETE", static_cast<int>(paramId), oss.str(), curveValue);
+            }
         } else {
-            printf("[MacroCurveSystem] WARNING: Invalid paramId for tap %d, context %d\n",
-                   tapIndex + 1, currentTapContext);
+            {
+                std::ostringstream oss;
+                oss << "[MacroCurveSystem] WARNING: Invalid paramId for tap " << (tapIndex + 1)
+                    << ", context " << currentTapContext << ", calculated paramId=" << static_cast<int>(paramId);
+                WS_LOG_ERROR(oss.str());
+            }
         }
     }
 
-    printf("[MacroCurveSystem] applyGlobalMacroCurveContinuous COMPLETE - Updated %d tap parameters\n", 16);
+    {
+        std::ostringstream oss;
+        oss << "[MacroCurveSystem] applyGlobalMacroCurveContinuous COMPLETE - Updated 16 tap parameters";
+        WS_LOG_INFO(oss.str());
+    }
 }
 
 float MacroCurveSystem::getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const {
@@ -1832,12 +1912,90 @@ Vst::ParamValue PLUGIN_API WaterStickController::getParamNormalized(Vst::ParamID
 //------------------------------------------------------------------------
 tresult PLUGIN_API WaterStickController::setParamNormalized(Vst::ParamID id, Vst::ParamValue value)
 {
+    // COMPREHENSIVE LOGGING: Track ALL parameter updates at method entry
+    {
+        std::ostringstream oss;
+        oss << "[setParamNormalized] ENTRY - ID: " << static_cast<int>(id)
+            << ", Value: " << std::fixed << std::setprecision(6) << value;
+
+        // Add parameter range identification
+        if (id >= kTap1Enable && id <= kTap16FeedbackSend) {
+            int tapParamStart = static_cast<int>(kTap1Enable);
+            int relativeId = static_cast<int>(id) - tapParamStart;
+            int tapIndex = -1;
+            std::string paramType = "Unknown";
+
+            // Identify parameter type within delay tap range
+            if (id >= kTap1Enable && id <= kTap16Pan) {
+                int basicOffset = static_cast<int>(id) - static_cast<int>(kTap1Enable);
+                tapIndex = basicOffset / 3;
+                int paramOffset = basicOffset % 3;
+                if (paramOffset == 0) paramType = "Enable";
+                else if (paramOffset == 1) paramType = "Level";
+                else if (paramOffset == 2) paramType = "Pan";
+            } else if (id >= kTap1FilterCutoff && id <= kTap16FilterType) {
+                int filterOffset = static_cast<int>(id) - static_cast<int>(kTap1FilterCutoff);
+                tapIndex = filterOffset / 3;
+                int paramOffset = filterOffset % 3;
+                if (paramOffset == 0) paramType = "FilterCutoff";
+                else if (paramOffset == 1) paramType = "FilterResonance";
+                else if (paramOffset == 2) paramType = "FilterType";
+            } else if (id >= kTap1PitchShift && id <= kTap16PitchShift) {
+                tapIndex = static_cast<int>(id) - static_cast<int>(kTap1PitchShift);
+                paramType = "PitchShift";
+            } else if (id >= kTap1FeedbackSend && id <= kTap16FeedbackSend) {
+                tapIndex = static_cast<int>(id) - static_cast<int>(kTap1FeedbackSend);
+                paramType = "FeedbackSend";
+            }
+
+            oss << " [DELAY_TAP_PARAM] Tap" << (tapIndex + 1) << " " << paramType
+                << " (relativeId=" << relativeId << ")";
+        } else if (id >= kMacroKnob1 && id <= kMacroKnob8) {
+            int knobIndex = static_cast<int>(id) - static_cast<int>(kMacroKnob1) + 1;
+            oss << " [MACRO_KNOB_PARAM] MacroKnob" << knobIndex;
+        } else if (id >= kDiscrete1 && id <= kDiscrete24) {
+            int discreteIndex = static_cast<int>(id) - static_cast<int>(kDiscrete1) + 1;
+            oss << " [DISCRETE_PARAM] Discrete" << discreteIndex;
+        } else {
+            oss << " [OTHER_PARAM]";
+        }
+
+        WS_LOG_PARAM_CONTEXT("SETPARAM_ALL", static_cast<int>(id), oss.str(), value);
+    }
+
+    // Validate parameter ID range
+    if (id < 0 || id >= kNumParams) {
+        std::ostringstream oss;
+        oss << "[setParamNormalized] ERROR: Invalid parameter ID " << static_cast<int>(id)
+            << " (range: 0-" << (kNumParams-1) << ")";
+        WS_LOG_ERROR(oss.str());
+        return kInvalidArgument;
+    }
+
+    // Validate parameter value range
+    if (value < 0.0 || value > 1.0) {
+        std::ostringstream oss;
+        oss << "[setParamNormalized] WARNING: Value " << value
+            << " out of range [0.0, 1.0] for parameter ID " << static_cast<int>(id);
+        WS_LOG_ERROR(oss.str());
+    }
+
     tresult result = EditControllerEx1::setParamNormalized(id, value);
+
+    // Log the result of the base class call
+    {
+        std::ostringstream oss;
+        oss << "[setParamNormalized] Base class result: " << (result == kResultOk ? "OK" : "FAILED")
+            << " for ID " << static_cast<int>(id);
+        WS_LOG_PARAM_CONTEXT("SETPARAM_RESULT", static_cast<int>(id), oss.str(), value);
+    }
 
     // Handle system triggers
     if (id == kRandomizeTrigger && value > 0.5f) {
+        WS_LOG_INFO("[setParamNormalized] Handling randomize trigger");
         handleRandomizeTrigger();
     } else if (id == kResetTrigger && value > 0.5f) {
+        WS_LOG_INFO("[setParamNormalized] Handling reset trigger");
         handleResetTrigger();
     }
 
@@ -1853,7 +2011,20 @@ tresult PLUGIN_API WaterStickController::setParamNormalized(Vst::ParamID id, Vst
 
     // Handle macro knob parameter changes for automation support
     if (id >= kMacroKnob1 && id <= kMacroKnob8) {
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnobParam] setParamNormalized - ID: " << static_cast<int>(id)
+                << ", MacroKnob: " << (static_cast<int>(id) - kMacroKnob1 + 1)
+                << ", Value: " << std::fixed << std::setprecision(6) << value
+                << " - CALLING handleMacroKnobParameterChange()";
+            WS_LOG_PARAM_CONTEXT("MACRO_KNOB_SET", static_cast<int>(id), oss.str(), value);
+        }
         handleMacroKnobParameterChange(id, value);
+        {
+            std::ostringstream oss;
+            oss << "[MacroKnobParam] handleMacroKnobParameterChange() completed for ID " << static_cast<int>(id);
+            WS_LOG_PARAM_CONTEXT("MACRO_KNOB_COMPLETE", static_cast<int>(id), oss.str(), value);
+        }
     }
 
     // Update randomization settings
@@ -2168,22 +2339,48 @@ void WaterStickController::updateCurveTypes()
 
 void WaterStickController::handleMacroKnobParameterChange(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
 {
+    // DETAILED LOGGING: Function entry
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnobDAW] handleMacroKnobParameterChange ENTRY - paramId: " << static_cast<int>(paramId)
+            << ", value: " << std::fixed << std::setprecision(6) << value
+            << ", kMacroKnob1: " << static_cast<int>(kMacroKnob1);
+        WS_LOG_PARAM_CONTEXT("MACRO_HANDLE_ENTRY", static_cast<int>(paramId), oss.str(), value);
+    }
+
     // Convert parameter ID to macro knob index (0-7)
     int macroKnobIndex = static_cast<int>(paramId - kMacroKnob1);
-    if (macroKnobIndex < 0 || macroKnobIndex >= 8) return;
+    if (macroKnobIndex < 0 || macroKnobIndex >= 8) {
+        std::ostringstream oss;
+        oss << "[MacroKnobDAW] ERROR: Invalid macro knob index " << macroKnobIndex
+            << " (paramId=" << static_cast<int>(paramId) << ", kMacroKnob1=" << static_cast<int>(kMacroKnob1) << ")";
+        WS_LOG_ERROR(oss.str());
+        return;
+    }
 
     // Use continuous value directly (0.0-1.0) for smooth control
     float continuousValue = static_cast<float>(value);
 
-    // DIAGNOSTIC: Log macro knob parameter changes from DAW automation
-    printf("[MacroKnobDAW] handleMacroKnobParameterChange - paramId: %d, macroKnobIndex: %d, value: %.3f, continuousValue: %.3f, currentContext: %d\n",
-           static_cast<int>(paramId), macroKnobIndex, value, continuousValue, mCurrentTapContext);
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnobDAW] handleMacroKnobParameterChange - paramId: " << static_cast<int>(paramId)
+            << ", macroKnobIndex: " << macroKnobIndex << ", value: " << std::fixed << std::setprecision(6) << value
+            << ", continuousValue: " << continuousValue << ", currentContext: " << mCurrentTapContext
+            << " - CALLING applyGlobalMacroCurveContinuous()";
+        WS_LOG_PARAM_CONTEXT("MACRO_HANDLE_BEFORE_CURVE", static_cast<int>(paramId), oss.str(), value);
+    }
 
     // Apply Rainmaker-style global macro curve using the current synchronized context
     // This ensures DAW automation respects the currently active GUI context
     mMacroCurveSystem.applyGlobalMacroCurveContinuous(continuousValue, mCurrentTapContext, this);
 
-    printf("[MacroKnobDAW] Applied global macro curve with context %d\n", mCurrentTapContext);
+    {
+        std::ostringstream oss;
+        oss << "[MacroKnobDAW] handleMacroKnobParameterChange COMPLETE - paramId: " << static_cast<int>(paramId)
+            << ", macroKnobIndex: " << macroKnobIndex << ", appliedContext: " << mCurrentTapContext
+            << ", continuousValue: " << std::fixed << std::setprecision(6) << continuousValue;
+        WS_LOG_PARAM_CONTEXT("MACRO_HANDLE_COMPLETE", static_cast<int>(paramId), oss.str(), value);
+    }
 }
 
 void WaterStickController::updateDiscreteParameters()
