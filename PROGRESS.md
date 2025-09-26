@@ -56,26 +56,34 @@ Current development has completed the core VST3 foundation with professional mul
 
 **Result**: **MACRO KNOB SYSTEM FULLY OPERATIONAL** - Professional-grade functionality suitable for production use with all GUI synchronization issues comprehensively resolved.
 
-### Phase 4.0: Pitch Shifting Implementation ✅ COMPLETED
-**Semitone-Based Pitch Shifting DSP**
+### Phase 4.0: Pitch Shifting Implementation (Temporary Rollback) 🔄
+**Strategic Performance Reset**
 
-1. **✅ Core Pitch Shifting Architecture**
-   - PitchShiftingDelayLine class extending DualDelayLine
-   - 4-grain overlap system with Hann windowing
-   - Semitone range: -12 to +12 with automatic dry/wet bypass
-   - ER-301-inspired grain processing for professional quality
+1. **🔙 Commit Rollback Rationale**
+   - Complex multi-band pitch shifting DSP proved too computationally intensive
+   - Original implementation introduced significant CPU overhead
+   - Quality of advanced grain processing did not meet project standards
+   - Decision to return to stable, simple baseline for future refinement
 
-2. **✅ Parameter System Integration**
-   - 16 new VST3 parameters: kTap1PitchShift through kTap16PitchShift
-   - Full automation support with semitone value display
-   - Integration with existing parameter history system
-   - Total parameter count now 121 parameters
+2. **🚧 Temporary Architecture Suspension**
+   - Removed advanced PitchShiftingDelayLine implementation
+   - Eliminated 16 tap-specific pitch shift parameters
+   - Restored basic delay line functionality
+   - Total parameter count reduced from 121 to 105
 
-3. **✅ Technical Quality**
-   - Zero CPU overhead when pitch shift = 0 (automatic bypass)
-   - Sample-accurate parameter automation
-   - Professional grain windowing techniques
-   - Seamless integration with existing delay architecture
+3. **🔬 Performance and Quality Assessment**
+   - Identified limitations in current pitch shifting approach
+   - Confirmed need for more efficient DSP techniques
+   - Prioritized CPU efficiency and clean audio character
+   - Preparing for next-generation pitch shifting research
+
+4. **🧭 Future Development Trajectory**
+   - Conduct comprehensive DSP research for lightweight pitch shifting
+   - Explore alternative grain processing algorithms
+   - Target zero-overhead implementation
+   - Maintain sample-accurate parameter automation principles
+
+**Status**: Pitch shifting implementation strategically reset, focused on refined, efficient approach
 
 ## Development Phases
 
@@ -472,11 +480,13 @@ The foundation provides:
 
 ## Next Development Priorities
 
-1. **Performance Optimization**: Optimize comb processing and graphics rendering
-2. **Tap Pattern System**: Implement 16 preset tap distribution patterns (uniform, fibonacci, etc.)
-3. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
-4. **GUI Interaction Refinement**: Improve comb parameter interaction and layout
-5. **Advanced Parameter Mapping**: Develop more sophisticated parameter scaling and automation curves
+1. **Pitch Shifting Research**: Comprehensive DSP investigation for lightweight, efficient pitch shifting
+2. **Performance Optimization**: Optimize comb processing and graphics rendering
+3. **Tap Pattern System**: Implement 16 preset tap distribution patterns (uniform, fibonacci, etc.)
+4. **Enhanced Visual Feedback**: Real-time tap activity meters and delay visualization
+5. **GUI Interaction Refinement**: Improve comb parameter interaction and layout
+6. **Advanced Parameter Mapping**: Develop more sophisticated parameter scaling and automation curves
+7. **Pitch Shifting Prototype**: Develop minimalist, zero-overhead pitch shifting implementation
 
 ---
 
@@ -892,26 +902,34 @@ Merged routing research findings from V3.5.0_routingResearch, providing comprehe
 
 **Status**: Build signing issue completely resolved with comprehensive prevention measures.
 
-### Phase 4.0: Pitch Shifting Implementation ✅ COMPLETED
-**Semitone-Based Pitch Shifting DSP**
+### Phase 4.0: Pitch Shifting Implementation (Temporary Rollback) 🔄
+**Strategic Performance Reset**
 
-1. **✅ Core Pitch Shifting Architecture**
-   - PitchShiftingDelayLine class extending DualDelayLine
-   - 4-grain overlap system with Hann windowing
-   - Semitone range: -12 to +12 with automatic dry/wet bypass
-   - ER-301-inspired grain processing for professional quality
+1. **🔙 Commit Rollback Rationale**
+   - Complex multi-band pitch shifting DSP proved too computationally intensive
+   - Original implementation introduced significant CPU overhead
+   - Quality of advanced grain processing did not meet project standards
+   - Decision to return to stable, simple baseline for future refinement
 
-2. **✅ Parameter System Integration**
-   - 16 new VST3 parameters: kTap1PitchShift through kTap16PitchShift
-   - Full automation support with semitone value display
-   - Integration with existing parameter history system
-   - Total parameter count now 121 parameters
+2. **🚧 Temporary Architecture Suspension**
+   - Removed advanced PitchShiftingDelayLine implementation
+   - Eliminated 16 tap-specific pitch shift parameters
+   - Restored basic delay line functionality
+   - Total parameter count reduced from 121 to 105
 
-3. **✅ Technical Quality**
-   - Zero CPU overhead when pitch shift = 0 (automatic bypass)
-   - Sample-accurate parameter automation
-   - Professional grain windowing techniques
-   - Seamless integration with existing delay architecture
+3. **🔬 Performance and Quality Assessment**
+   - Identified limitations in current pitch shifting approach
+   - Confirmed need for more efficient DSP techniques
+   - Prioritized CPU efficiency and clean audio character
+   - Preparing for next-generation pitch shifting research
+
+4. **🧭 Future Development Trajectory**
+   - Conduct comprehensive DSP research for lightweight pitch shifting
+   - Explore alternative grain processing algorithms
+   - Target zero-overhead implementation
+   - Maintain sample-accurate parameter automation principles
+
+**Status**: Pitch shifting implementation strategically reset, focused on refined, efficient approach
 
 ### Phase 4.2: Macro Knob GUI Synchronization Resolution ✅ COMPLETED
 **Comprehensive Synchronization & Reliability Enhancement**
@@ -1005,11 +1023,11 @@ The WaterStick VST3 plugin now provides a professional, production-ready delay e
 
 ### Current Features
 - Per-tap enable, volume, pan, and filter controls
-- Per-tap pitch shifting with semitone-based DSP
+- Basic delay line without per-tap pitch shifting
 - Multiple parameter navigation modes
 - Global controls for sync, timing, input/output levels, and feedback
 - Sophisticated DSP with Three Sisters-quality filtering
-- 121 total parameters with professional pitch shifting system
+- 105 total parameters with basic delay implementation
 - Advanced macro knob synchronization system with thread-safe parameter blocking
 - Optimized GUI performance with reduced update calls
 - Professional parameter automation with batched event handling
