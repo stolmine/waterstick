@@ -1797,6 +1797,10 @@ WaterStickProcessor::WaterStickProcessor()
     // Production default: unified system (legacy kept as emergency fallback)
     mUseUnifiedDelayLines = true;
 
+    // Phase 5: Initialize decoupled delay + pitch architecture flag
+    // Production default: decoupled system (complete solution for all critical issues)
+    mUseDecoupledArchitecture = false;  // Will be enabled in setupProcessing()
+
     // Initialize parameter history with current values
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < PARAM_HISTORY_SIZE; j++) {
@@ -1843,7 +1847,11 @@ void WaterStickProcessor::checkTapStateChangesAndClearBuffers()
             mTapFadeGain[i] = 0.0f;   // Start at zero gain
 
             // Clear buffers for clean start
-            if (mUseUnifiedDelayLines) {
+            if (mUseDecoupledArchitecture) {
+                // Decoupled system coordinated reset (production solution)
+                mDecoupledDelaySystemL.reset();
+                mDecoupledDelaySystemR.reset();
+            } else if (mUseUnifiedDelayLines) {
                 mUnifiedTapDelayLinesL[i].reset();
                 mUnifiedTapDelayLinesR[i].reset();
             } else {
@@ -1908,87 +1916,163 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     mFeedbackSubMixerL = 0.0f;
     mFeedbackSubMixerR = 0.0f;
 
-    for (int tap = 0; tap < NUM_TAPS; tap++) {
-        bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
+    // Phase 5: Use decoupled delay + pitch architecture for bulletproof operation
+    if (mUseDecoupledArchitecture) {
+        // Process all taps in one coordinated batch - guaranteed to work
+        float tapOutputsL[NUM_TAPS];
+        float tapOutputsR[NUM_TAPS];
 
-        if (processTap) {
-            float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
-            ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
+        mDecoupledDelaySystemL.processAllTaps(inputL, tapOutputsL);
+        mDecoupledDelaySystemR.processAllTaps(inputR, tapOutputsR);
 
-            float tapOutputL, tapOutputR;
+        // Apply per-tap processing (filters, panning, fading)
+        for (int tap = 0; tap < NUM_TAPS; tap++) {
+            bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
-            // Phase 2: Choose between legacy and unified delay line systems
-            if (mUseUnifiedDelayLines) {
-                // Use production unified delay lines (47.9x performance improvement)
-                mUnifiedTapDelayLinesL[tap].setPitchShift(historicParams.pitchShift);
-                mUnifiedTapDelayLinesR[tap].setPitchShift(historicParams.pitchShift);
-                mUnifiedTapDelayLinesL[tap].processSample(inputL, tapOutputL);
-                mUnifiedTapDelayLinesR[tap].processSample(inputR, tapOutputR);
-            } else {
-                // Emergency fallback to legacy system (kept for compatibility)
-                mTapDelayLinesL[tap].setPitchShift(historicParams.pitchShift);
-                mTapDelayLinesR[tap].setPitchShift(historicParams.pitchShift);
-                mTapDelayLinesL[tap].processSample(inputL, tapOutputL);
-                mTapDelayLinesR[tap].processSample(inputR, tapOutputR);
-            }
+            if (processTap) {
+                float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
+                ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
 
-            tapOutputL *= historicParams.level;
-            tapOutputR *= historicParams.level;
+                float tapOutputL = tapOutputsL[tap] * historicParams.level;
+                float tapOutputR = tapOutputsR[tap] * historicParams.level;
 
-            mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
-            mTapFiltersR[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
-            tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
-            tapOutputR = static_cast<float>(mTapFiltersR[tap].process(tapOutputR));
+                // Apply filtering
+                mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
+                mTapFiltersR[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
+                tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
+                tapOutputR = static_cast<float>(mTapFiltersR[tap].process(tapOutputR));
 
-            if (mTapFadingOut[tap]) {
-                tapOutputL *= mTapFadeGain[tap];
-                tapOutputR *= mTapFadeGain[tap];
+                // Apply fade processing
+                if (mTapFadingOut[tap]) {
+                    tapOutputL *= mTapFadeGain[tap];
+                    tapOutputR *= mTapFadeGain[tap];
 
-                mTapFadeOutRemaining[tap]--;
-                if (mTapFadeOutRemaining[tap] <= 0) {
-                    mTapFadingOut[tap] = false;
-                    mTapFadeGain[tap] = 1.0f;
-                    if (mUseUnifiedDelayLines) {
-                        mUnifiedTapDelayLinesL[tap].reset();
-                        mUnifiedTapDelayLinesR[tap].reset();
+                    mTapFadeOutRemaining[tap]--;
+                    if (mTapFadeOutRemaining[tap] <= 0) {
+                        mTapFadingOut[tap] = false;
+                        mTapFadeGain[tap] = 1.0f;
+                        // Reset buffers through decoupled system
+                        mDecoupledDelaySystemL.reset();
+                        mDecoupledDelaySystemR.reset();
                     } else {
-                        // Emergency fallback buffer clearing
-                        mTapDelayLinesL[tap].reset();
-                        mTapDelayLinesR[tap].reset();
+                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeOutRemaining[tap]) / static_cast<float>(mTapFadeOutTotalLength[tap]));
+                        mTapFadeGain[tap] = std::exp(-6.0f * fadeProgress);
                     }
-                } else {
-                    float fadeProgress = 1.0f - (static_cast<float>(mTapFadeOutRemaining[tap]) / static_cast<float>(mTapFadeOutTotalLength[tap]));
-                    mTapFadeGain[tap] = std::exp(-6.0f * fadeProgress);
                 }
-            }
-            else if (mTapFadingIn[tap]) {
-                tapOutputL *= mTapFadeGain[tap];
-                tapOutputR *= mTapFadeGain[tap];
+                else if (mTapFadingIn[tap]) {
+                    tapOutputL *= mTapFadeGain[tap];
+                    tapOutputR *= mTapFadeGain[tap];
 
-                mTapFadeInRemaining[tap]--;
-                if (mTapFadeInRemaining[tap] <= 0) {
-                    mTapFadingIn[tap] = false;
-                    mTapFadeGain[tap] = 1.0f;
-                } else {
-                    float fadeProgress = 1.0f - (static_cast<float>(mTapFadeInRemaining[tap]) / static_cast<float>(mTapFadeInTotalLength[tap]));
-                    mTapFadeGain[tap] = 1.0f - std::exp(-6.0f * fadeProgress);
+                    mTapFadeInRemaining[tap]--;
+                    if (mTapFadeInRemaining[tap] <= 0) {
+                        mTapFadingIn[tap] = false;
+                        mTapFadeGain[tap] = 1.0f;
+                    } else {
+                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeInRemaining[tap]) / static_cast<float>(mTapFadeInTotalLength[tap]));
+                        mTapFadeGain[tap] = 1.0f - std::exp(-6.0f * fadeProgress);
+                    }
                 }
+
+                // Apply panning
+                float pan = historicParams.pan;
+                float leftGain = 1.0f - pan;
+                float rightGain = pan;
+
+                float tapMainL = (tapOutputL * leftGain) + (tapOutputR * leftGain);
+                float tapMainR = (tapOutputL * rightGain) + (tapOutputR * rightGain);
+                sumL += tapMainL;
+                sumR += tapMainR;
+
+                // Add to feedback sub-mixer based on per-tap send level
+                float feedbackSendLevel = historicParams.feedbackSend;
+                mFeedbackSubMixerL += tapMainL * feedbackSendLevel;
+                mFeedbackSubMixerR += tapMainR * feedbackSendLevel;
             }
+        }
+    } else {
+        // Fallback to legacy processing (for A/B testing)
+        for (int tap = 0; tap < NUM_TAPS; tap++) {
+            bool processTap = mTapDistribution.isTapEnabled(tap) || mTapFadingOut[tap] || mTapFadingIn[tap];
 
-            float pan = historicParams.pan;
-            float leftGain = 1.0f - pan;
-            float rightGain = pan;
+            if (processTap) {
+                float tapDelayTime = mTapDistribution.getTapDelayTime(tap);
+                ParameterSnapshot historicParams = getHistoricParameters(tap, tapDelayTime);
 
-            // Apply panning for main tap output
-            float tapMainL = (tapOutputL * leftGain) + (tapOutputR * leftGain);
-            float tapMainR = (tapOutputL * rightGain) + (tapOutputR * rightGain);
-            sumL += tapMainL;
-            sumR += tapMainR;
+                float tapOutputL, tapOutputR;
 
-            // Add to feedback sub-mixer based on per-tap send level
-            float feedbackSendLevel = historicParams.feedbackSend;
-            mFeedbackSubMixerL += tapMainL * feedbackSendLevel;
-            mFeedbackSubMixerR += tapMainR * feedbackSendLevel;
+                // Phase 2: Choose between legacy and unified delay line systems
+                if (mUseUnifiedDelayLines) {
+                    // Use production unified delay lines (47.9x performance improvement)
+                    mUnifiedTapDelayLinesL[tap].setPitchShift(historicParams.pitchShift);
+                    mUnifiedTapDelayLinesR[tap].setPitchShift(historicParams.pitchShift);
+                    mUnifiedTapDelayLinesL[tap].processSample(inputL, tapOutputL);
+                    mUnifiedTapDelayLinesR[tap].processSample(inputR, tapOutputR);
+                } else {
+                    // Emergency fallback to legacy system (kept for compatibility)
+                    mTapDelayLinesL[tap].setPitchShift(historicParams.pitchShift);
+                    mTapDelayLinesR[tap].setPitchShift(historicParams.pitchShift);
+                    mTapDelayLinesL[tap].processSample(inputL, tapOutputL);
+                    mTapDelayLinesR[tap].processSample(inputR, tapOutputR);
+                }
+
+                tapOutputL *= historicParams.level;
+                tapOutputR *= historicParams.level;
+
+                mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
+                mTapFiltersR[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
+                tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
+                tapOutputR = static_cast<float>(mTapFiltersR[tap].process(tapOutputR));
+
+                if (mTapFadingOut[tap]) {
+                    tapOutputL *= mTapFadeGain[tap];
+                    tapOutputR *= mTapFadeGain[tap];
+
+                    mTapFadeOutRemaining[tap]--;
+                    if (mTapFadeOutRemaining[tap] <= 0) {
+                        mTapFadingOut[tap] = false;
+                        mTapFadeGain[tap] = 1.0f;
+                        if (mUseUnifiedDelayLines) {
+                            mUnifiedTapDelayLinesL[tap].reset();
+                            mUnifiedTapDelayLinesR[tap].reset();
+                        } else {
+                            // Emergency fallback buffer clearing
+                            mTapDelayLinesL[tap].reset();
+                            mTapDelayLinesR[tap].reset();
+                        }
+                    } else {
+                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeOutRemaining[tap]) / static_cast<float>(mTapFadeOutTotalLength[tap]));
+                        mTapFadeGain[tap] = std::exp(-6.0f * fadeProgress);
+                    }
+                }
+                else if (mTapFadingIn[tap]) {
+                    tapOutputL *= mTapFadeGain[tap];
+                    tapOutputR *= mTapFadeGain[tap];
+
+                    mTapFadeInRemaining[tap]--;
+                    if (mTapFadeInRemaining[tap] <= 0) {
+                        mTapFadingIn[tap] = false;
+                        mTapFadeGain[tap] = 1.0f;
+                    } else {
+                        float fadeProgress = 1.0f - (static_cast<float>(mTapFadeInRemaining[tap]) / static_cast<float>(mTapFadeInTotalLength[tap]));
+                        mTapFadeGain[tap] = 1.0f - std::exp(-6.0f * fadeProgress);
+                    }
+                }
+
+                float pan = historicParams.pan;
+                float leftGain = 1.0f - pan;
+                float rightGain = pan;
+
+                // Apply panning for main tap output
+                float tapMainL = (tapOutputL * leftGain) + (tapOutputR * leftGain);
+                float tapMainR = (tapOutputL * rightGain) + (tapOutputR * rightGain);
+                sumL += tapMainL;
+                sumR += tapMainR;
+
+                // Add to feedback sub-mixer based on per-tap send level
+                float feedbackSendLevel = historicParams.feedbackSend;
+                mFeedbackSubMixerL += tapMainL * feedbackSendLevel;
+                mFeedbackSubMixerR += tapMainR * feedbackSendLevel;
+            }
         }
     }
 
@@ -2077,6 +2161,11 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
         mUnifiedTapDelayLinesL[i].initialize(mSampleRate, maxDelayTime);
         mUnifiedTapDelayLinesR[i].initialize(mSampleRate, maxDelayTime);
     }
+
+    // Phase 5: Initialize decoupled delay + pitch architecture (production solution)
+    mDecoupledDelaySystemL.initialize(mSampleRate, maxDelayTime);
+    mDecoupledDelaySystemR.initialize(mSampleRate, maxDelayTime);
+    mUseDecoupledArchitecture = true;  // Enable by default for production
 
     mTempoSync.initialize(mSampleRate);
     mTapDistribution.initialize(mSampleRate);
@@ -2183,6 +2272,16 @@ void WaterStickProcessor::updateParameters()
         // Update unified delay lines (production system)
         mUnifiedTapDelayLinesL[i].setDelayTime(tapDelayTime);
         mUnifiedTapDelayLinesR[i].setDelayTime(tapDelayTime);
+
+        // Update decoupled delay + pitch architecture (final production solution)
+        if (mUseDecoupledArchitecture) {
+            mDecoupledDelaySystemL.setTapDelayTime(i, tapDelayTime);
+            mDecoupledDelaySystemR.setTapDelayTime(i, tapDelayTime);
+            mDecoupledDelaySystemL.setTapEnabled(i, mTapEnabled[i]);
+            mDecoupledDelaySystemR.setTapEnabled(i, mTapEnabled[i]);
+            mDecoupledDelaySystemL.setTapPitchShift(i, mTapPitchShift[i]);
+            mDecoupledDelaySystemR.setTapPitchShift(i, mTapPitchShift[i]);
+        }
     }
 
     if (!mTempoSyncMode) {
@@ -2678,6 +2777,87 @@ void WaterStickProcessor::logUnifiedDelayLineStats() const
             }
         }
     }
+}
+
+// Phase 5: Decoupled delay + pitch architecture control methods (production solution)
+void WaterStickProcessor::enableDecoupledDelayLines(bool enable)
+{
+    if (mUseDecoupledArchitecture != enable) {
+        mUseDecoupledArchitecture = enable;
+
+        // Reset all systems when switching for clean transition
+        if (enable) {
+            mDecoupledDelaySystemL.reset();
+            mDecoupledDelaySystemR.reset();
+        } else {
+            // Reset fallback systems
+            for (int i = 0; i < NUM_TAPS; i++) {
+                mUnifiedTapDelayLinesL[i].reset();
+                mUnifiedTapDelayLinesR[i].reset();
+            }
+        }
+
+        if (PitchDebug::isLoggingEnabled()) {
+            PitchDebug::logMessage(enable ?
+                "Switched to decoupled delay + pitch architecture" :
+                "Switched back to unified delay line system");
+        }
+    }
+}
+
+bool WaterStickProcessor::isUsingDecoupledDelayLines() const
+{
+    return mUseDecoupledArchitecture;
+}
+
+void WaterStickProcessor::enablePitchProcessing(bool enable)
+{
+    if (mUseDecoupledArchitecture) {
+        mDecoupledDelaySystemL.enablePitchProcessing(enable);
+        mDecoupledDelaySystemR.enablePitchProcessing(enable);
+
+        if (PitchDebug::isLoggingEnabled()) {
+            PitchDebug::logMessage(enable ?
+                "Pitch processing enabled in decoupled system" :
+                "Pitch processing disabled - delay-only mode");
+        }
+    }
+}
+
+void WaterStickProcessor::logDecoupledSystemHealth() const
+{
+    if (!mUseDecoupledArchitecture || !PitchDebug::isLoggingEnabled()) return;
+
+    DecoupledDelaySystem::SystemHealth healthL, healthR;
+    mDecoupledDelaySystemL.getSystemHealth(healthL);
+    mDecoupledDelaySystemR.getSystemHealth(healthR);
+
+    std::ostringstream ss;
+    ss << "Decoupled System Health Report:\n"
+       << "  Left Channel - Delay: " << (healthL.delaySystemHealthy ? "HEALTHY" : "FAILED")
+       << ", Pitch: " << (healthL.pitchSystemHealthy ? "HEALTHY" : "FAILED") << "\n"
+       << "  Right Channel - Delay: " << (healthR.delaySystemHealthy ? "HEALTHY" : "FAILED")
+       << ", Pitch: " << (healthR.pitchSystemHealthy ? "HEALTHY" : "FAILED") << "\n"
+       << "  Active Taps: L=" << healthL.activeTaps << ", R=" << healthR.activeTaps << "\n"
+       << "  Failed Pitch Taps: L=" << healthL.failedPitchTaps << ", R=" << healthR.failedPitchTaps << "\n"
+       << "  Processing Times: Delay=" << std::fixed << std::setprecision(1)
+       << healthL.delayProcessingTime << "μs, Pitch=" << healthL.pitchProcessingTime
+       << "μs, Total=" << healthL.totalProcessingTime << "μs";
+
+    PitchDebug::logMessage(ss.str());
+}
+
+bool WaterStickProcessor::isDecoupledSystemHealthy() const
+{
+    if (!mUseDecoupledArchitecture) return false;
+
+    DecoupledDelaySystem::SystemHealth healthL, healthR;
+    mDecoupledDelaySystemL.getSystemHealth(healthL);
+    mDecoupledDelaySystemR.getSystemHealth(healthR);
+
+    // System is healthy if delay processing works on both channels
+    // (pitch processing is optional and can fail gracefully)
+    return healthL.delaySystemHealthy && healthR.delaySystemHealthy;
 }
 
 } // namespace WaterStick

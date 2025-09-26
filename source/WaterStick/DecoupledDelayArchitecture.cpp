@@ -268,6 +268,8 @@ void PitchCoordinator::processAllTaps(const float* delayOutputs, float* pitchOut
         std::memory_order_release
     );
 
+    // Update tap counts
+    mActiveTaps.store(processedTaps, std::memory_order_release);
     mFailedTaps.store(failedTaps, std::memory_order_release);
 
     // Check system health
