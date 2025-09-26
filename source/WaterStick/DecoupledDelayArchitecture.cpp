@@ -12,15 +12,35 @@ namespace WaterStick {
 
 PureDelayLine::PureDelayLine()
 : mBufferSize(0)
-, mWriteIndex(0)
+, mWriteIndexA(0)
+, mWriteIndexB(0)
 , mSampleRate(44100.0)
 , mInitialized(false)
-, mDelayInSamples(0.0f)
-, mAllpassCoeff(0.0f)
-, mApInput(0.0f)
-, mLastOutput(0.0f)
-, mDoNextOut(false)
-, mNextOutput(0.0f) {
+, mUsingLineA(true)
+, mCrossfadeState(STABLE)
+, mTargetDelayTime(0.1f)
+, mCurrentDelayTime(0.1f)
+, mStabilityCounter(0)
+, mStabilityThreshold(2048)
+, mCrossfadeLength(0)
+, mCrossfadePosition(0)
+, mCrossfadeGainA(1.0f)
+, mCrossfadeGainB(0.0f) {
+    mStateA.delayInSamples = 0.5f;
+    mStateA.readIndex = 0;
+    mStateA.allpassCoeff = 0.0f;
+    mStateA.apInput = 0.0f;
+    mStateA.lastOutput = 0.0f;
+    mStateA.doNextOut = true;
+    mStateA.nextOutput = 0.0f;
+
+    mStateB.delayInSamples = 0.5f;
+    mStateB.readIndex = 0;
+    mStateB.allpassCoeff = 0.0f;
+    mStateB.apInput = 0.0f;
+    mStateB.lastOutput = 0.0f;
+    mStateB.doNextOut = true;
+    mStateB.nextOutput = 0.0f;
 }
 
 PureDelayLine::~PureDelayLine() = default;
@@ -28,17 +48,19 @@ PureDelayLine::~PureDelayLine() = default;
 void PureDelayLine::initialize(double sampleRate, double maxDelaySeconds) {
     mSampleRate = sampleRate;
 
-    // Simple buffer sizing - no pitch concerns
+    // Dual-buffer sizing for crossfading
     mBufferSize = static_cast<int>(maxDelaySeconds * sampleRate) + 1024;
-    mBuffer.resize(mBufferSize, 0.0f);
+    mBufferA.resize(mBufferSize, 0.0f);
+    mBufferB.resize(mBufferSize, 0.0f);
 
-    mWriteIndex = 0;
-    mDelayInSamples = 0.0f;
-    mAllpassCoeff = 0.0f;
-    mApInput = 0.0f;
-    mLastOutput = 0.0f;
-    mDoNextOut = false;
-    mNextOutput = 0.0f;
+    mWriteIndexA = 0;
+    mWriteIndexB = 0;
+
+    // Initialize delay states
+    updateDelayState(mStateA, mCurrentDelayTime);
+    updateDelayState(mStateB, mCurrentDelayTime);
+
+    mStabilityThreshold = static_cast<int>(sampleRate * 0.05);
 
     mInitialized = true;
 }
@@ -46,10 +68,11 @@ void PureDelayLine::initialize(double sampleRate, double maxDelaySeconds) {
 void PureDelayLine::setDelayTime(float delayTimeSeconds) {
     if (!mInitialized) return;
 
-    mDelayInSamples = delayTimeSeconds * static_cast<float>(mSampleRate);
-    mDelayInSamples = std::max(0.5f, std::min(static_cast<float>(mBufferSize - 1), mDelayInSamples));
-
-    updateAllpassCoeff();
+    // Use crossfading for smooth delay time changes (eliminates zipper noise)
+    if (std::abs(delayTimeSeconds - mTargetDelayTime) > 0.001f) {
+        mTargetDelayTime = delayTimeSeconds;
+        mStabilityCounter = 0;
+    }
 }
 
 void PureDelayLine::processSample(float input, float& output) {
@@ -58,11 +81,95 @@ void PureDelayLine::processSample(float input, float& output) {
         return;
     }
 
+    // Check for delay time changes and manage crossfading
+    if (std::abs(mTargetDelayTime - mCurrentDelayTime) > 0.001f) {
+        mStabilityCounter++;
+
+        if (mStabilityCounter >= mStabilityThreshold && mCrossfadeState == STABLE) {
+            startCrossfade();
+        }
+    } else {
+        mStabilityCounter = 0;
+    }
+
+    updateCrossfade();
+
+    // Process both delay lines
+    float outputA = processDelayLine(mBufferA, mWriteIndexA, mStateA, input);
+    float outputB = processDelayLine(mBufferB, mWriteIndexB, mStateB, input);
+
+    // Mix outputs based on crossfade state
+    if (mCrossfadeState == STABLE) {
+        output = mUsingLineA ? outputA : outputB;
+    } else {
+        output = (outputA * mCrossfadeGainA) + (outputB * mCrossfadeGainB);
+    }
+}
+
+void PureDelayLine::reset() {
+    if (!mInitialized) return;
+
+    // Reset dual buffers
+    std::fill(mBufferA.begin(), mBufferA.end(), 0.0f);
+    std::fill(mBufferB.begin(), mBufferB.end(), 0.0f);
+
+    mWriteIndexA = 0;
+    mWriteIndexB = 0;
+
+    mUsingLineA = true;
+    mCrossfadeState = STABLE;
+    mStabilityCounter = 0;
+    mCrossfadePosition = 0;
+    mCrossfadeGainA = 1.0f;
+    mCrossfadeGainB = 0.0f;
+
+    mStateA.delayInSamples = 0.5f;
+    mStateA.readIndex = 0;
+    mStateA.apInput = 0.0f;
+    mStateA.lastOutput = 0.0f;
+    mStateA.doNextOut = true;
+    mStateA.nextOutput = 0.0f;
+
+    mStateB.delayInSamples = 0.5f;
+    mStateB.readIndex = 0;
+    mStateB.apInput = 0.0f;
+    mStateB.lastOutput = 0.0f;
+    mStateB.doNextOut = true;
+    mStateB.nextOutput = 0.0f;
+}
+
+// Crossfading implementation for zipper-free delay time changes
+void PureDelayLine::updateDelayState(DelayLineState& state, float delayTime) {
+    float delaySamples = delayTime * static_cast<float>(mSampleRate);
+    float maxDelaySamples = static_cast<float>(mBufferSize - 1);
+
+    state.delayInSamples = std::max(0.5f, std::min(delaySamples, maxDelaySamples));
+    updateAllpassCoeff(state);
+}
+
+void PureDelayLine::updateAllpassCoeff(DelayLineState& state) {
+    if (state.delayInSamples <= 0.0f) {
+        state.allpassCoeff = 0.0f;
+        return;
+    }
+
+    float integerDelay = std::floor(state.delayInSamples);
+    float fraction = state.delayInSamples - integerDelay;
+
+    if (fraction < 1e-6f) {
+        state.allpassCoeff = 0.0f;
+    } else {
+        // Allpass coefficient for fractional delay
+        state.allpassCoeff = (1.0f - fraction) / (1.0f + fraction);
+    }
+}
+
+float PureDelayLine::processDelayLine(std::vector<float>& buffer, int& writeIndex, DelayLineState& state, float input) {
     // Write input to buffer
-    mBuffer[mWriteIndex] = input;
+    buffer[writeIndex] = input;
 
     // Calculate read position with fractional delay
-    float readPosFloat = static_cast<float>(mWriteIndex) - mDelayInSamples;
+    float readPosFloat = static_cast<float>(writeIndex) - state.delayInSamples;
     if (readPosFloat < 0.0f) {
         readPosFloat += static_cast<float>(mBufferSize);
     }
@@ -76,54 +183,28 @@ void PureDelayLine::processSample(float input, float& output) {
     if (readIndex < 0) readIndex += mBufferSize;
 
     // Get delayed sample with allpass interpolation
-    float delayedSample = mBuffer[readIndex];
+    float delayedSample = buffer[readIndex];
+    float output;
 
     if (fraction > 1e-6f) {
         // Use allpass interpolation for fractional delay
-        output = delayedSample + mAllpassCoeff * (input - mLastOutput);
-        mLastOutput = output;
+        output = delayedSample + state.allpassCoeff * (input - state.lastOutput);
+        state.lastOutput = output;
     } else {
         // No interpolation needed
         output = delayedSample;
-        mLastOutput = output;
+        state.lastOutput = output;
     }
 
     // Advance write index
-    mWriteIndex = (mWriteIndex + 1) % mBufferSize;
+    writeIndex = (writeIndex + 1) % mBufferSize;
+
+    return output;
 }
 
-void PureDelayLine::reset() {
-    if (!mInitialized) return;
-
-    std::fill(mBuffer.begin(), mBuffer.end(), 0.0f);
-    mWriteIndex = 0;
-    mApInput = 0.0f;
-    mLastOutput = 0.0f;
-    mDoNextOut = false;
-    mNextOutput = 0.0f;
-}
-
-void PureDelayLine::updateAllpassCoeff() {
-    if (mDelayInSamples <= 0.0f) {
-        mAllpassCoeff = 0.0f;
-        return;
-    }
-
-    float integerDelay = std::floor(mDelayInSamples);
-    float fraction = mDelayInSamples - integerDelay;
-
-    if (fraction < 1e-6f) {
-        mAllpassCoeff = 0.0f;
-    } else {
-        // Allpass coefficient for fractional delay
-        mAllpassCoeff = (1.0f - fraction) / (1.0f + fraction);
-    }
-}
-
-float PureDelayLine::nextOut() {
-    if (!mInitialized) return 0.0f;
-
-    float readPosFloat = static_cast<float>(mWriteIndex) - mDelayInSamples;
+float PureDelayLine::nextOut(DelayLineState& state, const std::vector<float>& buffer) {
+    // Calculate read position
+    float readPosFloat = static_cast<float>(mWriteIndexA) - state.delayInSamples;
     if (readPosFloat < 0.0f) {
         readPosFloat += static_cast<float>(mBufferSize);
     }
@@ -132,7 +213,63 @@ float PureDelayLine::nextOut() {
     readIndex = readIndex % mBufferSize;
     if (readIndex < 0) readIndex += mBufferSize;
 
-    return mBuffer[readIndex];
+    return buffer[readIndex];
+}
+
+void PureDelayLine::startCrossfade() {
+    mCrossfadeState = CROSSFADING;
+    mCrossfadeLength = calculateCrossfadeLength(mTargetDelayTime);
+    mCrossfadePosition = 0;
+
+    // Update the standby line with new delay time
+    if (mUsingLineA) {
+        updateDelayState(mStateB, mTargetDelayTime);
+    } else {
+        updateDelayState(mStateA, mTargetDelayTime);
+    }
+}
+
+void PureDelayLine::updateCrossfade() {
+    if (mCrossfadeState != CROSSFADING) return;
+
+    float progress = static_cast<float>(mCrossfadePosition) / static_cast<float>(mCrossfadeLength);
+    progress = std::min(progress, 1.0f);
+
+    // Exponential fade curves for smooth transitions
+    float fadeOut = 0.5f * (1.0f + cosf(progress * 3.14159265f));
+    float fadeIn = 1.0f - fadeOut;
+
+    if (mUsingLineA) {
+        mCrossfadeGainA = fadeOut;
+        mCrossfadeGainB = fadeIn;
+    } else {
+        mCrossfadeGainA = fadeIn;
+        mCrossfadeGainB = fadeOut;
+    }
+
+    mCrossfadePosition++;
+
+    if (mCrossfadePosition >= mCrossfadeLength) {
+        mCrossfadeState = STABLE;
+        mUsingLineA = !mUsingLineA;
+        mCurrentDelayTime = mTargetDelayTime;
+
+        if (mUsingLineA) {
+            mCrossfadeGainA = 1.0f;
+            mCrossfadeGainB = 0.0f;
+        } else {
+            mCrossfadeGainA = 0.0f;
+            mCrossfadeGainB = 1.0f;
+        }
+    }
+}
+
+int PureDelayLine::calculateCrossfadeLength(float delayTime) {
+    // Adaptive crossfade length based on delay time
+    float baseCrossfadeMs = 50.0f + (delayTime * 1000.0f * 0.25f);
+    baseCrossfadeMs = std::min(baseCrossfadeMs, 500.0f);
+
+    return static_cast<int>(baseCrossfadeMs * 0.001f * mSampleRate);
 }
 
 // ===================================================================

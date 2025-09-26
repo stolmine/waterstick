@@ -36,23 +36,56 @@ public:
     bool isInitialized() const { return mInitialized; }
 
 private:
-    // Simple, robust circular buffer - no pitch concerns
-    std::vector<float> mBuffer;
+    // Dual-buffer system for zipper-free delay time changes
+    std::vector<float> mBufferA;
+    std::vector<float> mBufferB;
     int mBufferSize;
-    int mWriteIndex;
+    int mWriteIndexA;
+    int mWriteIndexB;
     double mSampleRate;
     bool mInitialized;
 
-    // STK-style fractional delay with allpass interpolation
-    float mDelayInSamples;
-    float mAllpassCoeff;
-    float mApInput;
-    float mLastOutput;
-    bool mDoNextOut;
-    float mNextOutput;
+    // Active/Standby line management for crossfading
+    bool mUsingLineA;
+    enum CrossfadeState { STABLE, CROSSFADING };
+    CrossfadeState mCrossfadeState;
 
-    void updateAllpassCoeff();
-    float nextOut();
+    // Movement detection for smooth transitions
+    float mTargetDelayTime;
+    float mCurrentDelayTime;
+    int mStabilityCounter;
+    int mStabilityThreshold;
+
+    // Crossfade control for zipper-free modulation
+    int mCrossfadeLength;
+    int mCrossfadePosition;
+    float mCrossfadeGainA;
+    float mCrossfadeGainB;
+
+    // Per-line delay state
+    struct DelayLineState {
+        float delayInSamples;
+        int readIndex;
+        float allpassCoeff;
+        float apInput;
+        float lastOutput;
+        bool doNextOut;
+        float nextOutput;
+    };
+
+    DelayLineState mStateA;
+    DelayLineState mStateB;
+
+    // Core processing methods
+    void updateDelayState(DelayLineState& state, float delayTime);
+    void updateAllpassCoeff(DelayLineState& state);
+    float processDelayLine(std::vector<float>& buffer, int& writeIndex, DelayLineState& state, float input);
+    float nextOut(DelayLineState& state, const std::vector<float>& buffer);
+
+    // Crossfading methods for smooth delay time changes
+    void startCrossfade();
+    void updateCrossfade();
+    int calculateCrossfadeLength(float delayTime);
 };
 
 // ===================================================================
