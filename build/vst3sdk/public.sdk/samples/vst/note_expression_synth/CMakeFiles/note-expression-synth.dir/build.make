@@ -72,45 +72,45 @@ include vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-exp
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/codegen:
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/codegen
 
-VST3/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/note_expression_synth.uidesc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/note_expression_synth.uidesc VST3/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc
+VST3/Release/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/note_expression_synth.uidesc
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/note_expression_synth.uidesc VST3/Release/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc
 
-VST3/note-expression-synth.vst3/Contents/Resources/about.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/about.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/about.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/about.png VST3/note-expression-synth.vst3/Contents/Resources/about.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/about.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/about.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/about.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/about.png VST3/Release/note-expression-synth.vst3/Contents/Resources/about.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/background.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/background.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/background.png VST3/note-expression-synth.vst3/Contents/Resources/background.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/background.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/background.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/background.png VST3/Release/note-expression-synth.vst3/Contents/Resources/background.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/groupframe.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/groupframe.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/groupframe.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/groupframe.png VST3/note-expression-synth.vst3/Contents/Resources/groupframe.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/groupframe.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/groupframe.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/groupframe.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/groupframe.png VST3/Release/note-expression-synth.vst3/Contents/Resources/groupframe.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/knob.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/knob.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob.png VST3/note-expression-synth.vst3/Contents/Resources/knob.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/knob.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/knob.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob.png VST3/Release/note-expression-synth.vst3/Contents/Resources/knob.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/knob2.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob2.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/knob2.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob2.png VST3/note-expression-synth.vst3/Contents/Resources/knob2.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/knob2.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob2.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/knob2.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob2.png VST3/Release/note-expression-synth.vst3/Contents/Resources/knob2.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/knob\ big.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob\ big.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/knob big.png"
-	$(CMAKE_COMMAND) -E copy "/Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob big.png" "VST3/note-expression-synth.vst3/Contents/Resources/knob big.png"
+VST3/Release/note-expression-synth.vst3/Contents/Resources/knob\ big.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob\ big.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/knob big.png"
+	$(CMAKE_COMMAND) -E copy "/Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/knob big.png" "VST3/Release/note-expression-synth.vst3/Contents/Resources/knob big.png"
 
-VST3/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/vst3_logo_small.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/vst3_logo_small.png VST3/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/vst3_logo_small.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/vst3_logo_small.png VST3/Release/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot.png VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot.png VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png
 
-VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png
+VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/resource/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png
 
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/factory.cpp.o: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/flags.make
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/factory.cpp.o: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_synth/source/factory.cpp
@@ -238,49 +238,46 @@ note__expression__synth_OBJECTS = \
 # External object files for target note-expression-synth
 note__expression__synth_EXTERNAL_OBJECTS =
 
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/factory.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_controller.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_processor.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_ui.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_voice.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_touch_controller.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/__/__/__/__/vstgui4/vstgui/contrib/keyboardview.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/__/__/__/source/main/macmain.cpp.o
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build.make
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libvstgui_support.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libsdk.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libvstgui.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libvstgui_uidescription.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libsdk_common.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libbase.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/libpluginterfaces.a
-VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX CFBundle shared module ../../../../../VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//note-expression-synth.vst3/Contents/Resources
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/factory.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_controller.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_processor.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_ui.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_expression_synth_voice.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/source/note_touch_controller.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/__/__/__/__/vstgui4/vstgui/contrib/keyboardview.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build.make
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libvstgui_support.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libsdk.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libvstgui.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libvstgui_uidescription.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libsdk_common.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libbase.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: lib/Release/libpluginterfaces.a
+VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth: vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX CFBundle shared module ../../../../../VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/note-expression-synth.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/note-expression-synth.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//note-expression-synth.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//note-expression-synth.vst3 -output /Users/why/repos/waterstick/build/VST3//note-expression-synth.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//note-expression-synth.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/note-expression-synth.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/note-expression-synth.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/note-expression-synth.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/note-expression-synth.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && ln -svfF /Users/why/repos/waterstick/build/VST3//note-expression-synth.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/note-expression-synth.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_synth && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/note-expression-synth.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/note-expression-synth.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/MacOS/note-expression-synth
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/about.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/background.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/groupframe.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/knob\ big.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/knob.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/knob2.png
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc
-vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/MacOS/note-expression-synth
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/Snapshots/41466D9BB0654576B641098F686371B3_snapshot_2.0x.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/about.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/background.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/groupframe.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/knob\ big.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/knob.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/knob2.png
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/note_expression_synth.uidesc
+vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build: VST3/Release/note-expression-synth.vst3/Contents/Resources/vst3_logo_small.png
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/build
 
 vst3sdk/public.sdk/samples/vst/note_expression_synth/CMakeFiles/note-expression-synth.dir/clean:

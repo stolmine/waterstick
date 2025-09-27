@@ -72,37 +72,37 @@ include vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/flags.make
 vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/codegen:
 .PHONY : vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/codegen
 
-VST3/panner.vst3/Contents/Resources/plug.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/plug.uidesc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/plug.uidesc"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/plug.uidesc VST3/panner.vst3/Contents/Resources/plug.uidesc
+VST3/Release/panner.vst3/Contents/Resources/plug.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/plug.uidesc
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/plug.uidesc"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/plug.uidesc VST3/Release/panner.vst3/Contents/Resources/plug.uidesc
 
-VST3/panner.vst3/Contents/Resources/background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/background.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background.png VST3/panner.vst3/Contents/Resources/background.png
+VST3/Release/panner.vst3/Contents/Resources/background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/background.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background.png VST3/Release/panner.vst3/Contents/Resources/background.png
 
-VST3/panner.vst3/Contents/Resources/animation_knob.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/animation_knob.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob.png VST3/panner.vst3/Contents/Resources/animation_knob.png
+VST3/Release/panner.vst3/Contents/Resources/animation_knob.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/animation_knob.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob.png VST3/Release/panner.vst3/Contents/Resources/animation_knob.png
 
-VST3/panner.vst3/Contents/Resources/background_2x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_2x.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/background_2x.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_2x.png VST3/panner.vst3/Contents/Resources/background_2x.png
+VST3/Release/panner.vst3/Contents/Resources/background_2x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_2x.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/background_2x.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_2x.png VST3/Release/panner.vst3/Contents/Resources/background_2x.png
 
-VST3/panner.vst3/Contents/Resources/background_3x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_3x.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/background_3x.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_3x.png VST3/panner.vst3/Contents/Resources/background_3x.png
+VST3/Release/panner.vst3/Contents/Resources/background_3x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_3x.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/background_3x.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/background_3x.png VST3/Release/panner.vst3/Contents/Resources/background_3x.png
 
-VST3/panner.vst3/Contents/Resources/animation_knob_3x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob_3x.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/animation_knob_3x.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob_3x.png VST3/panner.vst3/Contents/Resources/animation_knob_3x.png
+VST3/Release/panner.vst3/Contents/Resources/animation_knob_3x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob_3x.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/animation_knob_3x.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/animation_knob_3x.png VST3/Release/panner.vst3/Contents/Resources/animation_knob_3x.png
 
-VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png
+VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png
 
-VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png
+VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/resource/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png
 
 vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugfactory.cpp.o: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/flags.make
 vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugfactory.cpp.o: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/panner/source/plugfactory.cpp
@@ -170,43 +170,40 @@ panner_OBJECTS = \
 # External object files for target panner
 panner_EXTERNAL_OBJECTS =
 
-VST3/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugfactory.cpp.o
-VST3/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugcontroller.cpp.o
-VST3/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugprocessor.cpp.o
-VST3/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/__/__/__/source/main/macmain.cpp.o
-VST3/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build.make
-VST3/panner.vst3/Contents/MacOS/panner: lib/libvstgui_support.a
-VST3/panner.vst3/Contents/MacOS/panner: lib/libsdk.a
-VST3/panner.vst3/Contents/MacOS/panner: lib/libvstgui.a
-VST3/panner.vst3/Contents/MacOS/panner: lib/libvstgui_uidescription.a
-VST3/panner.vst3/Contents/MacOS/panner: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/panner.vst3/Contents/MacOS/panner: lib/libsdk_common.a
-VST3/panner.vst3/Contents/MacOS/panner: lib/libbase.a
-VST3/panner.vst3/Contents/MacOS/panner: lib/libpluginterfaces.a
-VST3/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/panner.vst3/Contents/MacOS/panner"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//panner.vst3/Contents/Resources
+VST3/Release/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugfactory.cpp.o
+VST3/Release/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugcontroller.cpp.o
+VST3/Release/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/source/plugprocessor.cpp.o
+VST3/Release/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build.make
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libvstgui_support.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libsdk.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libvstgui.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libvstgui_uidescription.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libsdk_common.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libbase.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: lib/Release/libpluginterfaces.a
+VST3/Release/panner.vst3/Contents/MacOS/panner: vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/Release/panner.vst3/Contents/MacOS/panner"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/panner.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/panner.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//panner.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//panner.vst3 -output /Users/why/repos/waterstick/build/VST3//panner.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//panner.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/panner.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/panner.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/panner.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/panner.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && ln -svfF /Users/why/repos/waterstick/build/VST3//panner.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/panner.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/panner && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/panner.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/panner.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/MacOS/panner
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/animation_knob.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/animation_knob_3x.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/background.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/background_2x.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/background_3x.png
-vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/panner.vst3/Contents/Resources/plug.uidesc
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/MacOS/panner
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/Snapshots/A2EAF7DB320640F48EDE380DDF89562C_snapshot_2.0x.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/animation_knob.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/animation_knob_3x.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/background.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/background_2x.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/background_3x.png
+vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build: VST3/Release/panner.vst3/Contents/Resources/plug.uidesc
 .PHONY : vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/build
 
 vst3sdk/public.sdk/samples/vst/panner/CMakeFiles/panner.dir/clean:

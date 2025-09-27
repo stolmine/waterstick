@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <cmath>
 #include <vector>
+#include <mutex>
+#include <atomic>
 
 namespace WaterStick {
 
@@ -127,6 +129,42 @@ private:
     static const char* sRainmakerCurveNames[8]; // Names for Rainmaker-style macro curves
 };
 
+//========================================================================
+// CrossContextNotificationSystem - Multi-editor notification system for comprehensive cross-context coverage
+//========================================================================
+class CrossContextNotificationSystem {
+public:
+    CrossContextNotificationSystem();
+    ~CrossContextNotificationSystem();
+
+    // Multi-editor registration system
+    void registerEditor(class WaterStickEditor* editor);
+    void unregisterEditor(class WaterStickEditor* editor);
+
+    // Comprehensive notification dispatch to all registered editors
+    void notifyAllEditorsParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value);
+    void notifyAllEditorsMacroUpdate(Steinberg::Vst::ParamID macroParamId, Steinberg::Vst::ParamValue value, int currentTapContext);
+
+    // Platform-specific immediate update triggers
+    void triggerImmediateUpdates();
+    void triggerPlatformSpecificInvalidation();
+
+    // Diagnostic and performance tracking
+    size_t getRegisteredEditorCount() const { return mRegisteredEditors.size(); }
+    void getNotificationStats(int& totalNotifications, int& totalEditors) const;
+
+private:
+    std::vector<class WaterStickEditor*> mRegisteredEditors;
+    mutable std::mutex mEditorRegistrationMutex;
+
+    // Performance tracking
+    std::atomic<int> mTotalNotifications{0};
+
+    // Internal helpers
+    void cleanupStaleEditors();
+    bool isValidEditor(class WaterStickEditor* editor) const;
+};
+
 class WaterStickController : public Steinberg::Vst::EditControllerEx1
 {
 public:
@@ -185,6 +223,9 @@ private:
     DefaultResetSystem mDefaultResetSystem;
     MacroCurveSystem mMacroCurveSystem;
 
+    // Phase 2 Enhancement: CrossContextNotificationSystem for comprehensive multi-editor coverage
+    CrossContextNotificationSystem mCrossContextNotificationSystem;
+
     // System integration methods
     void handleRandomizeTrigger();
     void handleResetTrigger();
@@ -199,9 +240,13 @@ private:
     // Shared context state for macro knob coordination
     int mCurrentTapContext = 1; // Default to Volume context (TapContext::Volume = 1)
 
-    // VST3 Parameter Edit State Management
+    // VST3 Parameter Edit State Management - Enhanced for Phase 2
     bool mIsProcessingMacroEdit = false;  // Prevents circular parameter updates
     Steinberg::Vst::ParamID mCurrentEditingMacroParam = -1;  // Track which macro param is being edited
+    std::atomic<bool> mMacroBypassBlocking{false};  // Bypass blocking for macro-induced changes
+
+    // Legacy editor notification system (maintained for backward compatibility)
+    class WaterStickEditor* mRegisteredEditor = nullptr;  // Single editor instance (VST3 typical pattern)
 
 public:
     // Public access for processor integration
@@ -209,17 +254,35 @@ public:
     DefaultResetSystem& getDefaultResetSystem() { return mDefaultResetSystem; }
     MacroCurveSystem& getMacroCurveSystem() { return mMacroCurveSystem; }
 
+    // Phase 2 Enhancement: Access to CrossContextNotificationSystem
+    CrossContextNotificationSystem& getCrossContextNotificationSystem() { return mCrossContextNotificationSystem; }
+
     // Shared context state management for macro knob coordination
     void setCurrentTapContext(int context) { mCurrentTapContext = context; }
     int getCurrentTapContext() const { return mCurrentTapContext; }
 
-    // VST3 Parameter Edit State Management - Public access for editor
+    // VST3 Parameter Edit State Management - Enhanced for Phase 2
     bool isProcessingMacroEdit() const { return mIsProcessingMacroEdit; }
     Steinberg::Vst::ParamID getCurrentEditingMacroParam() const { return mCurrentEditingMacroParam; }
     void setMacroEditState(bool isEditing, Steinberg::Vst::ParamID paramId = -1) {
         mIsProcessingMacroEdit = isEditing;
         mCurrentEditingMacroParam = paramId;
     }
+
+    // Phase 2 Enhancement: Macro bypass blocking system
+    bool isMacroBypassBlocking() const { return mMacroBypassBlocking.load(); }
+    void setMacroBypassBlocking(bool bypass) { mMacroBypassBlocking.store(bypass); }
+
+    // Legacy editor notification system (maintained for backward compatibility)
+    void registerEditor(class WaterStickEditor* editor);
+    void unregisterEditor(class WaterStickEditor* editor);
+    void notifyEditorParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value);
+
+    // Phase 2 Enhancement: Multi-editor notification system
+    void registerEditorAdvanced(class WaterStickEditor* editor);
+    void unregisterEditorAdvanced(class WaterStickEditor* editor);
+    void notifyAllEditorsParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value);
+    void notifyAllEditorsMacroUpdate(Steinberg::Vst::ParamID macroParamId, Steinberg::Vst::ParamValue value);
 };
 
 } // namespace WaterStick

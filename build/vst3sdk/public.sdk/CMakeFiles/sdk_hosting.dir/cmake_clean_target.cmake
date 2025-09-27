@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "../../lib/libsdk_hosting.a"
+  "../../lib/Release/libsdk_hosting.a"
 )

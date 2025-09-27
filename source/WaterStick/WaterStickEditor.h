@@ -46,6 +46,16 @@ public:
     void cleanup();
     void getPerformanceStats(float& avgBlockingDuration, int& totalBlockedUpdates) const;
 
+    // Phase 2 Enhancement: Macro bypass blocking system
+    void setMacroBypassEnabled(bool enabled) {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        mMacroBypassEnabled = enabled;
+    }
+    bool isMacroBypassEnabled() const {
+        std::lock_guard<std::mutex> lock(mStateMutex);
+        return mMacroBypassEnabled;
+    }
+
 private:
     struct ParameterUpdate {
         int32_t parameterId;
@@ -61,7 +71,7 @@ private:
 
     // Configuration constants
     static constexpr std::chrono::milliseconds USER_CONTROL_TIMEOUT{1000};  // 1 second timeout
-    static constexpr std::chrono::milliseconds VISUAL_UPDATE_INTERVAL{33};  // ~30Hz (33ms)
+    static constexpr std::chrono::milliseconds VISUAL_UPDATE_INTERVAL{1};   // Critical timing fix: 1ms for macro synchronization
     static constexpr size_t MAX_QUEUED_UPDATES{256};
 
     // Thread-safe state management
@@ -81,11 +91,17 @@ private:
     mutable std::atomic<int> mTotalInteractions{0};
     std::chrono::steady_clock::time_point mLastCleanupTime;
 
+    // Phase 2 Enhancement: Macro bypass blocking system
+    std::atomic<bool> mMacroBypassEnabled{false};
+
     // Internal helper methods
     void updateUserControlledParameters();
     bool isInteractionExpired(const UserInteractionState& state) const;
     void removeExpiredInteractions();
     int32_t getParameterForControl(int32_t controlTag) const;
+
+    // Phase 2 Enhancement: Macro-related parameter detection
+    bool isMacroRelatedParameter(int32_t parameterId) const;
 };
 
 // Enum for different tap contexts
@@ -324,6 +340,9 @@ public:
     // IControlListener
     void valueChanged(VSTGUI::CControl* control) SMTG_OVERRIDE;
 
+    // Parameter change notification system for macro-induced updates
+    void onParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value);
+
     // Parameter blocking system access
     ParameterBlockingSystem& getParameterBlockingSystem() { return mParameterBlockingSystem; }
 
@@ -351,6 +370,7 @@ public:
     std::string formatParameterValue(int parameterId, float normalizedValue) const;
     void updateValueReadouts();
     void updateBypassValueDisplay();
+    void updateAllMacroKnobVisuals();
 
     // VST3 lifecycle compliance
     void forceParameterSynchronization();
@@ -362,6 +382,17 @@ public:
     void handleResetAction(int columnIndex);
     float generateRandomValue();
     float getContextDefaultValue(TapContext context);
+
+    // Real-time GUI update methods for parameter notifications
+    void updateTapButtonForParameter(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value);
+    void updateMinimapForParameterChange(Steinberg::Vst::ParamID paramId);
+
+    // Forced cross-context invalidation bypassing VSTGUI batching
+    void forceInvalidateAllContextViews();
+
+    // Phase 2 Enhancement: Platform-specific immediate updates and enhanced dirty state tracking
+    void triggerPlatformSpecificImmediateUpdates();
+    void markAllControlsForImmediateUpdate();
 
 private:
     static constexpr int kEditorWidth = 670;   // Optimized to eliminate excess whitespace while maintaining 30px margins

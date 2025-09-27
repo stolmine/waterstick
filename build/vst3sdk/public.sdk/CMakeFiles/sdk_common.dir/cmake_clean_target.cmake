@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "../../lib/libsdk_common.a"
+  "../../lib/Release/libsdk_common.a"
 )

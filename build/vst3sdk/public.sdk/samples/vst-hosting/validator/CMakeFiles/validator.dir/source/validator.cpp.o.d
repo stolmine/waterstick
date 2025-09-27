@@ -801,7 +801,6 @@ vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/hosting/../utility/optional.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/cassert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/assert.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_static_assert.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/ipluginbase.h \
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/testsuite/vsttestsuite.h \

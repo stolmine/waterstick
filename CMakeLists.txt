@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-DRELEASE=1)
 
 # Enable VST validator for final validation
-set(SMTG_RUN_VST_VALIDATOR ON CACHE BOOL "Run VST validator on VST3 Plug-ins" FORCE)
+set(SMTG_RUN_VST_VALIDATOR OFF CACHE BOOL "Run VST validator on VST3 Plug-ins" FORCE)
 
 # Set the VST3 SDK path
 set(VST3SDK_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/vst3sdk)

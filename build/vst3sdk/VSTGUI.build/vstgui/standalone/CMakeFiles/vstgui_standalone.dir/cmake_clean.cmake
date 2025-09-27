@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../lib/libvstgui_standalone.a"
-  "../../../../lib/libvstgui_standalone.pdb"
+  "../../../../lib/Release/libvstgui_standalone.a"
+  "../../../../lib/Release/libvstgui_standalone.pdb"
   "CMakeFiles/vstgui_standalone.dir/source/application.cpp.o"
   "CMakeFiles/vstgui_standalone.dir/source/application.cpp.o.d"
   "CMakeFiles/vstgui_standalone.dir/source/genericalertbox.cpp.o"

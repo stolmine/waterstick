@@ -72,17 +72,17 @@ include vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/f
 vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/codegen:
 .PHONY : vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/codegen
 
-VST3/host-checker.vst3/Contents/Resources/hostchecker.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/hostchecker.uidesc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/host-checker.vst3/Contents/Resources/hostchecker.uidesc"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/hostchecker.uidesc VST3/host-checker.vst3/Contents/Resources/hostchecker.uidesc
+VST3/Release/host-checker.vst3/Contents/Resources/hostchecker.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/hostchecker.uidesc
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/host-checker.vst3/Contents/Resources/hostchecker.uidesc"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/hostchecker.uidesc VST3/Release/host-checker.vst3/Contents/Resources/hostchecker.uidesc
 
-VST3/host-checker.vst3/Contents/Resources/bypass.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/bypass.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/host-checker.vst3/Contents/Resources/bypass.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/bypass.png VST3/host-checker.vst3/Contents/Resources/bypass.png
+VST3/Release/host-checker.vst3/Contents/Resources/bypass.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/bypass.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/host-checker.vst3/Contents/Resources/bypass.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/bypass.png VST3/Release/host-checker.vst3/Contents/Resources/bypass.png
 
-VST3/host-checker.vst3/Contents/Resources/knob.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/knob.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/host-checker.vst3/Contents/Resources/knob.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/knob.png VST3/host-checker.vst3/Contents/Resources/knob.png
+VST3/Release/host-checker.vst3/Contents/Resources/knob.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/knob.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/host-checker.vst3/Contents/Resources/knob.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/knob.png VST3/Release/host-checker.vst3/Contents/Resources/knob.png
 
 vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/editorsizecontroller.cpp.o: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/flags.make
 vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/editorsizecontroller.cpp.o: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/source/editorsizecontroller.cpp
@@ -270,46 +270,43 @@ host__checker_OBJECTS = \
 # External object files for target host-checker
 host__checker_EXTERNAL_OBJECTS =
 
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/editorsizecontroller.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/eventlistcheck.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/eventlogdatabrowsersource.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/eventlogger.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/factory.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/hostcheck.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/hostcheckercontroller.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/hostcheckerprocessor.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/parameterchangescheck.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/processcontextcheck.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/processsetupcheck.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/__/__/__/source/main/macmain.cpp.o
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build.make
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libvstgui_support.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libsdk.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libvstgui.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libvstgui_uidescription.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libsdk_common.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libbase.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: lib/libpluginterfaces.a
-VST3/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX CFBundle shared module ../../../../../VST3/host-checker.vst3/Contents/MacOS/host-checker"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//host-checker.vst3/Contents/Resources
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/editorsizecontroller.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/eventlistcheck.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/eventlogdatabrowsersource.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/eventlogger.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/factory.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/hostcheck.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/hostcheckercontroller.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/hostcheckerprocessor.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/parameterchangescheck.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/processcontextcheck.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/source/processsetupcheck.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build.make
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libvstgui_support.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libsdk.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libvstgui.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libvstgui_uidescription.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libsdk_common.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libbase.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: lib/Release/libpluginterfaces.a
+VST3/Release/host-checker.vst3/Contents/MacOS/host-checker: vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX CFBundle shared module ../../../../../VST3/Release/host-checker.vst3/Contents/MacOS/host-checker"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/host-checker.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/host-checker.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//host-checker.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//host-checker.vst3 -compat /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/vst_compatibility.json -output /Users/why/repos/waterstick/build/VST3//host-checker.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//host-checker.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/host-checker.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/host-checker.vst3 -compat /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/hostchecker/resource/vst_compatibility.json -output /Users/why/repos/waterstick/build/VST3/Release/host-checker.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/host-checker.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && ln -svfF /Users/why/repos/waterstick/build/VST3//host-checker.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/host-checker.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/hostchecker && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/host-checker.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/host-checker.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/host-checker.vst3/Contents/MacOS/host-checker
-vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/host-checker.vst3/Contents/Resources/bypass.png
-vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/host-checker.vst3/Contents/Resources/hostchecker.uidesc
-vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/host-checker.vst3/Contents/Resources/knob.png
+vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/Release/host-checker.vst3/Contents/MacOS/host-checker
+vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/Release/host-checker.vst3/Contents/Resources/bypass.png
+vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/Release/host-checker.vst3/Contents/Resources/hostchecker.uidesc
+vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build: VST3/Release/host-checker.vst3/Contents/Resources/knob.png
 .PHONY : vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/build
 
 vst3sdk/public.sdk/samples/vst/hostchecker/CMakeFiles/host-checker.dir/clean:

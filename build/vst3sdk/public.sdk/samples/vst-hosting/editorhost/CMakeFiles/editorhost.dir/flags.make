@@ -6,9 +6,9 @@ CXX_DEFINES = -DRELEASE=1
 
 CXX_INCLUDES = -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/..
 
-CXX_FLAGSarm64 =  -stdlib=libc++ -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1
+CXX_FLAGSarm64 =  -stdlib=libc++ -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -DRELEASE=1
 
-CXX_FLAGS =  -stdlib=libc++ -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1
+CXX_FLAGS =  -stdlib=libc++ -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIE -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -DRELEASE=1
 
 # Custom flags: vst3sdk/public.sdk/samples/vst-hosting/editorhost/CMakeFiles/editorhost.dir/source/platform/mac/platform.mm.o_FLAGS = -fobjc-arc
 

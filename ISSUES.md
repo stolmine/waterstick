@@ -4,6 +4,51 @@
 
 ### 🔧 Immediate Priority Issues
 
+#### Macro Parameter State Management Critical Issues
+**Priority**: HIGHEST - Critical
+**Component**: Parameter Control/DSP
+**Description**: Macro parameter changes exhibit persistent state corruption and GUI synchronization issues
+**Branch**: V4.2.2_macroHookup
+
+**Critical Issues**:
+
+1. **Parameter State Persistence Issue**:
+   - Macro changes to parameters seem to 'stick' and persist inappropriately
+   - Parameters remain affected even after return to defaults buttons are used
+   - Parameters remain affected when taps are muted/unmuted
+   - Parameters remain affected when manually changed via direct parameter interaction
+   - This suggests macro curve evaluation is overriding or interfering with normal parameter management
+
+2. **GUI Synchronization Issue**:
+   - Macros only update the GUI when user is focused on the same context/macro pair
+   - Users can apply macro changes on any context (not just the selected one)
+   - This leads to confusing results where:
+     - User focused on context A
+     - User applies macro changes affecting context B
+     - User switches to context B
+     - GUI state does not resemble actual current parameter settings
+   - GUI becomes desynchronized from actual parameter state
+
+**Symptoms**:
+- Return to defaults functionality broken by macro interference
+- Manual parameter changes overridden by persistent macro effects
+- GUI displays incorrect parameter values when switching contexts
+- Macro effects cannot be "undone" through normal parameter operations
+
+**Impact**:
+- Breaks fundamental parameter management expectations
+- Creates unpredictable and confusing user experience
+- Violates principle of direct parameter control precedence
+- Makes the macro system unreliable for production use
+
+**Root Cause Analysis Required**:
+- Investigate macro curve evaluation timing and precedence
+- Analyze parameter update order and conflicts
+- Examine GUI update mechanisms across context switches
+- Review parameter state management architecture
+
+**Status**: Requires immediate investigation and resolution
+
 #### Signal Routing & Bypass Controls Investigation
 **Priority**: Completed
 **Component**: DSP/Signal Processing

@@ -1,3 +1,3 @@
 file(REMOVE_RECURSE
-  "../../../../lib/libvstgui_standalone.a"
+  "../../../../lib/Release/libvstgui_standalone.a"
 )

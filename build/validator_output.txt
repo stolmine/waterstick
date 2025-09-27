@@ -1,0 +1,371 @@
+* Loading module...
+
+	/Library/Audio/Plug-Ins/VST3/WaterStick.vst3
+
+* Check valid bundle structure...
+
+* Scanning classes...
+
+  Factory Info:
+	vendor = WaterStick Audio
+	url = https://waterstick.audio
+	email = support@waterstick.audio
+
+  Class Info 0:
+	name = WaterStick
+	category = Audio Module Class
+	subCategories = Fx|Delay
+	version = 1.0.0.1
+	sdkVersion = VST 3.7.14
+	cid = 12345678123456781234567812345678
+
+  Class Info 1:
+	name = WaterStickController
+	category = Component Controller Class
+	subCategories = 
+	version = 1.0.0.1
+	sdkVersion = VST 3.7.14
+	cid = 87654321876543218765432187654321
+
+* Checking snapshots...
+
+Info: No snapshots in Bundle.
+
+* Creating tests...
+
+* Running tests...
+
+-------------------------------------------------------------
+TestSuite : WaterStick
+-------------------------------------------------------------
+
+-------------------------------------------------------------
+TestSuite : General Tests
+-------------------------------------------------------------
+
+[Scan Editor Classes]
+Info:  ===Scan Editor Classes ====================================
+Info:  This component has an edit controller class
+Info:     Controller CID: {87654321-8765-4321-8765-432187654321}
+[Succeeded]
+
+[Scan Buses]
+Info:  ===Scan Buses ====================================
+Info:  => Audio Buses: [1 In(s) => 1 Out(s)]
+Info:       In [0]: "Stereo In" (Main-Default Active) 
+Info:       Out[0]: "Stereo Out" (Main-Default Active) 
+Info:  => Event Buses: [0 In(s) => 0 Out(s)]
+[Succeeded]
+
+[Scan Parameters]
+Info:  ===Scan Parameters ====================================
+Info:  This component exports 177 parameter(s)
+Info:     Parameter 000 (id=0): [title="Input Gain"] [unit="dB"] [type = F, default = 0.769231, unit = 0]
+Info:     Parameter 001 (id=1): [title="Output Gain"] [unit="dB"] [type = F, default = 0.769231, unit = 0]
+Info:     Parameter 002 (id=2): [title="Delay Time"] [unit="s"] [type = F, default = 0.050000, unit = 0]
+Info:     Parameter 003 (id=3): [title="Feedback"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 004 (id=4): [title="Sync Mode"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 005 (id=5): [title="Sync Division"] [unit=""] [type = D, default = 0.571429, unit = 0]
+Info:     Parameter 006 (id=6): [title="Grid"] [unit=""] [type = D, default = 0.428571, unit = 0]
+Info:     Parameter 007 (id=7): [title="Tap 1 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 008 (id=8): [title="Tap 1 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 009 (id=9): [title="Tap 1 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 010 (id=10): [title="Tap 2 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 011 (id=11): [title="Tap 2 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 012 (id=12): [title="Tap 2 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 013 (id=13): [title="Tap 3 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 014 (id=14): [title="Tap 3 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 015 (id=15): [title="Tap 3 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 016 (id=16): [title="Tap 4 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 017 (id=17): [title="Tap 4 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 018 (id=18): [title="Tap 4 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 019 (id=19): [title="Tap 5 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 020 (id=20): [title="Tap 5 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 021 (id=21): [title="Tap 5 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 022 (id=22): [title="Tap 6 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 023 (id=23): [title="Tap 6 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 024 (id=24): [title="Tap 6 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 025 (id=25): [title="Tap 7 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 026 (id=26): [title="Tap 7 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 027 (id=27): [title="Tap 7 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 028 (id=28): [title="Tap 8 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 029 (id=29): [title="Tap 8 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 030 (id=30): [title="Tap 8 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 031 (id=31): [title="Tap 9 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 032 (id=32): [title="Tap 9 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 033 (id=33): [title="Tap 9 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 034 (id=34): [title="Tap 10 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 035 (id=35): [title="Tap 10 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 036 (id=36): [title="Tap 10 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 037 (id=37): [title="Tap 11 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 038 (id=38): [title="Tap 11 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 039 (id=39): [title="Tap 11 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 040 (id=40): [title="Tap 12 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 041 (id=41): [title="Tap 12 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 042 (id=42): [title="Tap 12 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 043 (id=43): [title="Tap 13 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 044 (id=44): [title="Tap 13 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 045 (id=45): [title="Tap 13 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 046 (id=46): [title="Tap 14 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 047 (id=47): [title="Tap 14 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 048 (id=48): [title="Tap 14 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 049 (id=49): [title="Tap 15 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 050 (id=50): [title="Tap 15 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 051 (id=51): [title="Tap 15 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 052 (id=52): [title="Tap 16 Enable"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 053 (id=53): [title="Tap 16 Level"] [unit="%"] [type = F, default = 0.800000, unit = 0]
+Info:     Parameter 054 (id=54): [title="Tap 16 Pan"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 055 (id=55): [title="Tap 1 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 056 (id=56): [title="Tap 1 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 057 (id=57): [title="Tap 1 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 058 (id=58): [title="Tap 2 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 059 (id=59): [title="Tap 2 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 060 (id=60): [title="Tap 2 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 061 (id=61): [title="Tap 3 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 062 (id=62): [title="Tap 3 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 063 (id=63): [title="Tap 3 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 064 (id=64): [title="Tap 4 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 065 (id=65): [title="Tap 4 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 066 (id=66): [title="Tap 4 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 067 (id=67): [title="Tap 5 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 068 (id=68): [title="Tap 5 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 069 (id=69): [title="Tap 5 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 070 (id=70): [title="Tap 6 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 071 (id=71): [title="Tap 6 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 072 (id=72): [title="Tap 6 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 073 (id=73): [title="Tap 7 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 074 (id=74): [title="Tap 7 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 075 (id=75): [title="Tap 7 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 076 (id=76): [title="Tap 8 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 077 (id=77): [title="Tap 8 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 078 (id=78): [title="Tap 8 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 079 (id=79): [title="Tap 9 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 080 (id=80): [title="Tap 9 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 081 (id=81): [title="Tap 9 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 082 (id=82): [title="Tap 10 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 083 (id=83): [title="Tap 10 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 084 (id=84): [title="Tap 10 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 085 (id=85): [title="Tap 11 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 086 (id=86): [title="Tap 11 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 087 (id=87): [title="Tap 11 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 088 (id=88): [title="Tap 12 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 089 (id=89): [title="Tap 12 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 090 (id=90): [title="Tap 12 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 091 (id=91): [title="Tap 13 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 092 (id=92): [title="Tap 13 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 093 (id=93): [title="Tap 13 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 094 (id=94): [title="Tap 14 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 095 (id=95): [title="Tap 14 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 096 (id=96): [title="Tap 14 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 097 (id=97): [title="Tap 15 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 098 (id=98): [title="Tap 15 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 099 (id=99): [title="Tap 15 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 100 (id=100): [title="Tap 16 Filter Cutoff"] [unit="Hz"] [type = F, default = 0.566323, unit = 0]
+Info:     Parameter 101 (id=101): [title="Tap 16 Filter Resonance"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 102 (id=102): [title="Tap 16 Filter Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 103 (id=103): [title="Tap 1 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 104 (id=104): [title="Tap 2 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 105 (id=105): [title="Tap 3 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 106 (id=106): [title="Tap 4 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 107 (id=107): [title="Tap 5 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 108 (id=108): [title="Tap 6 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 109 (id=109): [title="Tap 7 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 110 (id=110): [title="Tap 8 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 111 (id=111): [title="Tap 9 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 112 (id=112): [title="Tap 10 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 113 (id=113): [title="Tap 11 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 114 (id=114): [title="Tap 12 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 115 (id=115): [title="Tap 13 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 116 (id=116): [title="Tap 14 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 117 (id=117): [title="Tap 15 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 118 (id=118): [title="Tap 16 Pitch Shift"] [unit="st"] [type = D, default = 0.500000, unit = 0]
+Info:     Parameter 119 (id=119): [title="Tap 1 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 120 (id=120): [title="Tap 2 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 121 (id=121): [title="Tap 3 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 122 (id=122): [title="Tap 4 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 123 (id=123): [title="Tap 5 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 124 (id=124): [title="Tap 6 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 125 (id=125): [title="Tap 7 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 126 (id=126): [title="Tap 8 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 127 (id=127): [title="Tap 9 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 128 (id=128): [title="Tap 10 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 129 (id=129): [title="Tap 11 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 130 (id=130): [title="Tap 12 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 131 (id=131): [title="Tap 13 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 132 (id=132): [title="Tap 14 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 133 (id=133): [title="Tap 15 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 134 (id=134): [title="Tap 16 Feedback Send"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 135 (id=135): [title="Global Dry/Wet"] [unit="%"] [type = F, default = 0.500000, unit = 0]
+Info:     Parameter 136 (id=136): [title="Delay Bypass"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 137 (id=137): [title="Discrete 1"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 138 (id=138): [title="Discrete 2"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 139 (id=139): [title="Discrete 3"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 140 (id=140): [title="Discrete 4"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 141 (id=141): [title="Discrete 5"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 142 (id=142): [title="Discrete 6"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 143 (id=143): [title="Discrete 7"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 144 (id=144): [title="Discrete 8"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 145 (id=145): [title="Discrete 9"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 146 (id=146): [title="Discrete 10"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 147 (id=147): [title="Discrete 11"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 148 (id=148): [title="Discrete 12"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 149 (id=149): [title="Discrete 13"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 150 (id=150): [title="Discrete 14"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 151 (id=151): [title="Discrete 15"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 152 (id=152): [title="Discrete 16"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 153 (id=153): [title="Discrete 17"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 154 (id=154): [title="Discrete 18"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 155 (id=155): [title="Discrete 19"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 156 (id=156): [title="Discrete 20"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 157 (id=157): [title="Discrete 21"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 158 (id=158): [title="Discrete 22"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 159 (id=159): [title="Discrete 23"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 160 (id=160): [title="Discrete 24"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 161 (id=161): [title="Macro Curve 1 Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 162 (id=162): [title="Macro Curve 2 Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 163 (id=163): [title="Macro Curve 3 Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 164 (id=164): [title="Macro Curve 4 Type"] [unit=""] [type = D, default = 0.000000, unit = 0]
+Info:     Parameter 165 (id=165): [title="Macro Knob 1"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 166 (id=166): [title="Macro Knob 2"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 167 (id=167): [title="Macro Knob 3"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 168 (id=168): [title="Macro Knob 4"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 169 (id=169): [title="Macro Knob 5"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 170 (id=170): [title="Macro Knob 6"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 171 (id=171): [title="Macro Knob 7"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 172 (id=172): [title="Macro Knob 8"] [unit="%"] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 173 (id=173): [title="Randomization Seed"] [unit=""] [type = F, default = 0.000000, unit = 0]
+Info:     Parameter 174 (id=174): [title="Randomization Amount"] [unit="%"] [type = F, default = 1.000000, unit = 0]
+Info:     Parameter 175 (id=175): [title="Randomize Trigger"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:     Parameter 176 (id=176): [title="Reset Trigger"] [unit=""] [type = T, default = 0.000000, unit = 0]
+Info:  Note: This Unit (idx=-1, id=0, name="Root") has 177 parameters: it could be better to split it in sub-units!.
+Info:  Warning: No bypass parameter found. Is this intended ?
+[Succeeded]
+
+[MIDI Mapping]
+Info:  ===MIDI Mapping ====================================
+Info:  No MIDI Mapping interface supplied!
+[Succeeded]
+
+[MIDI Learn]
+Info:  ===MIDI Learn ====================================
+Info:  No MIDI Learn interface supplied!
+[Succeeded]
+
+[Scan Units]
+Info:  ===Scan Units ====================================
+Info:  No units found, while controller implements IUnitInfo !!!
+[Succeeded]
+
+[Scan Programs]
+Info:  ===Scan Programs ====================================
+Info:  This component does not export any programs.
+[Succeeded]
+
+[Terminate/Initialize]
+Info:  ===Terminate/Initialize ====================================
+[Succeeded]
+
+[Check Unit Structure]
+Info:  ===Check Unit Structure ====================================
+Info:  No units found, while controller implements IUnitInfo !!!
+Info:  All units have valid parent IDs.
+[Succeeded]
+
+[Valid State Transition 32bits]
+Info:  ===Valid State Transition 32bits ====================================
+[Succeeded]
+
+[Valid State Transition 64bits]
+Info:  ===Valid State Transition 64bits ====================================
+Info:  64bit Audio Processing not supported.
+[Succeeded]
+
+[Bus Consistency]
+Info:  ===Bus Consistency ====================================
+[Succeeded]
+
+[Bus Activation]
+Info:  ===Bus Activation ====================================
+Info:     Bus Activation: Input Audio Bus (0) (kMain)
+Info:     Bus Activation: Output Audio Bus (0) (kMain)
+[Succeeded]
+
+[Check Audio Bus Arrangement]
+Info:  ===Check Audio Bus Arrangement ====================================
+Info:     Check Input Audio Bus Arrangement (0)
+Info:     Check Output Audio Bus Arrangement (0)
+[Succeeded]
+
+[SideChain Arrangement]
+Info:  ===SideChain Arrangement ====================================
+[Succeeded]
+
+[Suspend/Resume]
+Info:  ===Suspend/Resume ====================================
+[Succeeded]
+
+[Note Expression]
+Info:  ===Note Expression ====================================
+Info:  No Note Expression interface supplied!
+[Succeeded]
+
+[Keyswitch]
+Info:  ===Keyswitch ====================================
+Info:  No Keyswitch interface supplied!
+[Succeeded]
+
+[ProcessContext Requirements]
+Info:  ===ProcessContext Requirements ====================================
+Info:  ProcessContextRequirements:
+Info:   - None
+[Succeeded]
+
+-------------------------------------------------------------
+TestSuite : Single Precision (32 bit) Tests
+-------------------------------------------------------------
+
+[Process Test]
+[Succeeded]
+
+[Process function running in another thread]
+Info:  ===Process function running in another thread ====================================
+[Succeeded]
+
+[Silence Flags]
+Info:  ===Silence Flags ====================================
+[Succeeded]
+
+[Silence Processing]
+Info:  ===Silence Processing ====================================
+[Succeeded]
+
+[Parameters Flush (no Buffer)]
+Info:  ===Parameters Flush (no Buffer) ====================================
+[Succeeded]
+
+[Parameters Flush 2 (only numChannel==0)]
+Info:  ===Parameters Flush 2 (only numChannel==0) ====================================
+[Succeeded]
+
+[Parameters Flush 2 (no Buffer, no parameter change)]
+Info:  ===Parameters Flush 2 (no Buffer, no parameter change) ====================================
+[Succeeded]
+
+[Variable Block Size]
+Info:  ===Variable Block Size ====================================
+[Succeeded]
+
+[Process Format]
+Info:  ===Process Format ====================================
+Info:  ***Tested Sample Rates***
+Info:        22050 Hz - processed successfully!
+Info:        32000 Hz - processed successfully!
+Info:        44100 Hz - processed successfully!
+Info:        48000 Hz - processed successfully!
+Info:        88200 Hz - processed successfully!
+Info:        96000 Hz - processed successfully!
+Info:       192000 Hz - processed successfully!
+Info:       384000 Hz - processed successfully!
+Info:    1234.5678 Hz - processed successfully!
+Info:    12345.678 Hz - processed successfully!
+Info:    123456.78 Hz - processed successfully!

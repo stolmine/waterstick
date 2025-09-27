@@ -71,6 +71,12 @@ bool WaterStick::ParameterBlockingSystem::shouldBlockParameterUpdate(int32_t par
 {
     std::lock_guard<std::mutex> lock(mStateMutex);
 
+    // Phase 2 Enhancement: Check for macro bypass blocking first
+    // If macro bypass is enabled, allow macro-induced parameter updates to bypass blocking
+    if (mMacroBypassEnabled && isMacroRelatedParameter(parameterId)) {
+        return false; // Bypass blocking for macro-induced changes
+    }
+
     // Check if any user is actively controlling a parameter that affects this one
     bool shouldBlock = mUserControlledParameters.count(parameterId) > 0;
 
@@ -242,6 +248,28 @@ int32_t WaterStick::ParameterBlockingSystem::getParameterForControl(int32_t cont
     return -1; // Unknown control
 }
 
+bool WaterStick::ParameterBlockingSystem::isMacroRelatedParameter(int32_t parameterId) const
+{
+    // Phase 2 Enhancement: Identify macro-related parameters for bypass blocking
+
+    // Direct macro knob parameters
+    if (parameterId >= kMacroKnob1 && parameterId <= kMacroKnob8) {
+        return true;
+    }
+
+    // Tap parameters that can be controlled by macro knobs
+    if (parameterId >= kTap1Enable && parameterId <= kTap16FeedbackSend) {
+        return true;
+    }
+
+    // Discrete parameters that can be affected by macro operations
+    if (parameterId >= kDiscrete1 && parameterId <= kDiscrete24) {
+        return true;
+    }
+
+    return false;
+}
+
 WaterStickEditor::WaterStickEditor(Steinberg::Vst::EditController* controller)
 : VSTGUIEditor(controller)
 {
@@ -322,10 +350,14 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     updateValueReadouts();
     updateMinimapState();
 
-    // Register for parameter change notifications
+    // Register for parameter change notifications (Phase 2 Enhancement: Both legacy and advanced systems)
     WaterStickController* controller = static_cast<WaterStickController*>(getController());
     if (controller) {
+        // Legacy registration for backward compatibility
         controller->registerEditor(this);
+
+        // Phase 2 Enhancement: Advanced multi-editor registration
+        controller->registerEditorAdvanced(this);
     }
 
     return true;
@@ -333,10 +365,14 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
 
 void PLUGIN_API WaterStickEditor::close()
 {
-    // Unregister from parameter change notifications
+    // Unregister from parameter change notifications (Phase 2 Enhancement: Both legacy and advanced systems)
     WaterStickController* controller = static_cast<WaterStickController*>(getController());
     if (controller) {
+        // Legacy unregistration for backward compatibility
         controller->unregisterEditor(this);
+
+        // Phase 2 Enhancement: Advanced multi-editor unregistration
+        controller->unregisterEditorAdvanced(this);
     }
 
     if (frame)
@@ -726,6 +762,27 @@ void WaterStick::WaterStickEditor::updateValueReadouts()
 
 }
 
+void WaterStick::WaterStickEditor::updateAllMacroKnobVisuals()
+{
+    auto controller = getController();
+    if (!controller) return;
+
+    // Update all 8 macro knob visual controls with current parameter values
+    // This ensures macro knobs in unfocused contexts show accurate states
+    for (int i = 0; i < 8; i++) {
+        if (macroKnobs[i]) {
+            int macroParamId = kMacroKnob1 + i;
+            float currentValue = controller->getParamNormalized(macroParamId);
+
+            // Update the visual control value
+            macroKnobs[i]->setValue(currentValue);
+
+            // Mark for visual refresh
+            macroKnobs[i]->setDirty(true);
+        }
+    }
+}
+
 //========================================================================
 // Enhanced Parameter Update Methods
 //========================================================================
@@ -756,9 +813,13 @@ void WaterStick::WaterStickEditor::performParameterUpdate(int32_t parameterId, f
         refreshAllContextsGUIState();
         mParameterBlockingSystem.markVisualUpdateComplete();
     } else if (isMacroParameter) {
-        // Macro parameter changed - update minimap and readouts
+        // Macro parameter changed - update minimap, readouts, AND macro knob visuals
         updateMinimapState();
         updateValueReadouts();
+
+        // MACRO GUI SYNCHRONIZATION FIX: Update all macro knob visual controls
+        // This ensures macro knobs in unfocused contexts show current parameter values
+        updateAllMacroKnobVisuals();
     }
 }
 
@@ -3639,12 +3700,41 @@ VSTGUI::CMouseEventResult WaterStick::ActionButton::onMouseDown(VSTGUI::CPoint& 
 
 void WaterStick::WaterStickEditor::onParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
 {
-    // Respect parameter blocking system to prevent conflicts with user interactions
+    // Phase 2 Enhancement: Enable macro bypass blocking for macro-induced changes
+    auto controller = static_cast<WaterStickController*>(getController());
+    bool isMacroInducedChange = controller && controller->isMacroBypassBlocking();
+
+    if (isMacroInducedChange) {
+        // Enable bypass blocking for macro-induced parameter changes
+        mParameterBlockingSystem.setMacroBypassEnabled(true);
+    }
+
+    // Immediate parameter update pathway for macro-driven changes
+    // Determine if this is a tap parameter that could be macro-controlled
+    bool isTapParameter = (paramId >= kTap1Enable && paramId <= kTap16FeedbackSend);
+
+    if (isTapParameter) {
+        // For tap parameters, always allow immediate updates to fix macro synchronization
+        // This bypasses blocking system for critical cross-context updates
+        updateTapButtonForParameter(paramId, value);
+        updateMinimapForParameterChange(paramId);
+
+        // Force immediate cross-context invalidation
+        forceInvalidateAllContextViews();
+
+        // Reset macro bypass after immediate update
+        if (isMacroInducedChange) {
+            mParameterBlockingSystem.setMacroBypassEnabled(false);
+        }
+        return;
+    }
+
+    // For non-tap parameters, use existing blocking system logic
     if (mParameterBlockingSystem.shouldBlockParameterUpdate(static_cast<int32_t>(paramId))) {
         return;
     }
 
-    // Check if visual updates are throttled
+    // Check if visual updates are throttled for non-critical parameters
     if (!mParameterBlockingSystem.shouldAllowVisualUpdate()) {
         // Queue the update for later processing
         mParameterBlockingSystem.queueParameterUpdate(static_cast<int32_t>(paramId), static_cast<float>(value));
@@ -3719,6 +3809,120 @@ void WaterStick::WaterStickEditor::updateMinimapForParameterChange(Steinberg::Vs
         (paramId >= kTap1FilterType && paramId <= kTap16FilterType)) {
 
         updateMinimapState();
+    }
+}
+
+void WaterStick::WaterStickEditor::forceInvalidateAllContextViews()
+{
+    // Force immediate visual updates for all context-sensitive controls
+    // This bypasses VSTGUI batching to ensure macro-driven changes are immediately visible
+
+    // Invalidate all tap buttons across all contexts
+    for (int i = 0; i < 16; ++i) {
+        if (tapButtons[i]) {
+            TapButton* tapButton = static_cast<TapButton*>(tapButtons[i]);
+            tapButton->setDirty(true);
+
+            // Force parent container to propagate invalidation
+            if (tapButton->getParentView()) {
+                tapButton->getParentView()->setDirty(true);
+            }
+        }
+    }
+
+    // Invalidate all macro knobs for immediate visual feedback
+    for (int i = 0; i < 8; ++i) {
+        if (macroKnobs[i]) {
+            macroKnobs[i]->setDirty(true);
+
+            // Force parent container propagation
+            if (macroKnobs[i]->getParentView()) {
+                macroKnobs[i]->getParentView()->setDirty(true);
+            }
+        }
+    }
+
+    // Invalidate minimap for cross-context state changes
+    for (int i = 0; i < 16; ++i) {
+        if (minimapButtons[i]) {
+            minimapButtons[i]->setDirty(true);
+
+            // Force parent container propagation
+            if (minimapButtons[i]->getParentView()) {
+                minimapButtons[i]->getParentView()->setDirty(true);
+            }
+        }
+    }
+
+    // Force root frame invalidation to ensure all changes propagate
+    if (frame) {
+        frame->setDirty(true);
+    }
+
+    // Phase 2 Enhancement: Platform-specific immediate updates bypassing VSTGUI batching
+    triggerPlatformSpecificImmediateUpdates();
+}
+
+void WaterStick::WaterStickEditor::triggerPlatformSpecificImmediateUpdates()
+{
+    // Platform-specific immediate updates for macro context synchronization
+    // Force immediate invalidation through VSTGUI's standard interface
+    if (frame) {
+        // Force immediate frame invalidation for cross-context synchronization
+        frame->invalid();
+
+        // Additional immediate update for all child views
+        frame->setDirty(true);
+    }
+
+    // Enhanced dirty state tracking for visual efficiency
+    markAllControlsForImmediateUpdate();
+}
+
+void WaterStick::WaterStickEditor::markAllControlsForImmediateUpdate()
+{
+    // Phase 2 Enhancement: Enhanced dirty state tracking for visual efficiency
+    // Mark all context-sensitive controls as needing immediate updates
+
+    // Enhanced TapButton dirty state management
+    for (int i = 0; i < 16; ++i) {
+        if (tapButtons[i]) {
+            TapButton* tapButton = static_cast<TapButton*>(tapButtons[i]);
+
+            // Enhanced dirty state tracking with immediate invalidation
+            tapButton->setDirty(true);
+            tapButton->invalid(); // Force immediate redraw
+
+            // Cascade invalidation to parent containers
+            auto parent = tapButton->getParentView();
+            while (parent) {
+                parent->setDirty(true);
+                parent = parent->getParentView();
+            }
+        }
+    }
+
+    // Immediate macro knob visual updates
+    for (int i = 0; i < 8; ++i) {
+        if (macroKnobs[i]) {
+            macroKnobs[i]->setDirty(true);
+            macroKnobs[i]->invalid();
+
+            // Cascade to parent containers
+            auto parent = macroKnobs[i]->getParentView();
+            while (parent) {
+                parent->setDirty(true);
+                parent = parent->getParentView();
+            }
+        }
+    }
+
+    // Immediate minimap updates for cross-context visualization
+    for (int i = 0; i < 16; ++i) {
+        if (minimapButtons[i]) {
+            minimapButtons[i]->setDirty(true);
+            minimapButtons[i]->invalid();
+        }
     }
 }
 

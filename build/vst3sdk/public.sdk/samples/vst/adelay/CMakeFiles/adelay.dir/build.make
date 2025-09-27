@@ -183,34 +183,31 @@ adelay_OBJECTS = \
 # External object files for target adelay
 adelay_EXTERNAL_OBJECTS =
 
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/adelaycontroller.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/adelayprocessor.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/exampletest.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/factory.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/__/__/__/source/vst/utility/test/ringbuffertest.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/__/__/__/source/vst/utility/test/versionparsertest.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/__/__/__/source/main/macmain.cpp.o
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build.make
-VST3/adelay.vst3/Contents/MacOS/adelay: lib/libsdk.a
-VST3/adelay.vst3/Contents/MacOS/adelay: lib/libsdk_common.a
-VST3/adelay.vst3/Contents/MacOS/adelay: lib/libbase.a
-VST3/adelay.vst3/Contents/MacOS/adelay: lib/libpluginterfaces.a
-VST3/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX CFBundle shared module ../../../../../VST3/adelay.vst3/Contents/MacOS/adelay"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//adelay.vst3/Contents/Resources
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/adelaycontroller.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/adelayprocessor.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/exampletest.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/source/factory.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/__/__/__/source/vst/utility/test/ringbuffertest.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/__/__/__/source/vst/utility/test/versionparsertest.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build.make
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: lib/Release/libsdk.a
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: lib/Release/libsdk_common.a
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: lib/Release/libbase.a
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: lib/Release/libpluginterfaces.a
+VST3/Release/adelay.vst3/Contents/MacOS/adelay: vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX CFBundle shared module ../../../../../VST3/Release/adelay.vst3/Contents/MacOS/adelay"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/adelay.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/adelay.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//adelay.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//adelay.vst3 -output /Users/why/repos/waterstick/build/VST3//adelay.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//adelay.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/adelay.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/adelay.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/adelay.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/adelay.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && ln -svfF /Users/why/repos/waterstick/build/VST3//adelay.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/adelay.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/adelay && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/adelay.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/adelay.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build: VST3/adelay.vst3/Contents/MacOS/adelay
+vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build: VST3/Release/adelay.vst3/Contents/MacOS/adelay
 .PHONY : vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/build
 
 vst3sdk/public.sdk/samples/vst/adelay/CMakeFiles/adelay.dir/clean:
