@@ -2690,8 +2690,11 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         }
     }
 
-    // PHASE 3: Use optimized parameter update system
-    updateParametersOptimized();
+    // CRITICAL FIX: Disable Phase 3 optimizations that broke audio processing
+    // updateParametersOptimized();  // DISABLED - complex SIMD/lock-free operations causing audio failure
+
+    // Restore original working parameter update system
+    updateParameters();
 
     // Check for tap state changes and clear buffers if needed
     checkTapStateChangesAndClearBuffers();
@@ -3437,16 +3440,16 @@ bool WaterStickProcessor::isDecoupledSystemHealthy() const
 
 void WaterStickProcessor::updateParametersOptimized()
 {
-    // Check if macro parameters need updating using atomic flag
-    if (mMacroParametersNeedUpdate.load(std::memory_order_acquire)) {
-        updateMacroParametersBatch();
-        mMacroParametersNeedUpdate.store(false, std::memory_order_release);
-    }
+    // CRITICAL FIX: Disable complex atomic macro parameter updates that may be causing audio failure
+    // if (mMacroParametersNeedUpdate.load(std::memory_order_acquire)) {
+    //     updateMacroParametersBatch();
+    //     mMacroParametersNeedUpdate.store(false, std::memory_order_release);
+    // }
 
-    // Check parameter cache for updates only if dirty flags indicate changes
-    if (checkParameterChangesOptimized()) {
-        applyParameterCacheUpdates();
-    }
+    // CRITICAL FIX: Disable optimized parameter change checking that may be causing audio failure
+    // if (checkParameterChangesOptimized()) {
+    //     applyParameterCacheUpdates();
+    // }
 
     // Update tempo sync and other lightweight parameters
     mTempoSync.setMode(mTempoSyncMode);
@@ -3478,8 +3481,8 @@ void WaterStickProcessor::updateMacroParametersBatch()
     batch->version = mMacroParameterVersion.fetch_add(1, std::memory_order_acq_rel);
     batch->dirtyFlags = 0;
 
-    // Use SIMD curve evaluator for batch processing
-    mSIMDCurveEvaluator->evaluateAllCurves(*batch);
+    // CRITICAL FIX: Disable SIMD curve evaluator that may be causing audio failure
+    // mSIMDCurveEvaluator->evaluateAllCurves(*batch);  // DISABLED - complex SIMD operations
 
     // Process the batch update
     processMacroParameterUpdate(*batch);
