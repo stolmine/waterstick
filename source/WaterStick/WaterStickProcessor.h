@@ -609,6 +609,24 @@ private:
     void applyParameterSmoothing();
     float evaluateMacroCurve(int curveType, float input) const;
 
+    // Processor-side macro curve evaluation system
+    void applyMacroCurvesToTapParameters();
+    float getGlobalCurveValueForTap(int discretePosition, int tapIndex) const;
+    float getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const;
+    void applyMacroKnobToTapParameter(int macroKnobIndex, int tapContext);
+    void applyMacroKnobToAllTaps(int macroKnobIndex, int tapContext);
+
+    // Rainmaker curve evaluation (matching controller implementation)
+    float evaluateRampUp(float x) const;
+    float evaluateRampDown(float x) const;
+    float evaluateSigmoidSCurve(float x) const;
+    float evaluateInverseSigmoid(float x) const;
+    float evaluateExpUp(float x) const;
+    float evaluateExpDown(float x) const;
+
+    // Current tap context for macro curve application (matches controller state)
+    int mCurrentTapContext;
+
 public:
     // Access discrete parameters with smoothing
     float getSmoothedDiscreteParameter(int index) const;

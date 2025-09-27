@@ -1798,6 +1798,9 @@ WaterStickProcessor::WaterStickProcessor()
         mMacroKnobValues[i] = 0.0f; // Default to 0.0
     }
 
+    // Initialize current tap context (default to Volume)
+    mCurrentTapContext = 1; // TapContext::Volume
+
     // Phase 4: Initialize unified delay line system flag
     // Production default: unified system (legacy kept as emergency fallback)
     mUseUnifiedDelayLines = true;
@@ -2636,7 +2639,7 @@ void WaterStickProcessor::updateDiscreteParameters()
 
 void WaterStickProcessor::applyCurveEvaluation()
 {
-    // Apply macro curves to discrete parameters for immediate response
+    // Phase 1: Apply macro curves to legacy discrete parameters for backward compatibility
     for (int i = 0; i < 24; i++) {
         float rawValue = mDiscreteParameters[i];
 
@@ -2646,6 +2649,9 @@ void WaterStickProcessor::applyCurveEvaluation()
             mDiscreteParameters[i] = curvedValue;
         }
     }
+
+    // Phase 2: Apply macro curves to tap parameters using Rainmaker-style global curve system
+    applyMacroCurvesToTapParameters();
 }
 
 void WaterStickProcessor::applyParameterSmoothing()
@@ -2685,6 +2691,175 @@ float WaterStickProcessor::evaluateMacroCurve(int curveType, float input) const
         default:
             return x; // Default to linear
     }
+}
+
+//------------------------------------------------------------------------
+// Processor-side Macro Curve Evaluation System
+// This system mirrors the controller's MacroCurveSystem but applies curves
+// directly to DSP parameter arrays instead of sending VST parameter updates
+//------------------------------------------------------------------------
+
+void WaterStickProcessor::applyMacroCurvesToTapParameters()
+{
+    // Apply each macro knob to its corresponding tap context
+    // Macro knobs 0-7 correspond to tap contexts 0-7
+    for (int macroKnobIndex = 0; macroKnobIndex < 8; macroKnobIndex++) {
+        float macroValue = mMacroKnobValues[macroKnobIndex];
+
+        // Only apply if macro knob has a meaningful value (not zero)
+        if (macroValue > 0.001f) {
+            applyMacroKnobToAllTaps(macroKnobIndex, macroKnobIndex); // Knob index = context index
+        }
+    }
+}
+
+void WaterStickProcessor::applyMacroKnobToAllTaps(int macroKnobIndex, int tapContext)
+{
+    if (macroKnobIndex < 0 || macroKnobIndex >= 8 || tapContext < 0 || tapContext >= 8) {
+        return;
+    }
+
+    float macroValue = mMacroKnobValues[macroKnobIndex];
+
+    // Apply macro value to all 16 taps for the specified context
+    for (int tapIndex = 0; tapIndex < 16; tapIndex++) {
+        float curveValue = getGlobalCurveValueForTapContinuous(macroValue, tapIndex);
+
+        // Apply the curve value to the appropriate parameter based on context
+        switch (tapContext) {
+            case 0: // Enable
+                // For enable, use quantized value (0.0 or 1.0)
+                mTapEnabled[tapIndex] = (curveValue >= 0.5f);
+                break;
+            case 1: // Volume
+                mTapLevel[tapIndex] = curveValue;
+                break;
+            case 2: // Pan
+                // Pan is bipolar: 0.5 = center, 0.0 = left, 1.0 = right
+                mTapPan[tapIndex] = curveValue;
+                break;
+            case 3: // FilterCutoff
+                mTapFilterCutoff[tapIndex] = curveValue;
+                break;
+            case 4: // FilterResonance
+                mTapFilterResonance[tapIndex] = curveValue;
+                break;
+            case 5: // FilterType
+                {
+                    // Quantize to valid discrete filter type values (0-4)
+                    float clampedValue = std::max(0.0f, std::min(1.0f, curveValue));
+                    int filterType = static_cast<int>(std::floor(clampedValue * 5.0f));
+                    if (filterType >= 5) filterType = 4; // Handle boundary case
+                    mTapFilterType[tapIndex] = filterType;
+                }
+                break;
+            case 6: // PitchShift
+                {
+                    // Convert curve value (0.0-1.0) to semitones (-12 to +12)
+                    int semitones = static_cast<int>((curveValue * 2.0f - 1.0f) * 12.0f + 0.5f);
+                    semitones = std::max(-12, std::min(12, semitones));
+                    mTapPitchShift[tapIndex] = semitones;
+                }
+                break;
+            case 7: // FeedbackSend
+                mTapFeedbackSend[tapIndex] = curveValue;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+float WaterStickProcessor::getGlobalCurveValueForTap(int discretePosition, int tapIndex) const
+{
+    if (tapIndex < 0 || tapIndex >= 16) return 0.0f;
+
+    // Normalize tap index to 0.0-1.0 for curve evaluation
+    const float normalizedPosition = static_cast<float>(tapIndex) / 15.0f; // 0-15 maps to 0.0-1.0
+
+    switch (discretePosition) {
+        case 0: // Ramp up curve
+            return evaluateRampUp(normalizedPosition);
+        case 1: // Ramp down curve
+            return evaluateRampDown(normalizedPosition);
+        case 2: // S-curve sigmoid
+            return evaluateSigmoidSCurve(normalizedPosition);
+        case 3: // S-curve inverted
+            return evaluateInverseSigmoid(normalizedPosition);
+        case 4: // Exponential up
+            return evaluateExpUp(normalizedPosition);
+        case 5: // Exponential down
+            return evaluateExpDown(normalizedPosition);
+        case 6: // Uniform level 70%
+            return 0.7f;
+        case 7: // Uniform level 100%
+            return 1.0f;
+        default:
+            return normalizedPosition; // Linear fallback
+    }
+}
+
+float WaterStickProcessor::getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const
+{
+    if (tapIndex < 0 || tapIndex >= 16) return 0.0f;
+
+    // Clamp input to valid range [0.0, 1.0]
+    float clampedValue = std::max(0.0f, std::min(1.0f, continuousValue));
+
+    // Smooth interpolation between different curve types based on continuous value
+    // Scale continuous value to range [0, 7] for 8 curve positions
+    float scaledValue = clampedValue * 7.0f;
+    int lowerIndex = static_cast<int>(std::floor(scaledValue));
+    int upperIndex = static_cast<int>(std::ceil(scaledValue));
+
+    // Handle boundary case where clampedValue = 1.0 exactly
+    if (lowerIndex >= 7) lowerIndex = 7;
+    if (upperIndex >= 8) upperIndex = 7;
+
+    float lowerWeight = static_cast<float>(upperIndex) - scaledValue;
+    float upperWeight = 1.0f - lowerWeight;
+
+    // Get curve values for lower and upper positions
+    float lowerCurveValue = getGlobalCurveValueForTap(lowerIndex, tapIndex);
+    float upperCurveValue = getGlobalCurveValueForTap(upperIndex, tapIndex);
+
+    // Linear interpolation between curve values
+    return lowerCurveValue * lowerWeight + upperCurveValue * upperWeight;
+}
+
+// Rainmaker-style curve implementations (matching controller)
+float WaterStickProcessor::evaluateRampUp(float x) const
+{
+    return x; // Linear ramp up
+}
+
+float WaterStickProcessor::evaluateRampDown(float x) const
+{
+    return 1.0f - x; // Linear ramp down
+}
+
+float WaterStickProcessor::evaluateSigmoidSCurve(float x) const
+{
+    // S-curve using sigmoid function
+    return 0.5f * (1.0f + std::tanh(4.0f * (x - 0.5f)));
+}
+
+float WaterStickProcessor::evaluateInverseSigmoid(float x) const
+{
+    // Inverse S-curve (U-shape)
+    return 1.0f - evaluateSigmoidSCurve(x);
+}
+
+float WaterStickProcessor::evaluateExpUp(float x) const
+{
+    // Exponential curve (slow start, fast end)
+    return x * x;
+}
+
+float WaterStickProcessor::evaluateExpDown(float x) const
+{
+    // Inverse exponential curve (fast start, slow end)
+    return 1.0f - (1.0f - x) * (1.0f - x);
 }
 
 float WaterStickProcessor::getSmoothedDiscreteParameter(int index) const
