@@ -322,11 +322,23 @@ bool PLUGIN_API WaterStickEditor::open(void* parent, const VSTGUI::PlatformType&
     updateValueReadouts();
     updateMinimapState();
 
+    // Register for parameter change notifications
+    WaterStickController* controller = static_cast<WaterStickController*>(getController());
+    if (controller) {
+        controller->registerEditor(this);
+    }
+
     return true;
 }
 
 void PLUGIN_API WaterStickEditor::close()
 {
+    // Unregister from parameter change notifications
+    WaterStickController* controller = static_cast<WaterStickController*>(getController());
+    if (controller) {
+        controller->unregisterEditor(this);
+    }
+
     if (frame)
     {
         frame->forget();
@@ -3120,11 +3132,12 @@ void WaterStick::WaterStickEditor::handleGlobalMacroKnobChange(float continuousV
                 }
             }
 
-            // Update display if this tap button is showing the affected context
+            // Always update display for consistency with parameter notification system
+            // This ensures all context changes are immediately visible
             if (tapButton->getContext() == currentCtx) {
                 tapButton->setValue(curveValue);
-                tapButton->invalid();
             }
+            tapButton->invalid();
         }
     }
 
@@ -3151,8 +3164,8 @@ void WaterStick::WaterStickEditor::handleRandomizeAction(int columnIndex)
             tapButton->setContextValue(assignedCtx, randomValue);
             if (tapButton->getContext() == assignedCtx) {
                 tapButton->setValue(randomValue);
-                tapButton->invalid();
             }
+            tapButton->invalid();
 
             int paramId = getTapParameterIdForContext(tapIndex, assignedCtx);
             if (paramId >= 0) {
@@ -3185,8 +3198,8 @@ void WaterStick::WaterStickEditor::handleResetAction(int columnIndex)
             tapButton->setContextValue(assignedCtx, defaultValue);
             if (tapButton->getContext() == assignedCtx) {
                 tapButton->setValue(defaultValue);
-                tapButton->invalid();
             }
+            tapButton->invalid();
 
             int paramId = getTapParameterIdForContext(tapIndex, assignedCtx);
             if (paramId >= 0) {
@@ -3618,6 +3631,95 @@ VSTGUI::CMouseEventResult WaterStick::ActionButton::onMouseDown(VSTGUI::CPoint& 
         return VSTGUI::kMouseEventHandled;
     }
     return VSTGUI::kMouseEventNotHandled;
+}
+
+//========================================================================
+// WaterStickEditor Parameter Notification Implementation
+//========================================================================
+
+void WaterStick::WaterStickEditor::onParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
+{
+    // Respect parameter blocking system to prevent conflicts with user interactions
+    if (mParameterBlockingSystem.shouldBlockParameterUpdate(static_cast<int32_t>(paramId))) {
+        return;
+    }
+
+    // Check if visual updates are throttled
+    if (!mParameterBlockingSystem.shouldAllowVisualUpdate()) {
+        // Queue the update for later processing
+        mParameterBlockingSystem.queueParameterUpdate(static_cast<int32_t>(paramId), static_cast<float>(value));
+        return;
+    }
+
+    // Update GUI elements based on parameter type
+    updateTapButtonForParameter(paramId, value);
+    updateMinimapForParameterChange(paramId);
+
+    // Mark visual update as complete for throttling
+    mParameterBlockingSystem.markVisualUpdateComplete();
+}
+
+void WaterStick::WaterStickEditor::updateTapButtonForParameter(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
+{
+    // Determine if this is a tap parameter
+    if (paramId >= kTap1Enable && paramId <= kTap16FeedbackSend) {
+        // Calculate tap index (0-15) and context
+        int tapIndex = -1;
+        TapContext context = TapContext::Enable;
+
+        // Map parameter ID to tap index and context
+        // Enable/Level/Pan parameters are in groups of 3 per tap
+        if (paramId >= kTap1Enable && paramId <= kTap16Pan) {
+            int relativeId = static_cast<int>(paramId - kTap1Enable);
+            tapIndex = relativeId / 3;  // 3 parameters per tap
+            int paramInTap = relativeId % 3;
+            if (paramInTap == 0) context = TapContext::Enable;        // Enable
+            else if (paramInTap == 1) context = TapContext::Volume;   // Level
+            else context = TapContext::Pan;                           // Pan
+        }
+        // Filter parameters are grouped together
+        else if (paramId >= kTap1FilterCutoff && paramId <= kTap16FilterType) {
+            int relativeId = static_cast<int>(paramId - kTap1FilterCutoff);
+            tapIndex = relativeId / 3;  // 3 filter parameters per tap
+            int paramInTap = relativeId % 3;
+            if (paramInTap == 0) context = TapContext::FilterCutoff;     // Cutoff
+            else if (paramInTap == 1) context = TapContext::FilterResonance; // Resonance
+            else context = TapContext::FilterType;                      // Type
+        }
+        // Pitch shift parameters are sequential
+        else if (paramId >= kTap1PitchShift && paramId <= kTap16PitchShift) {
+            tapIndex = static_cast<int>(paramId - kTap1PitchShift);
+            context = TapContext::PitchShift;
+        }
+        // Feedback send parameters are sequential
+        else if (paramId >= kTap1FeedbackSend && paramId <= kTap16FeedbackSend) {
+            tapIndex = static_cast<int>(paramId - kTap1FeedbackSend);
+            context = TapContext::FeedbackSend;
+        }
+
+        if (tapIndex >= 0 && tapIndex < 16) {
+            // Update the tap button's context value
+            TapButton* tapButton = static_cast<TapButton*>(tapButtons[tapIndex]);
+            if (tapButton) {
+                tapButton->setContextValue(context, static_cast<float>(value));
+
+                // Always invalidate the button regardless of current context
+                // This ensures cross-context parameter changes (macro knobs, automation)
+                // are immediately visible even when user is focused on a different context
+                tapButton->invalid();
+            }
+        }
+    }
+}
+
+void WaterStick::WaterStickEditor::updateMinimapForParameterChange(Steinberg::Vst::ParamID paramId)
+{
+    // Update minimap if enable or filter parameters changed
+    if ((paramId >= kTap1Enable && paramId <= kTap16Enable) ||
+        (paramId >= kTap1FilterType && paramId <= kTap16FilterType)) {
+
+        updateMinimapState();
+    }
 }
 
 // } // namespace WaterStick
