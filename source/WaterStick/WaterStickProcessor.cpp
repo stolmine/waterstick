@@ -2450,10 +2450,8 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
         }
     }
 
-    if (mDelayBypass && !mDelayFadingOut && !mDelayFadingIn) {
-        outputL = inputL;
-        outputR = inputR;
-    }
+    // NOTE: Bypass logic moved to main processing loop for proper scope
+    // This section now only handles delay processing - bypass is handled upstream
 }
 
 
@@ -2810,6 +2808,19 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         float inL = inputL[sample];
         float inR = inputR[sample];
 
+        // BYPASS SCOPE FIX: Check bypass state at the top level
+        if (mDelayBypass && !mDelayFadingOut && !mDelayFadingIn) {
+            // TRUE BYPASS: Direct input to output, no processing, no feedback accumulation
+            outputL[sample] = inL * mOutputGain;
+            outputR[sample] = inR * mOutputGain;
+
+            // Clear feedback buffers during bypass to prevent accumulation
+            mFeedbackBufferL = 0.0f;
+            mFeedbackBufferR = 0.0f;
+            continue;
+        }
+
+        // Normal processing path (bypass is OFF)
         float inputWithFeedbackL = inL + (mFeedbackBufferL * mFeedback);
         float inputWithFeedbackR = inR + (mFeedbackBufferR * mFeedback);
 
