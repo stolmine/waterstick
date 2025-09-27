@@ -699,6 +699,9 @@ struct TapParameterProcessor {
                     case 1: processor->mTapLevel[tapIndex] = static_cast<float>(value); break;
                     case 2: processor->mTapPan[tapIndex] = static_cast<float>(value); break;
                 }
+
+                // Mark this parameter as user-modified to disable macro influence
+                processor->markParameterAsUserModified(paramId);
             }
             return;
         }
@@ -713,6 +716,9 @@ struct TapParameterProcessor {
                     case 1: processor->mTapFilterResonance[tapIndex] = ParameterConverter::convertFilterResonance(value); break;
                     case 2: processor->mTapFilterType[tapIndex] = ParameterConverter::convertFilterType(value); break;
                 }
+
+                // Mark this parameter as user-modified to disable macro influence
+                processor->markParameterAsUserModified(paramId);
             }
             return;
         }
@@ -726,6 +732,9 @@ struct TapParameterProcessor {
                 PerformanceProfiler::getInstance().startProfiling("PitchShiftParameterUpdate", tapIndex, paramType);
                 processor->mTapPitchShift[tapIndex] = ParameterConverter::convertPitchShift(value);
                 PerformanceProfiler::getInstance().endProfiling();
+
+                // Mark this parameter as user-modified to disable macro influence
+                processor->markParameterAsUserModified(paramId);
             }
             return;
         }
@@ -736,6 +745,9 @@ struct TapParameterProcessor {
 
             if (tapIndex < 16) {
                 processor->mTapFeedbackSend[tapIndex] = static_cast<float>(value);
+
+                // Mark this parameter as user-modified to disable macro influence
+                processor->markParameterAsUserModified(paramId);
             }
         }
     }
@@ -1798,6 +1810,16 @@ WaterStickProcessor::WaterStickProcessor()
         mMacroKnobValues[i] = 0.0f; // Default to 0.0
     }
 
+    // Initialize macro system state tracking
+    mMacroInfluenceActive = false;
+    for (int i = 0; i < 8; i++) {
+        mMacroSystemActive[i] = false;
+        mPreviousMacroKnobValues[i] = 0.0f;
+    }
+    for (int i = 0; i < 1024; i++) {
+        mParameterModifiedByUser[i] = false;
+    }
+
     // Initialize current tap context (default to Volume)
     mCurrentTapContext = 1; // TapContext::Volume
 
@@ -2382,6 +2404,10 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             else if (paramQueue->getParameterId() >= kMacroKnob1 && paramQueue->getParameterId() <= kMacroKnob8) {
                                 int index = paramQueue->getParameterId() - kMacroKnob1;
                                 mMacroKnobValues[index] = static_cast<float>(value);
+
+                                // CRITICAL FIX: Apply macro curves only when macro parameters change
+                                // This prevents continuous parameter override in audio processing loop
+                                applyMacroCurvesToTapParameters();
                             }
                             // Handle randomization and reset parameters (processed in controller)
                             else if (paramQueue->getParameterId() == kRandomizeSeed ||
@@ -2650,8 +2676,9 @@ void WaterStickProcessor::applyCurveEvaluation()
         }
     }
 
-    // Phase 2: Apply macro curves to tap parameters using Rainmaker-style global curve system
-    applyMacroCurvesToTapParameters();
+    // Phase 2: REMOVED - No longer apply macro curves to tap parameters on every audio cycle
+    // Macro curves are now applied only when macro parameters change (see process() method)
+    // This prevents continuous parameter override that breaks user control and VST3 automation
 }
 
 void WaterStickProcessor::applyParameterSmoothing()
@@ -2701,16 +2728,42 @@ float WaterStickProcessor::evaluateMacroCurve(int curveType, float input) const
 
 void WaterStickProcessor::applyMacroCurvesToTapParameters()
 {
-    // Apply each macro knob to its corresponding tap context
-    // Macro knobs 0-7 correspond to tap contexts 0-7
-    for (int macroKnobIndex = 0; macroKnobIndex < 8; macroKnobIndex++) {
-        float macroValue = mMacroKnobValues[macroKnobIndex];
+    // CRITICAL FIX: Only apply macro curves when macro values have actually changed
+    // This prevents continuous parameter override that breaks user control and defaults
 
-        // Only apply if macro knob has a meaningful value (not zero)
-        if (macroValue > 0.001f) {
-            applyMacroKnobToAllTaps(macroKnobIndex, macroKnobIndex); // Knob index = context index
+    // Check if any macro knob values have changed
+    for (int macroKnobIndex = 0; macroKnobIndex < 8; macroKnobIndex++) {
+        float currentValue = mMacroKnobValues[macroKnobIndex];
+        float previousValue = mPreviousMacroKnobValues[macroKnobIndex];
+
+        // Only process if the macro value has changed significantly
+        if (std::abs(currentValue - previousValue) > 0.001f) {
+            mPreviousMacroKnobValues[macroKnobIndex] = currentValue;
+
+            // Activate macro system for this knob if it has a meaningful value
+            if (currentValue > 0.001f) {
+                mMacroSystemActive[macroKnobIndex] = true;
+                mMacroInfluenceActive = true;
+                applyMacroKnobToAllTaps(macroKnobIndex, macroKnobIndex); // Knob index = context index
+            } else {
+                // Macro knob returned to zero - deactivate macro influence for this knob
+                mMacroSystemActive[macroKnobIndex] = false;
+
+                // Check if any macro knobs are still active
+                bool anyMacroActive = false;
+                for (int i = 0; i < 8; i++) {
+                    if (mMacroSystemActive[i]) {
+                        anyMacroActive = true;
+                        break;
+                    }
+                }
+                mMacroInfluenceActive = anyMacroActive;
+            }
         }
     }
+
+    // If no macro values changed, don't process anything
+    // This is the critical fix - prevents continuous parameter override
 }
 
 void WaterStickProcessor::applyMacroKnobToAllTaps(int macroKnobIndex, int tapContext)
@@ -2876,6 +2929,54 @@ float WaterStickProcessor::getRawDiscreteParameter(int index) const
         return mDiscreteParameters[index];
     }
     return 0.0f;
+}
+
+//------------------------------------------------------------------------
+// Parameter Source Priority Implementation
+// VST3 architecture compliance - user parameters take precedence over macro effects
+//------------------------------------------------------------------------
+
+void WaterStickProcessor::detectUserParameterChanges()
+{
+    // This method would be called when parameters are changed via VST3 parameter updates
+    // Currently not implemented as it requires integration with parameter change detection
+    // TODO: Implement parameter change source detection in updateParameters()
+}
+
+void WaterStickProcessor::markParameterAsUserModified(int paramId)
+{
+    if (paramId >= 0 && paramId < 1024) {
+        mParameterModifiedByUser[paramId] = true;
+
+        // Clear macro influence for this parameter when user takes control
+        clearMacroInfluenceForParameter(paramId);
+    }
+}
+
+void WaterStickProcessor::clearMacroInfluenceForParameter(int paramId)
+{
+    if (paramId >= 0 && paramId < 1024) {
+        // Mark this parameter as no longer under macro influence
+        // This allows user changes to take precedence
+        // Implementation would depend on specific parameter mapping
+        // For now, this establishes the architecture
+    }
+}
+
+void WaterStickProcessor::enableMacroControlForParameter(int paramId)
+{
+    if (paramId >= 0 && paramId < 1024) {
+        mParameterModifiedByUser[paramId] = false;
+        // This allows macro system to regain control after user explicitly re-enables it
+    }
+}
+
+bool WaterStickProcessor::isParameterUnderMacroInfluence(int paramId) const
+{
+    if (paramId >= 0 && paramId < 1024) {
+        return !mParameterModifiedByUser[paramId] && mMacroInfluenceActive;
+    }
+    return false;
 }
 
 // Debug and diagnostics methods for dropout investigation

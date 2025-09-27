@@ -501,6 +501,12 @@ private:
     // Macro knob values (8 macro knobs)
     float mMacroKnobValues[8];
 
+    // Macro system state tracking for conditional evaluation
+    bool mMacroSystemActive[8];           // Track which macro knobs are actively controlling parameters
+    bool mMacroInfluenceActive;           // Global flag to control macro system activation
+    bool mParameterModifiedByUser[1024];  // Track which parameters have been manually modified
+    float mPreviousMacroKnobValues[8];    // Track previous macro knob values for change detection
+
     float mGlobalDryWet;
     bool mDelayBypass;
 
@@ -626,6 +632,13 @@ private:
 
     // Current tap context for macro curve application (matches controller state)
     int mCurrentTapContext;
+
+    // Parameter source priority methods
+    void detectUserParameterChanges();
+    void markParameterAsUserModified(int paramId);
+    void clearMacroInfluenceForParameter(int paramId);
+    void enableMacroControlForParameter(int paramId);
+    bool isParameterUnderMacroInfluence(int paramId) const;
 
 public:
     // Access discrete parameters with smoothing
