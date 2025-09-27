@@ -138,7 +138,15 @@
       "Bash(/usr/bin/c++:*)",
       "Bash(./validator:*)",
       "Bash(/Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator/validator -e /Library/Audio/Plug-Ins/VST3/WaterStick.vst3)",
-      "Bash(/Users/why/repos/waterstick/build/bin/validator:*)"
+      "Bash(/Users/why/repos/waterstick/build/bin/validator:*)",
+      "Bash(/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/WaterStick.dir/link.txt --verbose=1)",
+      "Bash(/Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 1.0.0 -path /Users/why/repos/waterstick/build/VST3/WaterStick.vst3 -output /Users/why/repos/waterstick/build/VST3/WaterStick.vst3/Contents/Resources/moduleinfo.json)",
+      "Bash(./bin/Release/validator:*)",
+      "Read(//usr/local/bin/**)",
+      "Bash(./macro_validation_test)",
+      "Bash(./bin/Release/moduleinfotool:*)",
+      "Bash(pkill:*)",
+      "Bash(gtimeout:*)"
     ],
     "deny": [],
     "ask": []

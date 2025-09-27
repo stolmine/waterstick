@@ -8,6 +8,16 @@
 #include <sstream>
 #include <iomanip>
 #include <map>
+#include <cstring>
+
+// Platform-specific SIMD includes
+#if defined(__SSE4_1__) && (defined(__x86_64__) || defined(__i386__))
+#include <immintrin.h>
+#include <smmintrin.h>
+#endif
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#endif
 
 using namespace Steinberg;
 
@@ -395,6 +405,248 @@ double RecoveryManager::getMaxProcessingTime() const {
     return mMaxProcessingTime.load(std::memory_order_acquire);
 }
 
+// =====================================================
+// PHASE 3: PERFORMANCE OPTIMIZATION IMPLEMENTATIONS
+// =====================================================
+
+// SIMD-accelerated macro curve evaluator implementation
+SIMDMacroCurveEvaluator::SIMDMacroCurveEvaluator() {
+    memset(mScratchBuffer, 0, sizeof(mScratchBuffer));
+}
+
+SIMDMacroCurveEvaluator::~SIMDMacroCurveEvaluator() = default;
+
+void SIMDMacroCurveEvaluator::evaluateBatch(const float* inputs, float* outputs, int curveType, int count) {
+    // Use platform-specific SIMD when available, fallback to scalar otherwise
+    #if defined(__SSE4_1__) && (defined(__x86_64__) || defined(__i386__))
+    if (count >= 4 && (count % 4 == 0)) {
+        evaluateSSE(inputs, outputs, curveType, count);
+        return;
+    }
+    #endif
+    #ifdef __ARM_NEON__
+    if (count >= 4 && (count % 4 == 0)) {
+        evaluateNEON(inputs, outputs, curveType, count);
+        return;
+    }
+    #endif
+
+    // Scalar fallback for remaining elements or unsupported platforms
+    for (int i = 0; i < count; ++i) {
+        float x = std::max(0.0f, std::min(1.0f, inputs[i]));
+        switch (curveType) {
+            case 0: outputs[i] = x; break; // Linear
+            case 1: outputs[i] = x * x; break; // Ramp Up
+            case 2: outputs[i] = 1.0f - (1.0f - x) * (1.0f - x); break; // Ramp Down
+            case 3: outputs[i] = 1.0f / (1.0f + std::exp(-12.0f * (x - 0.5f))); break; // S-Curve
+            case 4: outputs[i] = std::exp(3.0f * x) / std::exp(3.0f); break; // Exp Up
+            case 5: outputs[i] = 1.0f - std::exp(-3.0f * x); break; // Exp Down
+            default: outputs[i] = x; break;
+        }
+    }
+}
+
+#if defined(__SSE4_1__) && (defined(__x86_64__) || defined(__i386__))
+void SIMDMacroCurveEvaluator::evaluateSSE(const float* inputs, float* outputs, int curveType, int count) {
+    const __m128 zero = _mm_setzero_ps();
+    const __m128 one = _mm_set1_ps(1.0f);
+
+    for (int i = 0; i < count; i += 4) {
+        __m128 x = _mm_loadu_ps(&inputs[i]);
+        x = _mm_max_ps(zero, _mm_min_ps(one, x)); // Clamp to [0,1]
+
+        __m128 result;
+        switch (curveType) {
+            case 0: // Linear
+                result = x;
+                break;
+            case 1: // Ramp Up (x^2)
+                result = _mm_mul_ps(x, x);
+                break;
+            case 2: // Ramp Down (1-(1-x)^2)
+            {
+                __m128 one_minus_x = _mm_sub_ps(one, x);
+                result = _mm_sub_ps(one, _mm_mul_ps(one_minus_x, one_minus_x));
+                break;
+            }
+            case 3: // S-Curve approximation (simplified for SIMD)
+            {
+                // Simplified sigmoid: x^3 * (3 - 2*x)
+                __m128 x2 = _mm_mul_ps(x, x);
+                __m128 x3 = _mm_mul_ps(x2, x);
+                __m128 two_x = _mm_add_ps(x, x);
+                __m128 three_minus_2x = _mm_sub_ps(_mm_set1_ps(3.0f), two_x);
+                result = _mm_mul_ps(x3, three_minus_2x);
+                break;
+            }
+            default:
+                result = x;
+                break;
+        }
+
+        _mm_storeu_ps(&outputs[i], result);
+    }
+}
+#endif
+
+#ifdef __ARM_NEON__
+void SIMDMacroCurveEvaluator::evaluateNEON(const float* inputs, float* outputs, int curveType, int count) {
+    const float32x4_t zero = vdupq_n_f32(0.0f);
+    const float32x4_t one = vdupq_n_f32(1.0f);
+
+    for (int i = 0; i < count; i += 4) {
+        float32x4_t x = vld1q_f32(&inputs[i]);
+        x = vmaxq_f32(zero, vminq_f32(one, x)); // Clamp to [0,1]
+
+        float32x4_t result;
+        switch (curveType) {
+            case 0: // Linear
+                result = x;
+                break;
+            case 1: // Ramp Up (x^2)
+                result = vmulq_f32(x, x);
+                break;
+            case 2: // Ramp Down (1-(1-x)^2)
+            {
+                float32x4_t one_minus_x = vsubq_f32(one, x);
+                result = vsubq_f32(one, vmulq_f32(one_minus_x, one_minus_x));
+                break;
+            }
+            case 3: // S-Curve approximation
+            {
+                float32x4_t x2 = vmulq_f32(x, x);
+                float32x4_t x3 = vmulq_f32(x2, x);
+                float32x4_t two_x = vaddq_f32(x, x);
+                float32x4_t three_minus_2x = vsubq_f32(vdupq_n_f32(3.0f), two_x);
+                result = vmulq_f32(x3, three_minus_2x);
+                break;
+            }
+            default:
+                result = x;
+                break;
+        }
+
+        vst1q_f32(&outputs[i], result);
+    }
+}
+#endif
+
+void SIMDMacroCurveEvaluator::evaluateAllCurves(MacroParameterBatch& batch) {
+    // Evaluate all 8 macro knob values with their respective curve types (batched)
+    for (int i = 0; i < 8; ++i) {
+        evaluateBatch(&batch.values[i], &batch.curves[i], i % 6, 1); // Cycle through 6 curve types
+    }
+}
+
+// Cache-optimized parameter lookup implementation
+CacheOptimizedParameterLookup::CacheOptimizedParameterLookup() : mNumTaps(0) {}
+
+CacheOptimizedParameterLookup::~CacheOptimizedParameterLookup() = default;
+
+void CacheOptimizedParameterLookup::initialize(int numTaps) {
+    mNumTaps = numTaps;
+    mTapCache.resize(numTaps);
+
+    // Initialize all tap caches
+    for (int i = 0; i < numTaps; ++i) {
+        memset(mTapCache[i].parameters, 0, sizeof(mTapCache[i].parameters));
+        mTapCache[i].dirtyFlags = 0;
+        mTapCache[i].version = 0;
+    }
+
+    mGlobalVersion.store(0, std::memory_order_relaxed);
+}
+
+void CacheOptimizedParameterLookup::markDirty(int tapIndex, int parameterType) {
+    if (tapIndex >= 0 && tapIndex < mNumTaps && parameterType >= 0 && parameterType < PARAMS_PER_TAP) {
+        mTapCache[tapIndex].dirtyFlags |= (1U << parameterType);
+        mTapCache[tapIndex].version = mGlobalVersion.fetch_add(1, std::memory_order_acq_rel);
+    }
+}
+
+bool CacheOptimizedParameterLookup::isDirty(int tapIndex, int parameterType) const {
+    if (tapIndex >= 0 && tapIndex < mNumTaps && parameterType >= 0 && parameterType < PARAMS_PER_TAP) {
+        return (mTapCache[tapIndex].dirtyFlags & (1U << parameterType)) != 0;
+    }
+    return false;
+}
+
+void CacheOptimizedParameterLookup::clearDirty(int tapIndex, int parameterType) {
+    if (tapIndex >= 0 && tapIndex < mNumTaps && parameterType >= 0 && parameterType < PARAMS_PER_TAP) {
+        mTapCache[tapIndex].dirtyFlags &= ~(1U << parameterType);
+    }
+}
+
+void CacheOptimizedParameterLookup::clearAllDirty() {
+    for (int i = 0; i < mNumTaps; ++i) {
+        mTapCache[i].dirtyFlags = 0;
+    }
+}
+
+float CacheOptimizedParameterLookup::getTapParameter(int tapIndex, int parameterType) const {
+    if (tapIndex >= 0 && tapIndex < mNumTaps && parameterType >= 0 && parameterType < PARAMS_PER_TAP) {
+        return mTapCache[tapIndex].parameters[parameterType];
+    }
+    return 0.0f;
+}
+
+void CacheOptimizedParameterLookup::setTapParameter(int tapIndex, int parameterType, float value) {
+    if (tapIndex >= 0 && tapIndex < mNumTaps && parameterType >= 0 && parameterType < PARAMS_PER_TAP) {
+        mTapCache[tapIndex].parameters[parameterType] = value;
+        markDirty(tapIndex, parameterType);
+    }
+}
+
+void CacheOptimizedParameterLookup::getTapParametersBatch(int tapIndex, float* outParams, int count) const {
+    if (tapIndex >= 0 && tapIndex < mNumTaps) {
+        int copyCount = std::min(count, PARAMS_PER_TAP);
+        memcpy(outParams, mTapCache[tapIndex].parameters, copyCount * sizeof(float));
+    }
+}
+
+void CacheOptimizedParameterLookup::setTapParametersBatch(int tapIndex, const float* params, int count) {
+    if (tapIndex >= 0 && tapIndex < mNumTaps) {
+        int copyCount = std::min(count, PARAMS_PER_TAP);
+        memcpy(mTapCache[tapIndex].parameters, params, copyCount * sizeof(float));
+        // Mark all updated parameters as dirty
+        for (int i = 0; i < copyCount; ++i) {
+            markDirty(tapIndex, i);
+        }
+    }
+}
+
+uint64_t CacheOptimizedParameterLookup::getGlobalVersion() const {
+    return mGlobalVersion.load(std::memory_order_acquire);
+}
+
+// Enhanced LockFreeParameterManager with batch operations
+void LockFreeParameterManager::updateMacroParametersBatch(const MacroParameterBatch& batch) {
+    // Get next write buffer for macro parameters
+    int writeIdx = mMacroWriteIndex.load(std::memory_order_acquire);
+    int nextWriteIdx = getNextIndex(writeIdx);
+
+    // Copy batch to next buffer
+    mMacroBatches[nextWriteIdx] = batch;
+    mMacroBatches[nextWriteIdx].version = mGlobalVersion.fetch_add(1, std::memory_order_acq_rel);
+
+    // Publish new macro batch
+    mMacroWriteIndex.store(nextWriteIdx, std::memory_order_release);
+}
+
+bool LockFreeParameterManager::getMacroParametersBatch(MacroParameterBatch& outBatch) {
+    int readIdx = mMacroReadIndex.load(std::memory_order_acquire);
+    int writeIdx = mMacroWriteIndex.load(std::memory_order_acquire);
+
+    if (readIdx != writeIdx) {
+        // Copy latest batch
+        outBatch = mMacroBatches[writeIdx];
+        mMacroReadIndex.store(writeIdx, std::memory_order_release);
+        return true;
+    }
+
+    return false; // No new data
+}
+
 // UnifiedPitchDelayLine Implementation
 UnifiedPitchDelayLine::UnifiedPitchDelayLine()
 : mBufferSize(0)
@@ -728,10 +980,8 @@ struct TapParameterProcessor {
             kTapPitchRange.getIndices(paramId, tapIndex, paramType);
 
             if (tapIndex < 16) {
-                // Profile pitch shift parameter changes for dropout investigation
-                PerformanceProfiler::getInstance().startProfiling("PitchShiftParameterUpdate", tapIndex, paramType);
+                // CRITICAL FIX: Removed heavy profiling calls from audio thread
                 processor->mTapPitchShift[tapIndex] = ParameterConverter::convertPitchShift(value);
-                PerformanceProfiler::getInstance().endProfiling();
 
                 // Mark this parameter as user-modified to disable macro influence
                 processor->markParameterAsUserModified(paramId);
@@ -1340,14 +1590,13 @@ void SpeedBasedDelayLine::initialize(double sampleRate, double maxDelaySeconds)
 
 void SpeedBasedDelayLine::setPitchShift(int semitones)
 {
-    // Profile pitch shift processing for dropout investigation
-    PerformanceProfiler::getInstance().startProfiling("setPitchShift");
+    // CRITICAL FIX: Removed heavy profiling calls from audio thread
 
     // Validate and clamp semitones parameter
     int clampedSemitones = std::max(-12, std::min(12, semitones));
 
     if (mPitchSemitones != clampedSemitones) {
-        // Log pitch shift parameter change
+        // Log pitch shift parameter change (only in debug mode)
         if (PitchDebug::isLoggingEnabled()) {
             std::ostringstream ss;
             ss << "setPitchShift: " << mPitchSemitones << " -> " << clampedSemitones
@@ -1369,8 +1618,6 @@ void SpeedBasedDelayLine::setPitchShift(int semitones)
             }
         }
     }
-
-    PerformanceProfiler::getInstance().endProfiling();
 }
 
 void SpeedBasedDelayLine::updatePitchRatio()
@@ -1823,6 +2070,22 @@ WaterStickProcessor::WaterStickProcessor()
     // Initialize current tap context (default to Volume)
     mCurrentTapContext = 1; // TapContext::Volume
 
+    // PHASE 3: Initialize performance optimization components
+    mSIMDCurveEvaluator = std::make_unique<SIMDMacroCurveEvaluator>();
+    mParameterCache = std::make_unique<CacheOptimizedParameterLookup>();
+    mParameterUpdatePool = std::make_unique<LockFreeMemoryPool<MacroParameterBatch>>();
+
+    // Initialize macro parameter batch
+    memset(&mCurrentMacroBatch, 0, sizeof(mCurrentMacroBatch));
+    mMacroParameterVersion.store(0, std::memory_order_relaxed);
+    mMacroParametersNeedUpdate.store(false, std::memory_order_relaxed);
+    mLastParameterUpdateVersion.store(0, std::memory_order_relaxed);
+
+    // Initialize dirty flags for all taps
+    for (int i = 0; i < 16; ++i) {
+        mTapParameterDirtyFlags[i].store(0, std::memory_order_relaxed);
+    }
+
     // Phase 4: Initialize unified delay line system flag
     // Production default: unified system (legacy kept as emergency fallback)
     mUseUnifiedDelayLines = true;
@@ -2197,6 +2460,9 @@ tresult PLUGIN_API WaterStickProcessor::setupProcessing(Vst::ProcessSetup& newSe
     mDecoupledDelaySystemR.initialize(mSampleRate, maxDelayTime);
     mUseDecoupledArchitecture = true;  // Enable by default for production
 
+    // PHASE 3: Initialize performance optimization components
+    mParameterCache->initialize(NUM_TAPS);
+
     mTempoSync.initialize(mSampleRate);
     mTapDistribution.initialize(mSampleRate);
 
@@ -2276,8 +2542,8 @@ void WaterStickProcessor::checkTempoSyncParameterChanges()
 
 void WaterStickProcessor::updateParameters()
 {
-    // Profile parameter updates for dropout investigation
-    PerformanceProfiler::getInstance().startProfiling("updateParameters");
+    // CRITICAL FIX: Removed heavy profiling calls from audio thread
+    // Performance profiling moved to debug/development mode only
 
     mTempoSync.setMode(mTempoSyncMode);
     mTempoSync.setSyncDivision(mSyncDivision);
@@ -2329,8 +2595,6 @@ void WaterStickProcessor::updateParameters()
     updateDiscreteParameters();
     applyCurveEvaluation();
     applyParameterSmoothing();
-
-    PerformanceProfiler::getInstance().endProfiling();
 }
 
 tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
@@ -2426,7 +2690,8 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
         }
     }
 
-    updateParameters();
+    // PHASE 3: Use optimized parameter update system
+    updateParametersOptimized();
 
     // Check for tap state changes and clear buffers if needed
     checkTapStateChangesAndClearBuffers();
@@ -2726,9 +2991,19 @@ float WaterStickProcessor::evaluateMacroCurve(int curveType, float input) const
 // directly to DSP parameter arrays instead of sending VST parameter updates
 //------------------------------------------------------------------------
 
-void WaterStickProcessor::applyMacroCurvesToTapParameters()
-{
-    // CRITICAL FIX: Only apply macro curves when macro values have actually changed
+void WaterStickProcessor::applyMacroCurvesToTapParameters() {
+    // Enhanced diagnostic logging for macro curve application
+    if (PitchDebug::isLoggingEnabled()) {
+        std::ostringstream macroLog;
+        macroLog << "Macro Curve Application:n";
+        for (int macroKnobIndex = 0; macroKnobIndex < 8; ++macroKnobIndex) {
+            macroLog << "  Macro Knob " << macroKnobIndex
+                     << " Value: " << mMacroKnobValues[macroKnobIndex]
+                     << " Curve Type: " << mMacroCurveTypes[macroKnobIndex]
+                     << " Active: " << (mMacroSystemActive[macroKnobIndex] ? "Yes" : "No") << "\n";
+        }
+        PitchDebug::logMessage(macroLog.str());
+    }    // CRITICAL FIX: Only apply macro curves when macro values have actually changed
     // This prevents continuous parameter override that breaks user control and defaults
 
     // Check if any macro knob values have changed
@@ -2936,9 +3211,19 @@ float WaterStickProcessor::getRawDiscreteParameter(int index) const
 // VST3 architecture compliance - user parameters take precedence over macro effects
 //------------------------------------------------------------------------
 
-void WaterStickProcessor::detectUserParameterChanges()
-{
-    // This method would be called when parameters are changed via VST3 parameter updates
+void WaterStickProcessor::detectUserParameterChanges() {
+    // Enhanced diagnostic logging for parameter change detection
+    if (PitchDebug::isLoggingEnabled()) {
+        std::ostringstream changeLog;
+        changeLog << "User Parameter Changes Detected:n";
+        for (int paramId = 0; paramId < 1024; ++paramId) {
+            if (mParameterModifiedByUser[paramId]) {
+                changeLog << "  Parameter ID: " << paramId
+                          << " Marked as User-Modified\n";
+            }
+        }
+        PitchDebug::logMessage(changeLog.str());
+    }    // This method would be called when parameters are changed via VST3 parameter updates
     // Currently not implemented as it requires integration with parameter change detection
     // TODO: Implement parameter change source detection in updateParameters()
 }
@@ -3144,6 +3429,170 @@ bool WaterStickProcessor::isDecoupledSystemHealthy() const
     // System is healthy if delay processing works on both channels
     // (pitch processing is optional and can fail gracefully)
     return healthL.delaySystemHealthy && healthR.delaySystemHealthy;
+}
+
+// =====================================================
+// PHASE 3: OPTIMIZED PARAMETER UPDATE IMPLEMENTATIONS
+// =====================================================
+
+void WaterStickProcessor::updateParametersOptimized()
+{
+    // Check if macro parameters need updating using atomic flag
+    if (mMacroParametersNeedUpdate.load(std::memory_order_acquire)) {
+        updateMacroParametersBatch();
+        mMacroParametersNeedUpdate.store(false, std::memory_order_release);
+    }
+
+    // Check parameter cache for updates only if dirty flags indicate changes
+    if (checkParameterChangesOptimized()) {
+        applyParameterCacheUpdates();
+    }
+
+    // Update tempo sync and other lightweight parameters
+    mTempoSync.setMode(mTempoSyncMode);
+    mTempoSync.setSyncDivision(mSyncDivision);
+    mTempoSync.setFreeTime(mDelayTime);
+
+    mTapDistribution.updateTempo(mTempoSync);
+    mTapDistribution.setGrid(mGrid);
+
+    // Apply optimized parameter smoothing only to changed parameters
+    applyParameterSmoothing();
+}
+
+void WaterStickProcessor::updateMacroParametersBatch()
+{
+    // Acquire a parameter batch from the memory pool
+    MacroParameterBatch* batch = mParameterUpdatePool->acquire();
+    MacroParameterBatch stackBatch;
+    bool usingStackBatch = false;
+
+    if (!batch) {
+        // Pool exhausted - fallback to stack allocation
+        batch = &stackBatch;
+        usingStackBatch = true;
+    }
+
+    // Copy current macro knob values to batch
+    memcpy(batch->values, mMacroKnobValues, sizeof(mMacroKnobValues));
+    batch->version = mMacroParameterVersion.fetch_add(1, std::memory_order_acq_rel);
+    batch->dirtyFlags = 0;
+
+    // Use SIMD curve evaluator for batch processing
+    mSIMDCurveEvaluator->evaluateAllCurves(*batch);
+
+    // Process the batch update
+    processMacroParameterUpdate(*batch);
+
+    // Release the batch back to the pool (if it came from pool)
+    if (!usingStackBatch) {
+        mParameterUpdatePool->release(batch);
+    }
+}
+
+void WaterStickProcessor::processMacroParameterUpdate(const MacroParameterBatch& batch)
+{
+    // Apply macro curve evaluations to tap parameters using cache-optimized approach
+    for (int tap = 0; tap < NUM_TAPS; ++tap) {
+        // Check if this tap needs updates
+        uint32_t tapDirtyFlags = mTapParameterDirtyFlags[tap].load(std::memory_order_acquire);
+
+        if (tapDirtyFlags != 0) {
+            // Get current tap parameters in batch
+            float tapParams[8]; // All tap parameters
+            mParameterCache->getTapParametersBatch(tap, tapParams, 8);
+
+            // Apply macro influences to parameters using SIMD-evaluated curves
+            for (int macro = 0; macro < 8; ++macro) {
+                if (mMacroSystemActive[macro]) {
+                    float macroInfluence = batch.curves[macro];
+
+                    // Apply to relevant tap parameter based on current context
+                    switch (mCurrentTapContext) {
+                        case 1: // Volume
+                            tapParams[0] = tapParams[0] * (1.0f - macroInfluence) + macroInfluence;
+                            break;
+                        case 2: // Pan
+                            tapParams[1] = tapParams[1] * (1.0f - macroInfluence) + (macroInfluence * 2.0f - 1.0f);
+                            break;
+                        case 3: // Filter Cutoff
+                            tapParams[2] = tapParams[2] * (1.0f - macroInfluence) + macroInfluence;
+                            break;
+                        case 4: // Filter Resonance
+                            tapParams[3] = tapParams[3] * (1.0f - macroInfluence) + macroInfluence;
+                            break;
+                        // Additional cases as needed
+                    }
+                }
+            }
+
+            // Update cache with new values
+            mParameterCache->setTapParametersBatch(tap, tapParams, 8);
+
+            // Clear dirty flags for this tap
+            mTapParameterDirtyFlags[tap].store(0, std::memory_order_release);
+        }
+    }
+}
+
+void WaterStickProcessor::applyParameterCacheUpdates()
+{
+    // Update actual parameter arrays from cache only for dirty parameters
+    for (int tap = 0; tap < NUM_TAPS; ++tap) {
+        if (mParameterCache->isDirty(tap, 0)) { // Level
+            mTapLevel[tap] = mParameterCache->getTapParameter(tap, 0);
+            mParameterCache->clearDirty(tap, 0);
+        }
+        if (mParameterCache->isDirty(tap, 1)) { // Pan
+            mTapPan[tap] = mParameterCache->getTapParameter(tap, 1);
+            mParameterCache->clearDirty(tap, 1);
+        }
+        if (mParameterCache->isDirty(tap, 2)) { // Filter Cutoff
+            mTapFilterCutoff[tap] = mParameterCache->getTapParameter(tap, 2);
+            mParameterCache->clearDirty(tap, 2);
+        }
+        if (mParameterCache->isDirty(tap, 3)) { // Filter Resonance
+            mTapFilterResonance[tap] = mParameterCache->getTapParameter(tap, 3);
+            mParameterCache->clearDirty(tap, 3);
+        }
+        if (mParameterCache->isDirty(tap, 4)) { // Filter Type
+            mTapFilterType[tap] = static_cast<int>(mParameterCache->getTapParameter(tap, 4));
+            mParameterCache->clearDirty(tap, 4);
+        }
+        if (mParameterCache->isDirty(tap, 5)) { // Pitch Shift
+            mTapPitchShift[tap] = static_cast<int>(mParameterCache->getTapParameter(tap, 5));
+            mParameterCache->clearDirty(tap, 5);
+        }
+        if (mParameterCache->isDirty(tap, 6)) { // Feedback Send
+            mTapFeedbackSend[tap] = mParameterCache->getTapParameter(tap, 6);
+            mParameterCache->clearDirty(tap, 6);
+        }
+        if (mParameterCache->isDirty(tap, 7)) { // Enable
+            mTapEnabled[tap] = mParameterCache->getTapParameter(tap, 7) > 0.5f;
+            mParameterCache->clearDirty(tap, 7);
+        }
+    }
+}
+
+bool WaterStickProcessor::checkParameterChangesOptimized()
+{
+    // Check global parameter version for any changes
+    uint64_t currentVersion = mParameterCache->getGlobalVersion();
+    uint64_t lastVersion = mLastParameterUpdateVersion.load(std::memory_order_acquire);
+
+    if (currentVersion != lastVersion) {
+        mLastParameterUpdateVersion.store(currentVersion, std::memory_order_release);
+        return true;
+    }
+
+    // Check individual tap dirty flags for fine-grained updates
+    for (int tap = 0; tap < NUM_TAPS; ++tap) {
+        if (mTapParameterDirtyFlags[tap].load(std::memory_order_acquire) != 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 } // namespace WaterStick

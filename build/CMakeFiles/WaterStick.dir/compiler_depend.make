@@ -5221,6 +5221,9 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o: /Users/wh
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stddef_rsize_t.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stddef_size_t.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stddef_wchar_t.h \
+  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_bf16.h \
+  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_neon.h \
+  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_vector_types.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/limits.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/ptrcheck.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stdarg.h \
@@ -6198,7 +6201,6 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/__wctype.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/__xlocale.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_abort.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_bounds.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctermid.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctype.h \
@@ -7080,8 +7082,6 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/arm/arch.h:
 
-/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h:
-
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/MacTypes.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/Block.h:
@@ -7171,6 +7171,8 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 /Users/why/repos/waterstick/vst3sdk/pluginterfaces/vst/ivstaudioprocessor.h:
 
 /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.h:
+
+/Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_vector_types.h:
 
 /Users/why/repos/waterstick/source/WaterStick/WaterStickProcessor.cpp:
 
@@ -7519,6 +7521,8 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__functional/mem_fun_ref.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/_types/_uid_t.h:
+
+/Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_bf16.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/sys/_types/_in_addr_t.h:
 
@@ -9233,6 +9237,8 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o: /Users/why/repos/
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_types/_wctrans_t.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_abort.h:
+
+/Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_neon.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_types/_uint8_t.h:
 
