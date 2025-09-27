@@ -1974,37 +1974,9 @@ void WaterStick::ModeButton::draw(VSTGUI::CDrawContext* context)
         viewCenter.y + halfButtonSize
     );
 
-    if (isSelected) {
-        // Calculate rectangle size as 1.5x the circle size
-        const double strokeInset = 2.5; // Half of 5px stroke width (keeping 5px)
-        const double circleSize = buttonSize - (strokeInset * 2); // 53px - 5px = 48px
-        const double rectangleSize = circleSize * 1.5; // 48px * 1.5 = 72px
-
-        // Center rectangle on the button's center
-        const double halfRectSize = rectangleSize / 2.0;
-
-        VSTGUI::CRect backgroundRect(
-            viewCenter.x - halfRectSize,
-            viewCenter.y - halfRectSize,
-            viewCenter.x + halfRectSize,
-            viewCenter.y + halfRectSize
-        );
-
-        // Draw black rounded rectangle background (no stroke, fill only)
-        const double cornerRadius = 14.0; // Circular corner radius (8 * 1.75 = 14)
-        context->setFillColor(VSTGUI::kBlackCColor);
-        context->setDrawMode(VSTGUI::kAntiAliasing);
-
-        // Use graphics path for rounded rectangle
-        VSTGUI::CGraphicsPath* path = context->createRoundRectGraphicsPath(backgroundRect, cornerRadius);
-        if (path) {
-            context->drawGraphicsPath(path, VSTGUI::CDrawContext::kPathFilled);
-            path->forget();
-        }
-    }
-
     // Set stroke width to 5px (matching tap buttons)
     context->setLineWidth(5.0);
+    context->setDrawMode(VSTGUI::kAntiAliasing);
 
     // Create drawing rect that accounts for stroke width
     // Inset by half the stroke width to prevent clipping
@@ -2012,32 +1984,49 @@ void WaterStick::ModeButton::draw(VSTGUI::CDrawContext* context)
     const double strokeInset = 2.5; // Half of 5px stroke
     drawRect.inset(strokeInset, strokeInset);
 
-    if (isSelected) {
-        // Selected state: white circle stroke, no fill
-        context->setFrameColor(VSTGUI::kWhiteCColor);
-        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
-    } else {
-        // Unselected state: black circle stroke, no fill
-        context->setFrameColor(VSTGUI::kBlackCColor);
-        context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
-    }
-
-    // Draw center dot (12px diameter, scaled by 1.75x)
-    const double centerDotRadius = 6.125; // 12.25px diameter = 6.125px radius (7 * 1.75)
-    VSTGUI::CPoint center = drawRect.getCenter();
-    VSTGUI::CRect centerDotRect(
-        center.x - centerDotRadius,
-        center.y - centerDotRadius,
-        center.x + centerDotRadius,
-        center.y + centerDotRadius
-    );
+    // Always draw outer circle with black stroke, no fill
+    context->setFrameColor(VSTGUI::kBlackCColor);
+    context->drawEllipse(drawRect, VSTGUI::kDrawStroked);
 
     if (isSelected) {
-        // Selected state: white center dot (inverted)
+        // Selected state: Draw inner black filled circle (match bypass/sync sizing)
+        VSTGUI::CPoint center = drawRect.getCenter();
+        // Use same inner radius as bypass and sync controls: 17.415px
+        const double innerRadius = 17.415;
+
+        VSTGUI::CRect innerCircleRect(
+            center.x - innerRadius,
+            center.y - innerRadius,
+            center.x + innerRadius,
+            center.y + innerRadius
+        );
+
+        // Draw inner black filled circle
+        context->setFillColor(VSTGUI::kBlackCColor);
+        context->drawEllipse(innerCircleRect, VSTGUI::kDrawFilled);
+
+        // Draw white center dot on top of black circle
+        const double centerDotRadius = 6.125; // 12.25px diameter = 6.125px radius (7 * 1.75)
+        VSTGUI::CRect centerDotRect(
+            center.x - centerDotRadius,
+            center.y - centerDotRadius,
+            center.x + centerDotRadius,
+            center.y + centerDotRadius
+        );
+
         context->setFillColor(VSTGUI::kWhiteCColor);
         context->drawEllipse(centerDotRect, VSTGUI::kDrawFilled);
     } else {
-        // Unselected state: black center dot
+        // Unselected state: black center dot only
+        const double centerDotRadius = 6.125; // 12.25px diameter = 6.125px radius (7 * 1.75)
+        VSTGUI::CPoint center = drawRect.getCenter();
+        VSTGUI::CRect centerDotRect(
+            center.x - centerDotRadius,
+            center.y - centerDotRadius,
+            center.x + centerDotRadius,
+            center.y + centerDotRadius
+        );
+
         context->setFillColor(VSTGUI::kBlackCColor);
         context->drawEllipse(centerDotRect, VSTGUI::kDrawFilled);
     }
