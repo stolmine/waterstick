@@ -438,6 +438,7 @@ private:
     void createSmartHierarchy(VSTGUI::CViewContainer* container);
     void createMinimap(VSTGUI::CViewContainer* container);
     void updateMinimapState();
+    void refreshAllContextsGUIState();
     void createGlobalControls(VSTGUI::CViewContainer* container);
     void applyEqualMarginLayout(VSTGUI::CViewContainer* container);
 

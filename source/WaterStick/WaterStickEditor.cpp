@@ -733,6 +733,21 @@ void WaterStick::WaterStickEditor::performParameterUpdate(int32_t parameterId, f
     // Perform immediate parameter update
     controller->setParamNormalized(parameterId, normalizedValue);
     controller->performEdit(parameterId, normalizedValue);
+
+    // CROSS-CONTEXT SYNC TRIGGER: Check if this parameter affects tap contexts
+    // If so, trigger GUI refresh to ensure accurate cross-context visualization
+    bool isTapParameter = (parameterId >= kTap1Enable && parameterId <= kTap16FeedbackSend);
+    bool isMacroParameter = (parameterId >= kMacroKnob1 && parameterId <= kMacroKnob8);
+
+    if (isTapParameter && mParameterBlockingSystem.shouldAllowVisualUpdate()) {
+        // Tap parameter changed - refresh all context GUI state to maintain accuracy
+        refreshAllContextsGUIState();
+        mParameterBlockingSystem.markVisualUpdateComplete();
+    } else if (isMacroParameter) {
+        // Macro parameter changed - update minimap and readouts
+        updateMinimapState();
+        updateValueReadouts();
+    }
 }
 
 bool WaterStick::WaterStickEditor::shouldAllowParameterUpdate(int32_t parameterId) const
@@ -983,7 +998,7 @@ void WaterStick::WaterStickEditor::switchToContext(TapContext newContext)
     }
 
 
-    // Load new context values from VST parameters
+    // Load new context values from VST parameters WITH COMPREHENSIVE CROSS-CONTEXT SYNC
     if (controller) {
         for (int i = 0; i < 16; i++) {
             auto tapButton = static_cast<TapButton*>(tapButtons[i]);
@@ -991,6 +1006,15 @@ void WaterStick::WaterStickEditor::switchToContext(TapContext newContext)
                 // CRITICAL FIX: Force complete state clearing before context switch
                 // This prevents graphics artifacts from previous context (especially PitchShift)
                 tapButton->setDirty(true);
+
+                // CROSS-CONTEXT SYNC FIX: Refresh ALL context values from actual parameters
+                // This ensures macro changes from other contexts are properly reflected
+                for (int contextIndex = 0; contextIndex < static_cast<int>(TapContext::COUNT); contextIndex++) {
+                    TapContext ctx = static_cast<TapContext>(contextIndex);
+                    int ctxParamId = getTapParameterIdForContext(i, ctx);
+                    float ctxParamValue = controller->getParamNormalized(ctxParamId);
+                    tapButton->setContextValue(ctx, ctxParamValue);
+                }
 
                 // Set the context for the button
                 tapButton->setContext(newContext);
@@ -1001,13 +1025,11 @@ void WaterStick::WaterStickEditor::switchToContext(TapContext newContext)
                 // Get the parameter ID for the new context
                 int newParamId = getTapParameterIdForContext(i, newContext);
 
-                // Load the parameter value
+                // Load the parameter value (already loaded above, but get fresh copy for display)
                 float paramValue = controller->getParamNormalized(newParamId);
 
-
-                // Set the button's value and internal storage
+                // Set the button's display value to the actual parameter value
                 tapButton->setValue(paramValue);
-                tapButton->setContextValue(newContext, paramValue);
 
                 // Trigger comprehensive visual update with state clearing
                 tapButton->setDirty(true);
@@ -1016,12 +1038,9 @@ void WaterStick::WaterStickEditor::switchToContext(TapContext newContext)
         }
     }
 
-    // Force minimap redraw for context change
-    for (int i = 0; i < 16; i++) {
-        if (minimapButtons[i]) {
-            minimapButtons[i]->invalid();
-        }
-    }
+    // COMPREHENSIVE CONTEXT SWITCH SYNC: Ensure ALL GUI elements are up-to-date
+    // This fixes the macro cross-context synchronization issue
+    refreshAllContextsGUIState();
 }
 
 int WaterStick::WaterStickEditor::getSelectedModeButtonIndex() const
@@ -2317,6 +2336,43 @@ void WaterStick::WaterStickEditor::updateMinimapState()
     }
 }
 
+void WaterStick::WaterStickEditor::refreshAllContextsGUIState()
+{
+    // COMPREHENSIVE CROSS-CONTEXT GUI SYNCHRONIZATION
+    // This method ensures all GUI elements reflect actual parameter values
+    // regardless of current context focus or recent macro changes
+
+    auto controller = getController();
+    if (!controller) return;
+
+    // Refresh all tap button contexts with actual parameter values
+    for (int i = 0; i < 16; i++) {
+        if (tapButtons[i]) {
+            auto tapButton = static_cast<TapButton*>(tapButtons[i]);
+
+            // Update ALL context values from current parameters
+            for (int contextIndex = 0; contextIndex < static_cast<int>(TapContext::COUNT); contextIndex++) {
+                TapContext ctx = static_cast<TapContext>(contextIndex);
+                int paramId = getTapParameterIdForContext(i, ctx);
+                float paramValue = controller->getParamNormalized(paramId);
+                tapButton->setContextValue(ctx, paramValue);
+            }
+
+            // Update the button's displayed value to match its current context
+            TapContext buttonContext = tapButton->getContext();
+            float currentContextValue = tapButton->getContextValue(buttonContext);
+            tapButton->setValue(currentContextValue);
+            tapButton->invalid();
+        }
+    }
+
+    // Refresh minimap state
+    updateMinimapState();
+
+    // Refresh global control readouts
+    updateValueReadouts();
+}
+
 void WaterStick::WaterStickEditor::forceParameterSynchronization()
 {
     auto controller = getController();
@@ -2997,8 +3053,12 @@ void WaterStick::WaterStickEditor::handleMacroKnobChange(int columnIndex, float 
         }
     }
 
-    // MINIMAP UPDATE FIX: Update minimap when macro knobs change parameters
+    // COMPREHENSIVE VISUAL SYNC: Update minimap and ensure full GUI consistency
     updateMinimapState();
+
+    // CROSS-CONTEXT VISUAL UPDATE: If any non-current context tap buttons are visible,
+    // ensure they reflect the latest parameter state for when context switches occur
+    updateValueReadouts();
 
     {
         WS_LOG_INFO("[MacroKnob] ===== handleMacroKnobChange END =====");
@@ -3046,8 +3106,21 @@ void WaterStick::WaterStickEditor::handleGlobalMacroKnobChange(float continuousV
                     break;
             }
 
-            // Update the tap button's context value and display
+            // CRITICAL SYNC FIX: Update context storage for macro-affected context
             tapButton->setContextValue(currentCtx, curveValue);
+
+            // CROSS-CONTEXT REFRESH: Get fresh parameter values for ALL other contexts
+            // This ensures when user switches contexts later, GUI shows accurate values
+            for (int contextIndex = 0; contextIndex < static_cast<int>(TapContext::COUNT); contextIndex++) {
+                if (contextIndex != static_cast<int>(currentCtx)) {
+                    TapContext otherCtx = static_cast<TapContext>(contextIndex);
+                    int otherParamId = getTapParameterIdForContext(tapIndex, otherCtx);
+                    float otherParamValue = controller->getParamNormalized(otherParamId);
+                    tapButton->setContextValue(otherCtx, otherParamValue);
+                }
+            }
+
+            // Update display if this tap button is showing the affected context
             if (tapButton->getContext() == currentCtx) {
                 tapButton->setValue(curveValue);
                 tapButton->invalid();
@@ -3092,8 +3165,8 @@ void WaterStick::WaterStickEditor::handleRandomizeAction(int columnIndex)
         }
     }
 
-    // MINIMAP RANDOMIZATION FIX: Update minimap to reflect randomized parameter states
-    updateMinimapState();
+    // COMPREHENSIVE RANDOMIZATION SYNC: Update all GUI elements to reflect changes
+    refreshAllContextsGUIState();
 
     // Macro knobs remain visually independent - no visual update needed
 }
@@ -3126,8 +3199,8 @@ void WaterStick::WaterStickEditor::handleResetAction(int columnIndex)
         }
     }
 
-    // MINIMAP RESET FIX: Update minimap to reflect reset parameter states
-    updateMinimapState();
+    // COMPREHENSIVE RESET SYNC: Update all GUI elements to reflect changes
+    refreshAllContextsGUIState();
 
     // Macro knobs remain visually independent - no visual update needed
 }
