@@ -7,6 +7,12 @@ project(WaterStick VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Define build configuration before including VST3 SDK
+add_definitions(-DRELEASE=1)
+
+# Enable VST validator for final validation
+set(SMTG_RUN_VST_VALIDATOR ON CACHE BOOL "Run VST validator on VST3 Plug-ins" FORCE)
+
 # Set the VST3 SDK path
 set(VST3SDK_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/vst3sdk)
 
@@ -26,8 +32,10 @@ add_subdirectory(${VST3SDK_ROOT_PATH} EXCLUDE_FROM_ALL)
 # Set up compiler flags
 if(MSVC)
     add_compile_options(/W4)
+    add_compile_definitions(RELEASE=1)
 else()
     add_compile_options(-Wall -Wextra -Wpedantic)
+    add_compile_definitions(RELEASE=1)
 endif()
 
 # Define the plugin target
@@ -47,6 +55,8 @@ smtg_add_vst3plugin(${target}
     source/WaterStick/ThreeSistersFilter.h
     source/WaterStick/ControlFactory.cpp
     source/WaterStick/ControlFactory.h
+    source/WaterStick/DecoupledDelayArchitecture.cpp
+    source/WaterStick/DecoupledDelayArchitecture.h
     source/WaterStick/version.h
     source/WaterStick/factory.cpp
     source/WaterStick/moduleentry.cpp
@@ -78,5 +88,20 @@ if(SMTG_MAC)
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
     )
 endif()
+
+# Pitch shifting dropout test program
+add_executable(test_pitch_dropout
+    test_pitch_dropout.cpp
+)
+
+# Set C++17 for test program
+set_target_properties(test_pitch_dropout PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+
+# Link with threading library for test program
+find_package(Threads REQUIRED)
+target_link_libraries(test_pitch_dropout PRIVATE Threads::Threads)
 
 # Tests will be added later

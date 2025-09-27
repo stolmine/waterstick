@@ -127,7 +127,18 @@
       "WebFetch(domain:cycling74.com)",
       "Bash(sed:*)",
       "Bash(./test_macro_knob_angles)",
-      "Bash(ulimit:*)"
+      "Bash(ulimit:*)",
+      "WebFetch(domain:doc.sccode.org)",
+      "Bash(./bin/Release/test_pitch_dropout)",
+      "Bash(clang++:*)",
+      "Bash(./phase3_validation_test)",
+      "Bash(./test_unified_makefile)",
+      "Bash(xcode-select:*)",
+      "Bash(python:*)",
+      "Bash(/usr/bin/c++:*)",
+      "Bash(./validator:*)",
+      "Bash(/Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator/validator -e /Library/Audio/Plug-Ins/VST3/WaterStick.vst3)",
+      "Bash(/Users/why/repos/waterstick/build/bin/validator:*)"
     ],
     "deny": [],
     "ask": []

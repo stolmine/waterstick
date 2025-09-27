@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text"
-  "../../../../../VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text.pdb"
-  "../../../../../VST3/Release/note-expression-text.vst3/Contents/Resources/plug.uidesc"
+  "../../../../../VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text"
+  "../../../../../VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text.pdb"
+  "../../../../../VST3/note-expression-text.vst3/Contents/Resources/plug.uidesc"
   "CMakeFiles/note-expression-text.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/note-expression-text.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/note-expression-text.dir/source/plug.cpp.o"

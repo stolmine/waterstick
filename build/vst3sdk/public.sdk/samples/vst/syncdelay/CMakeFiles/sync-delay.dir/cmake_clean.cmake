@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay"
-  "../../../../../VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay.pdb"
+  "../../../../../VST3/sync-delay.vst3/Contents/MacOS/sync-delay"
+  "../../../../../VST3/sync-delay.vst3/Contents/MacOS/sync-delay.pdb"
   "CMakeFiles/sync-delay.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/sync-delay.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/sync-delay.dir/source/syncdelaycontroller.cpp.o"

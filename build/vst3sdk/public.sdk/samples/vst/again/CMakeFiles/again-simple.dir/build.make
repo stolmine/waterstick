@@ -72,33 +72,33 @@ include vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/flags.m
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/codegen:
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/codegen
 
-VST3/Release/again-simple.vst3/Contents/Resources/again.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/again.uidesc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/again.uidesc"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/again.uidesc VST3/Release/again-simple.vst3/Contents/Resources/again.uidesc
+VST3/again-simple.vst3/Contents/Resources/again.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/again.uidesc
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/again.uidesc"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/again.uidesc VST3/again-simple.vst3/Contents/Resources/again.uidesc
 
-VST3/Release/again-simple.vst3/Contents/Resources/background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/background.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/background.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/background.png VST3/Release/again-simple.vst3/Contents/Resources/background.png
+VST3/again-simple.vst3/Contents/Resources/background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/background.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/background.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/background.png VST3/again-simple.vst3/Contents/Resources/background.png
 
-VST3/Release/again-simple.vst3/Contents/Resources/slider_background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_background.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/slider_background.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_background.png VST3/Release/again-simple.vst3/Contents/Resources/slider_background.png
+VST3/again-simple.vst3/Contents/Resources/slider_background.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_background.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/slider_background.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_background.png VST3/again-simple.vst3/Contents/Resources/slider_background.png
 
-VST3/Release/again-simple.vst3/Contents/Resources/slider_handle.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/slider_handle.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle.png VST3/Release/again-simple.vst3/Contents/Resources/slider_handle.png
+VST3/again-simple.vst3/Contents/Resources/slider_handle.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/slider_handle.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle.png VST3/again-simple.vst3/Contents/Resources/slider_handle.png
 
-VST3/Release/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle_2.0x.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle_2.0x.png VST3/Release/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png
+VST3/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle_2.0x.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/slider_handle_2.0x.png VST3/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png
 
-VST3/Release/again-simple.vst3/Contents/Resources/vu_on.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_on.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/vu_on.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_on.png VST3/Release/again-simple.vst3/Contents/Resources/vu_on.png
+VST3/again-simple.vst3/Contents/Resources/vu_on.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_on.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/vu_on.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_on.png VST3/again-simple.vst3/Contents/Resources/vu_on.png
 
-VST3/Release/again-simple.vst3/Contents/Resources/vu_off.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_off.png
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/again-simple.vst3/Contents/Resources/vu_off.png"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_off.png VST3/Release/again-simple.vst3/Contents/Resources/vu_off.png
+VST3/again-simple.vst3/Contents/Resources/vu_off.png: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_off.png
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/again-simple.vst3/Contents/Resources/vu_off.png"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/again/resource/vu_off.png VST3/again-simple.vst3/Contents/Resources/vu_off.png
 
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/__/__/__/source/vst/vstsinglecomponenteffect.cpp.o: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/flags.make
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/__/__/__/source/vst/vstsinglecomponenteffect.cpp.o: /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/vstsinglecomponenteffect.cpp
@@ -151,41 +151,41 @@ again__simple_OBJECTS = \
 # External object files for target again-simple
 again__simple_EXTERNAL_OBJECTS =
 
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/__/__/__/source/vst/vstsinglecomponenteffect.cpp.o
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/source/againsimple.cpp.o
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/__/__/__/source/main/macmain.cpp.o
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build.make
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libsdk.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libvstgui_support.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libsdk_common.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libpluginterfaces.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libbase.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libvstgui.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: lib/Release/libvstgui_uidescription.a
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/Release/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX CFBundle shared module ../../../../../VST3/Release/again-simple.vst3/Contents/MacOS/again-simple"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3/Contents/Resources
+VST3/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/__/__/__/source/vst/vstsinglecomponenteffect.cpp.o
+VST3/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/source/againsimple.cpp.o
+VST3/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/__/__/__/source/main/macmain.cpp.o
+VST3/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build.make
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libsdk.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libvstgui_support.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libsdk_common.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libpluginterfaces.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libbase.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libvstgui.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: lib/libvstgui_uidescription.a
+VST3/again-simple.vst3/Contents/MacOS/again-simple: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/again-simple.vst3/Contents/MacOS/again-simple: vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX CFBundle shared module ../../../../../VST3/again-simple.vst3/Contents/MacOS/again-simple"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//again-simple.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/again-simple.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/validator  /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//again-simple.vst3
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//again-simple.vst3 -output /Users/why/repos/waterstick/build/VST3//again-simple.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//again-simple.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/again-simple.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/again-simple.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again && ln -svfF /Users/why/repos/waterstick/build/VST3//again-simple.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/again-simple.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/MacOS/again-simple
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/again.uidesc
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/background.png
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/slider_background.png
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/slider_handle.png
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/vu_off.png
-vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/Release/again-simple.vst3/Contents/Resources/vu_on.png
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/MacOS/again-simple
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/again.uidesc
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/background.png
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/slider_background.png
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/slider_handle.png
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/slider_handle_2.0x.png
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/vu_off.png
+vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build: VST3/again-simple.vst3/Contents/Resources/vu_on.png
 .PHONY : vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/build
 
 vst3sdk/public.sdk/samples/vst/again/CMakeFiles/again-simple.dir/clean:

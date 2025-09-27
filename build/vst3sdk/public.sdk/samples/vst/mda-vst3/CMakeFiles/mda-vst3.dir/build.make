@@ -1173,100 +1173,100 @@ mda__vst3_OBJECTS = \
 # External object files for target mda-vst3
 mda__vst3_EXTERNAL_OBJECTS =
 
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaAmbienceController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaAmbienceProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBandistoController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBandistoProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBaseController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBaseProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBeatBoxController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBeatBoxProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaComboController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaComboProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDeEsserController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDeEsserProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDegradeController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDegradeProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDelayController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDelayProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDetuneController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDetuneProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDitherController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDitherProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDubDelayController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDubDelayProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDX10Controller.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDX10Processor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDynamicsController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDynamicsProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaEPianoController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaEPianoProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdafactory.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaImageController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaImageProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaJX10Controller.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaJX10Processor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLeslieController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLeslieProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLimiterController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLimiterProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLoudnessController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLoudnessProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaMultiBandController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaMultiBandProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaOverdriveController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaOverdriveProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaParameter.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaPianoController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaPianoProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRePsychoController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRePsychoProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRezFilterController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRezFilterProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRingModController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRingModProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRoundPanController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRoundPanProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaShepardController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaShepardProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSpecMeterController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSpecMeterProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSplitterController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSplitterProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaStereoController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaStereoProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSubSynthController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSubSynthProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTalkBoxController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTalkBoxProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTestToneController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTestToneProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaThruZeroController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaThruZeroProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTrackerController.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTrackerProcessor.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/__/__/__/source/main/macmain.cpp.o
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/build.make
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/Release/libsdk.a
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/Release/libsdk_common.a
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/Release/libbase.a
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/Release/libpluginterfaces.a
-VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Linking CXX CFBundle shared module ../../../../../VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3/Contents/Resources
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaAmbienceController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaAmbienceProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBandistoController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBandistoProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBaseController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBaseProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBeatBoxController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaBeatBoxProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaComboController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaComboProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDeEsserController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDeEsserProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDegradeController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDegradeProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDelayController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDelayProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDetuneController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDetuneProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDitherController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDitherProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDubDelayController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDubDelayProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDX10Controller.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDX10Processor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDynamicsController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaDynamicsProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaEPianoController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaEPianoProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdafactory.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaImageController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaImageProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaJX10Controller.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaJX10Processor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLeslieController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLeslieProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLimiterController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLimiterProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLoudnessController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaLoudnessProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaMultiBandController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaMultiBandProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaOverdriveController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaOverdriveProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaParameter.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaPianoController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaPianoProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRePsychoController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRePsychoProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRezFilterController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRezFilterProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRingModController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRingModProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRoundPanController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaRoundPanProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaShepardController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaShepardProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSpecMeterController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSpecMeterProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSplitterController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSplitterProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaStereoController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaStereoProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSubSynthController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaSubSynthProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTalkBoxController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTalkBoxProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTestToneController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTestToneProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaThruZeroController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaThruZeroProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTrackerController.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/source/mdaTrackerProcessor.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/__/__/__/source/main/macmain.cpp.o
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/build.make
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/libsdk.a
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/libsdk_common.a
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/libbase.a
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: lib/libpluginterfaces.a
+VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3: vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Linking CXX CFBundle shared module ../../../../../VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//mda-vst3.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/mda-vst3.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3 -compat /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/mda-vst3/resource/vst3_compatibility.json -output /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/validator  /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//mda-vst3.vst3
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//mda-vst3.vst3 -compat /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/mda-vst3/resource/vst3_compatibility.json -output /Users/why/repos/waterstick/build/VST3//mda-vst3.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//mda-vst3.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/mda-vst3.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/mda-vst3.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/mda-vst3 && ln -svfF /Users/why/repos/waterstick/build/VST3//mda-vst3.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/mda-vst3.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/build: VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3
+vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/build: VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3
 .PHONY : vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/build
 
 vst3sdk/public.sdk/samples/vst/mda-vst3/CMakeFiles/mda-vst3.dir/clean:

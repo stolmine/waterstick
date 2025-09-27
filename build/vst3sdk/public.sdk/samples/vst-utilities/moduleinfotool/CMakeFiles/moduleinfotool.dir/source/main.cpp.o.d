@@ -648,6 +648,7 @@ vst3sdk/public.sdk/samples/vst-utilities/moduleinfotool/CMakeFiles/moduleinfotoo
   /Users/why/repos/waterstick/vst3sdk/public.sdk/source/vst/hosting/../utility/optional.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/cassert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/assert.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_static_assert.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/funknown.h \
   /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/fplatform.h \

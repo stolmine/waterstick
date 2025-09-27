@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Phase 3 Comprehensive Validation Test Builder and Runner
+# Builds against the WaterStick VST3 processor for thorough testing
+
+CXX=clang++
+CXXFLAGS="-std=c++17 -O2 -DDEBUG=1"
+INCLUDES="-I. -Ivst3sdk -Ivst3sdk/public.sdk/source -Ivst3sdk/base -Ivst3sdk/pluginterfaces"
+FRAMEWORKS="-framework Foundation -framework CoreFoundation"
+
+echo "=== Phase 3 Comprehensive Validation Test Builder ==="
+echo "Building comprehensive validation test suite..."
+
+# Compile the comprehensive validation test
+$CXX $CXXFLAGS $INCLUDES \
+    phase3_comprehensive_validation.cpp \
+    source/WaterStick/WaterStickProcessor.cpp \
+    source/WaterStick/WaterStickController.cpp \
+    source/WaterStick/ThreeSistersFilter.cpp \
+    build/lib/Release/libbase.a \
+    build/lib/Release/libsdk_common.a \
+    build/lib/Release/libsdk.a \
+    build/lib/Release/libpluginterfaces.a \
+    $FRAMEWORKS \
+    -o phase3_comprehensive_test
+
+if [ $? -eq 0 ]; then
+    echo "✓ Compilation successful!"
+    echo ""
+    echo "=== RUNNING PHASE 3 COMPREHENSIVE VALIDATION ==="
+    echo "Expected duration: 10+ minutes for complete validation"
+    echo ""
+
+    # Run the validation test
+    ./phase3_comprehensive_test
+
+    RESULT=$?
+    echo ""
+    echo "=== VALIDATION COMPLETE ==="
+    if [ $RESULT -eq 0 ]; then
+        echo "✅ PHASE 3 VALIDATION PASSED - PRODUCTION READY"
+        echo "The unified system successfully eliminates pitch shifting dropouts."
+    else
+        echo "❌ PHASE 3 VALIDATION FAILED"
+        echo "Some validation criteria were not met. Review the detailed report."
+    fi
+
+    echo ""
+    echo "Detailed report available in: phase3_validation_report.txt"
+
+else
+    echo "❌ Compilation failed!"
+    exit 1
+fi

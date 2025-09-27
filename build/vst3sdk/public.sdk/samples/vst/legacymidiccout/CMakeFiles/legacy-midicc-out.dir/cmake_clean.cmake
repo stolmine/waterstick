@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/legacy-midicc-out.vst3/Contents/MacOS/legacy-midicc-out"
-  "../../../../../VST3/Release/legacy-midicc-out.vst3/Contents/MacOS/legacy-midicc-out.pdb"
+  "../../../../../VST3/legacy-midicc-out.vst3/Contents/MacOS/legacy-midicc-out"
+  "../../../../../VST3/legacy-midicc-out.vst3/Contents/MacOS/legacy-midicc-out.pdb"
   "CMakeFiles/legacy-midicc-out.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/legacy-midicc-out.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/legacy-midicc-out.dir/source/plug.cpp.o"

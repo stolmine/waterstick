@@ -3,21 +3,21 @@
 
 # compile C with /usr/bin/cc
 # compile CXX with /usr/bin/c++
-C_DEFINES = -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -Ddata_exchange_EXPORTS
+C_DEFINES = -DRELEASE=1 -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -Ddata_exchange_EXPORTS
 
 C_INCLUDES = -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/dataexchange/source/3rdparty/nanovg/src -I/Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/dataexchange -I/Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/dataexchange/source/3rdparty/MetalNanoVG/src -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/..
 
-C_FLAGSarm64 = -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -DSMTG_RENAME_ASSERT=1 -DRELEASE=1 -stdlib=libc++
+C_FLAGSarm64 =  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -DSMTG_RENAME_ASSERT=1 -stdlib=libc++
 
-C_FLAGS = -O3 -DNDEBUG -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -DSMTG_RENAME_ASSERT=1 -DRELEASE=1 -stdlib=libc++
+C_FLAGS =  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -DSMTG_RENAME_ASSERT=1 -stdlib=libc++
 
-CXX_DEFINES = -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -Ddata_exchange_EXPORTS
+CXX_DEFINES = -DRELEASE=1 -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -Ddata_exchange_EXPORTS
 
 CXX_INCLUDES = -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/dataexchange/source/3rdparty/nanovg/src -I/Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/dataexchange -I/Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/dataexchange/source/3rdparty/MetalNanoVG/src -I/Users/why/repos/waterstick/vst3sdk/vstgui4 -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/..
 
-CXX_FLAGSarm64 =  -stdlib=libc++ -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -DRELEASE=1 -stdlib=libc++
+CXX_FLAGSarm64 =  -stdlib=libc++ -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -stdlib=libc++
 
-CXX_FLAGS =  -stdlib=libc++ -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -DRELEASE=1 -stdlib=libc++
+CXX_FLAGS =  -stdlib=libc++ -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -DSMTG_RENAME_ASSERT=1 -stdlib=libc++
 
 # Custom flags: vst3sdk/public.sdk/samples/vst/dataexchange/CMakeFiles/data-exchange.dir/source/3rdparty/MetalNanoVG/src/nanovg_mtl.m.o_FLAGS = -fobjc-arc
 

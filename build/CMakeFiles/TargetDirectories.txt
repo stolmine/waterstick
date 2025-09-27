@@ -1,4 +1,5 @@
 /Users/why/repos/waterstick/build/CMakeFiles/WaterStick.dir
+/Users/why/repos/waterstick/build/CMakeFiles/test_pitch_dropout.dir
 /Users/why/repos/waterstick/build/CMakeFiles/edit_cache.dir
 /Users/why/repos/waterstick/build/CMakeFiles/rebuild_cache.dir
 /Users/why/repos/waterstick/build/vst3sdk/CMakeFiles/vstgui_support.dir
