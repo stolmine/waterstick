@@ -150,268 +150,7 @@ int PerformanceProfiler::getTimeoutCount() const {
 
 namespace WaterStick {
 
-<<<<<<< HEAD
-// Embedded GranularPitchShifter class from MSpitchAlgo.cpp
-class GranularPitchShifter {
-public:
-    // Configuration constants
-    static constexpr float BUFFER_SIZE_SECONDS = 4.0f;
-    static constexpr float MIN_GRAIN_SIZE_MS = 5.0f;
-    static constexpr float MAX_GRAIN_SIZE_MS = 2000.0f;
-    static constexpr float CROSSFADE_RATIO = 0.1f;  // 10% crossfade overlap
-    static constexpr int ZERO_CROSSING_SEARCH_SAMPLES = 256;
-
-    struct GrainReader {
-        double position = 0.0;          // Current read position in samples
-        double phase = 0.0;             // Phase within current grain (0-1)
-        double grainDuration = 0.0;     // Duration of current grain in samples
-        double fadeInTime = 0.0;        // Fade in duration
-        double fadeOutTime = 0.0;       // Fade out duration
-        bool active = false;            // Is this grain currently playing
-        double startPosition = 0.0;     // Where this grain started
-        double endPosition = 0.0;       // Where this grain will end
-    };
-
-    GranularPitchShifter(float sampleRate)
-        : sampleRate(sampleRate) {
-
-        bufferSize = static_cast<int>(BUFFER_SIZE_SECONDS * sampleRate);
-        delayBuffer.resize(bufferSize, 0.0f);
-
-        // Initialize write position
-        writePosition = 0;
-    }
-
-    /**
-     * Main processing function
-     * @param input Input sample to write to delay buffer
-     * @param pitchSemitones Pitch shift in semitones (-24 to +24)
-     * @param positionMs Position in delay buffer (ms)
-     * @param segmentMs Size of segment to loop (ms)
-     * @return Pitch-shifted output sample
-     */
-    float processSample(float input, float pitchSemitones, float positionMs, float segmentMs) {
-        // Write input to delay buffer
-        delayBuffer[writePosition] = input;
-        writePosition = (writePosition + 1) % bufferSize;
-
-        // Calculate pitch ratio (2^(semitones/12))
-        float pitchRatio = std::pow(2.0f, pitchSemitones / 12.0f);
-
-        // Convert parameters to samples
-        double positionSamples = (positionMs / 1000.0) * sampleRate;
-        double segmentSamples = (segmentMs / 1000.0) * sampleRate;
-
-        // Ensure segment is within valid range
-        segmentSamples = std::max(MIN_GRAIN_SIZE_MS * sampleRate / 1000.0,
-                                  std::min(segmentSamples, MAX_GRAIN_SIZE_MS * sampleRate / 1000.0));
-
-        // Calculate grain duration based on pitch ratio
-        // Higher pitch = shorter grains, lower pitch = longer grains
-        double grainDuration = segmentSamples / pitchRatio;
-
-        // Update grain readers
-        updateGrainReaders(positionSamples, segmentSamples, pitchRatio, grainDuration);
-
-        // Mix active grains
-        float output = 0.0f;
-
-        if (grain1.active) {
-            output += readGrain(grain1, pitchRatio);
-        }
-
-        if (grain2.active) {
-            output += readGrain(grain2, pitchRatio);
-        }
-
-        return output;
-    }
-
-private:
-    float sampleRate;
-    int bufferSize;
-    std::vector<float> delayBuffer;
-    int writePosition;
-
-    GrainReader grain1;
-    GrainReader grain2;
-
-    /**
-     * Update grain reader states and trigger new grains as needed
-     */
-    void updateGrainReaders(double positionSamples, double segmentSamples,
-                           float pitchRatio, double grainDuration) {
-
-        if (!grain1.active && !grain2.active) {
-            // No grains active, start grain 1
-            startGrain(grain1, positionSamples, segmentSamples, pitchRatio, grainDuration);
-        }
-        else if (grain1.active && !grain2.active) {
-            // Check if grain1 is in its fade-out phase
-            if (grain1.phase > (1.0 - CROSSFADE_RATIO)) {
-                // Start grain2 to crossfade with grain1
-                startGrain(grain2, positionSamples, segmentSamples, pitchRatio, grainDuration);
-            }
-        }
-        else if (!grain1.active && grain2.active) {
-            // Check if grain2 is in its fade-out phase
-            if (grain2.phase > (1.0 - CROSSFADE_RATIO)) {
-                // Start grain1 to crossfade with grain2
-                startGrain(grain1, positionSamples, segmentSamples, pitchRatio, grainDuration);
-            }
-        }
-    }
-
-    /**
-     * Start a new grain with zero-crossing detection
-     */
-    void startGrain(GrainReader& grain, double positionSamples, double segmentSamples,
-                   float /*pitchRatio*/, double grainDuration) {
-
-        // Find nearest zero crossing for clean grain boundary
-        double startPos = findNearestZeroCrossing(positionSamples);
-
-        grain.position = startPos;
-        grain.startPosition = startPos;
-        grain.endPosition = startPos + segmentSamples;
-        grain.phase = 0.0;
-        grain.grainDuration = grainDuration;
-        grain.fadeInTime = grainDuration * CROSSFADE_RATIO;
-        grain.fadeOutTime = grainDuration * CROSSFADE_RATIO;
-        grain.active = true;
-    }
-
-    /**
-     * Read a sample from an active grain with interpolation and windowing
-     */
-    float readGrain(GrainReader& grain, float pitchRatio) {
-        // Read sample with cubic interpolation
-        float sample = readDelayBufferWithInterpolation(grain.position);
-
-        // Apply window envelope
-        float windowGain = calculateWindow(grain.phase);
-        sample *= windowGain;
-
-        // Advance grain position
-        grain.position += pitchRatio;
-
-        // Wrap around if we exceed segment boundary
-        if (grain.position >= grain.endPosition) {
-            grain.position = grain.startPosition + std::fmod(grain.position - grain.startPosition,
-                                                            grain.endPosition - grain.startPosition);
-        }
-
-        // Advance phase
-        grain.phase += 1.0 / grain.grainDuration;
-
-        // Check if grain is complete
-        if (grain.phase >= 1.0) {
-            grain.active = false;
-        }
-
-        return sample;
-    }
-
-    /**
-     * Dynamic window function with smooth fade in/out
-     */
-    float calculateWindow(double phase) {
-        if (phase < CROSSFADE_RATIO) {
-            // Fade in (raised cosine)
-            double fadePhase = phase / CROSSFADE_RATIO;
-            return 0.5f * (1.0f - std::cos(M_PI * fadePhase));
-        }
-        else if (phase > (1.0 - CROSSFADE_RATIO)) {
-            // Fade out (raised cosine)
-            double fadePhase = (phase - (1.0 - CROSSFADE_RATIO)) / CROSSFADE_RATIO;
-            return 0.5f * (1.0f + std::cos(M_PI * fadePhase));
-        }
-        else {
-            // Sustain
-            return 1.0f;
-        }
-    }
-
-    /**
-     * Find nearest zero crossing to minimize clicks at grain boundaries
-     */
-    double findNearestZeroCrossing(double targetPosition) {
-        int searchStart = static_cast<int>(targetPosition - ZERO_CROSSING_SEARCH_SAMPLES/2);
-        int searchEnd = static_cast<int>(targetPosition + ZERO_CROSSING_SEARCH_SAMPLES/2);
-
-        double nearestPosition = targetPosition;
-        double minAbsValue = std::abs(getDelayBufferSample(targetPosition));
-
-        for (int i = searchStart; i < searchEnd; i++) {
-            float currentSample = getDelayBufferSample(i);
-            float nextSample = getDelayBufferSample(i + 1);
-
-            // Check for zero crossing
-            if ((currentSample <= 0 && nextSample > 0) ||
-                (currentSample >= 0 && nextSample < 0)) {
-
-                // Interpolate exact crossing point
-                double crossingPoint = i - currentSample / (nextSample - currentSample);
-                double absValue = std::abs(getDelayBufferSample(crossingPoint));
-
-                if (absValue < minAbsValue) {
-                    minAbsValue = absValue;
-                    nearestPosition = crossingPoint;
-                }
-            }
-        }
-
-        return nearestPosition;
-    }
-
-    /**
-     * Read from delay buffer with cubic interpolation
-     */
-    float readDelayBufferWithInterpolation(double position) {
-        // Calculate read position relative to write position
-        double delayInSamples = writePosition - position;
-        while (delayInSamples < 0) delayInSamples += bufferSize;
-        while (delayInSamples >= bufferSize) delayInSamples -= bufferSize;
-
-        // Get integer and fractional parts
-        int index = static_cast<int>(delayInSamples);
-        double frac = delayInSamples - index;
-
-        // Get four points for cubic interpolation
-        float y0 = delayBuffer[(index - 1 + bufferSize) % bufferSize];
-        float y1 = delayBuffer[index % bufferSize];
-        float y2 = delayBuffer[(index + 1) % bufferSize];
-        float y3 = delayBuffer[(index + 2) % bufferSize];
-
-        // Cubic interpolation (Catmull-Rom spline)
-        float a0 = -0.5f * y0 + 1.5f * y1 - 1.5f * y2 + 0.5f * y3;
-        float a1 = y0 - 2.5f * y1 + 2.0f * y2 - 0.5f * y3;
-        float a2 = -0.5f * y0 + 0.5f * y2;
-        float a3 = y1;
-
-        return a0 * frac * frac * frac + a1 * frac * frac + a2 * frac + a3;
-    }
-
-    /**
-     * Simple linear interpolation helper for zero-crossing detection
-     */
-    float getDelayBufferSample(double position) {
-        double delayInSamples = writePosition - position;
-        while (delayInSamples < 0) delayInSamples += bufferSize;
-        while (delayInSamples >= bufferSize) delayInSamples -= bufferSize;
-
-        int index = static_cast<int>(delayInSamples);
-        double frac = delayInSamples - index;
-
-        float sample1 = delayBuffer[index % bufferSize];
-        float sample2 = delayBuffer[(index + 1) % bufferSize];
-
-        return sample1 * (1.0f - frac) + sample2 * frac;
-    }
-};
-=======
 // No static constants needed for SpeedBasedDelayLine
->>>>>>> V4.2.1_pitchUpdate
 
 struct ParameterConverter {
     static float convertFilterCutoff(double value) {
@@ -1542,37 +1281,12 @@ void STKDelayLine::reset()
     mNextOutput = 0.0f;
 }
 
-<<<<<<< HEAD
-MSpitchDelayLine::MSpitchDelayLine()
-=======
 SpeedBasedDelayLine::SpeedBasedDelayLine()
->>>>>>> V4.2.1_pitchUpdate
 : DualDelayLine()
 , mPitchSemitones(0)
 , mPitchRatio(1.0f)
 , mTargetPitchRatio(1.0f)
 , mSmoothingCoeff(1.0f)
-<<<<<<< HEAD
-{
-}
-
-MSpitchDelayLine::~MSpitchDelayLine()
-{
-}
-
-void MSpitchDelayLine::initialize(double sampleRate, double maxDelaySeconds)
-{
-    DualDelayLine::initialize(sampleRate, maxDelaySeconds);
-
-    // Initialize the embedded GranularPitchShifter
-    mPitchShifter = std::make_unique<GranularPitchShifter>(static_cast<float>(sampleRate));
-
-    // Initialize VST parameter smoothing
-    updateSmoothingCoeff();
-}
-
-void MSpitchDelayLine::setPitchShift(int semitones)
-=======
 , mReadPosition(0.0f)
 , mSpeedBufferSize(0)
 , mSpeedWriteIndexA(0)
@@ -1613,19 +1327,10 @@ void SpeedBasedDelayLine::initialize(double sampleRate, double maxDelaySeconds)
 }
 
 void SpeedBasedDelayLine::setPitchShift(int semitones)
->>>>>>> V4.2.1_pitchUpdate
 {
     // Profile pitch shift processing for dropout investigation
     PerformanceProfiler::getInstance().startProfiling("setPitchShift");
 
-<<<<<<< HEAD
-        // Calculate target pitch ratio for VST parameter smoothing
-        if (mPitchSemitones == 0) {
-            mTargetPitchRatio = 1.0f;
-        } else {
-            mTargetPitchRatio = powf(2.0f, static_cast<float>(mPitchSemitones) / 12.0f);
-        }
-=======
     // Validate and clamp semitones parameter
     int clampedSemitones = std::max(-12, std::min(12, semitones));
 
@@ -1651,60 +1356,12 @@ void SpeedBasedDelayLine::setPitchShift(int semitones)
                 mReadPosition += static_cast<float>(mSpeedBufferSize);
             }
         }
->>>>>>> V4.2.1_pitchUpdate
     }
 
     PerformanceProfiler::getInstance().endProfiling();
 }
 
-<<<<<<< HEAD
-void MSpitchDelayLine::processSample(float input, float& output)
-{
-    // Update parameter smoothing for VST automation
-    updatePitchRatioSmoothing();
-
-    if (mPitchSemitones == 0 || !mPitchShifter) {
-        // Bypass pitch shifting - use regular delay processing
-        DualDelayLine::processSample(input, output);
-        return;
-    }
-
-    // First process through the delay line to get delayed input
-    float delayedInput;
-    DualDelayLine::processSample(input, delayedInput);
-
-    // Then apply pitch shifting to the delayed signal
-    // Convert current delay time to milliseconds for MSpitchAlgo
-    float delayTimeMs = mCurrentDelayTime * 1000.0f; // Convert seconds to ms
-
-    // Use a fixed grain size of ~50ms for stable pitch shifting
-    float grainSizeMs = 50.0f;
-
-    // Apply pitch shifting using smoothed ratio for artifact-free automation
-    float pitchSemitones = (mPitchRatio == 1.0f) ? 0.0f :
-                          (12.0f * log2f(mPitchRatio));
-
-    output = mPitchShifter->processSample(delayedInput, pitchSemitones, delayTimeMs, grainSizeMs);
-}
-
-void MSpitchDelayLine::reset()
-{
-    DualDelayLine::reset();
-
-    // Reset pitch shifting state
-    mPitchRatio = 1.0f;
-    mTargetPitchRatio = 1.0f;
-
-    // Reinitialize pitch shifter if it exists
-    if (mPitchShifter) {
-        mPitchShifter = std::make_unique<GranularPitchShifter>(static_cast<float>(mSampleRate));
-    }
-}
-
-void MSpitchDelayLine::updatePitchRatio()
-=======
 void SpeedBasedDelayLine::updatePitchRatio()
->>>>>>> V4.2.1_pitchUpdate
 {
     float oldTargetRatio = mTargetPitchRatio;
 
@@ -1745,37 +1402,22 @@ void SpeedBasedDelayLine::updatePitchRatio()
     }
 }
 
-<<<<<<< HEAD
-void MSpitchDelayLine::updateSmoothingCoeff()
-{
-    // 15ms smoothing time constant for artifact-free parameter automation
-    const float timeConstantMs = 15.0f;
-=======
 void SpeedBasedDelayLine::updateSmoothingCoeff()
 {
     // 10ms smoothing time constant for real-time safe parameter smoothing
     const float timeConstantMs = 10.0f;
->>>>>>> V4.2.1_pitchUpdate
     const float timeConstantSec = timeConstantMs / 1000.0f;
 
     // First-order IIR filter coefficient: α = exp(-1/(timeConstant × sampleRate))
     mSmoothingCoeff = expf(-1.0f / (timeConstantSec * static_cast<float>(mSampleRate)));
 }
 
-<<<<<<< HEAD
-void MSpitchDelayLine::updatePitchRatioSmoothing()
-{
-    // Apply VST parameter smoothing for artifact-free automation
-=======
 void SpeedBasedDelayLine::updatePitchRatioSmoothing()
 {
     // Apply exponential smoothing to pitch ratio for zipper-free modulation
->>>>>>> V4.2.1_pitchUpdate
     // y[n] = α·y[n-1] + (1-α)·x[n]
     float newRatio = mSmoothingCoeff * mPitchRatio + (1.0f - mSmoothingCoeff) * mTargetPitchRatio;
 
-<<<<<<< HEAD
-=======
     // Validate smoothed result
     if (std::isfinite(newRatio) && newRatio > 0.0f) {
         mPitchRatio = newRatio;
@@ -2087,7 +1729,6 @@ void SpeedBasedDelayLine::logProcessingStats() const {
 
 
 
->>>>>>> V4.2.1_pitchUpdate
 
 WaterStickProcessor::WaterStickProcessor()
 : mInputGain(1.0f)
@@ -2150,6 +1791,11 @@ WaterStickProcessor::WaterStickProcessor()
     // Initialize macro curve types
     for (int i = 0; i < 4; i++) {
         mMacroCurveTypes[i] = 0; // Linear curves
+    }
+
+    // Initialize macro knob values
+    for (int i = 0; i < 8; i++) {
+        mMacroKnobValues[i] = 0.0f; // Default to 0.0
     }
 
     // Phase 4: Initialize unified delay line system flag
@@ -2698,7 +2344,7 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             mOutputGain = ParameterConverter::convertGain(value);
                             break;
                         case kDelayTime:
-                            mDelayTime = static_cast<float>(value * 20.0); // 0-20 seconds
+                            mDelayTime = static_cast<float>(value * 2.0); // 0-2 seconds
                             break;
                         case kFeedback:
                             mFeedback = ParameterConverter::convertFeedback(value);
@@ -2728,6 +2374,11 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                             else if (paramQueue->getParameterId() >= kMacroCurve1Type && paramQueue->getParameterId() <= kMacroCurve4Type) {
                                 int index = paramQueue->getParameterId() - kMacroCurve1Type;
                                 mMacroCurveTypes[index] = static_cast<int>(value * (kNumCurveTypes - 1) + 0.5);
+                            }
+                            // Handle macro knob parameters
+                            else if (paramQueue->getParameterId() >= kMacroKnob1 && paramQueue->getParameterId() <= kMacroKnob8) {
+                                int index = paramQueue->getParameterId() - kMacroKnob1;
+                                mMacroKnobValues[index] = static_cast<float>(value);
                             }
                             // Handle randomization and reset parameters (processed in controller)
                             else if (paramQueue->getParameterId() == kRandomizeSeed ||

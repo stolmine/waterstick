@@ -9,9 +9,6 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-<<<<<<< HEAD
-#include <memory>
-=======
 #include <chrono>
 #include <string>
 #include <atomic>
@@ -67,7 +64,6 @@ private:
 
     static const size_t MAX_PROFILE_HISTORY = 10000;
 };
->>>>>>> V4.2.1_pitchUpdate
 
 namespace WaterStick {
 
@@ -305,22 +301,12 @@ protected:
     int calculateCrossfadeLength(float delayTime);
 };
 
-<<<<<<< HEAD
-// Forward declaration for embedded GranularPitchShifter
-class GranularPitchShifter;
-
-class MSpitchDelayLine : public DualDelayLine {
-public:
-    MSpitchDelayLine();
-    ~MSpitchDelayLine();
-=======
 // LEGACY SYSTEM: Kept for emergency fallback only
 // Production system now uses UnifiedPitchDelayLine (47.9x performance improvement)
 class SpeedBasedDelayLine : public DualDelayLine {
 public:
     SpeedBasedDelayLine();
     ~SpeedBasedDelayLine();
->>>>>>> V4.2.1_pitchUpdate
 
     void initialize(double sampleRate, double maxDelaySeconds);
     void processSample(float input, float& output);
@@ -330,20 +316,6 @@ public:
     bool isPitchShiftActive() const { return mPitchSemitones != 0; }
 
 private:
-<<<<<<< HEAD
-    int mPitchSemitones;      // -12 to +12 semitones
-    float mPitchRatio;        // Current smoothed pitch ratio
-    float mTargetPitchRatio;  // Target pitch ratio for smoothing
-    float mSmoothingCoeff;    // Smoothing coefficient for parameter automation
-
-    // Embedded MSpitchAlgo implementation
-    std::unique_ptr<GranularPitchShifter> mPitchShifter;
-
-    // VST parameter smoothing
-    void updatePitchRatio();
-    void updateSmoothingCoeff();
-    void updatePitchRatioSmoothing();
-=======
     // Speed-based pitch shifting parameters
     int mPitchSemitones;         // -12 to +12 semitones
     float mPitchRatio;           // Current smoothed pitch ratio (speed)
@@ -391,7 +363,6 @@ private:
 public:
     // Public diagnostic methods
     void logProcessingStats() const;
->>>>>>> V4.2.1_pitchUpdate
 };
 
 class STKDelayLine {
@@ -527,6 +498,9 @@ private:
     // Macro curve parameters
     int mMacroCurveTypes[4];
 
+    // Macro knob values (8 macro knobs)
+    float mMacroKnobValues[8];
+
     float mGlobalDryWet;
     bool mDelayBypass;
 
@@ -572,10 +546,6 @@ private:
 
     // Multi-tap delay lines (16 taps, stereo)
     static const int NUM_TAPS = 16;
-<<<<<<< HEAD
-    MSpitchDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
-    MSpitchDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
-=======
     SpeedBasedDelayLine mTapDelayLinesL[NUM_TAPS];  // LEGACY: Emergency fallback only
     SpeedBasedDelayLine mTapDelayLinesR[NUM_TAPS];  // LEGACY: Emergency fallback only
 
@@ -588,7 +558,6 @@ private:
     DecoupledDelaySystem mDecoupledDelaySystemL;             // Left channel decoupled system (PRIMARY)
     DecoupledDelaySystem mDecoupledDelaySystemR;             // Right channel decoupled system (PRIMARY)
     bool mUseDecoupledArchitecture;                          // Feature flag for decoupled system
->>>>>>> V4.2.1_pitchUpdate
 
     TempoSync mTempoSync;
     TapDistribution mTapDistribution;
