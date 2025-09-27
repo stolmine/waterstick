@@ -8,6 +8,10 @@ enum {
     kOutputGain,
     kDelayTime,
     kFeedback,               // Global feedback parameter
+    kFeedbackDamping,        // High-frequency damping amount (0.0-1.0)
+    kFeedbackDampingCutoff,  // Damping filter cutoff frequency (0.0-1.0, mapped to 20Hz-20kHz)
+    kFeedbackPreEffects,     // Feedback routing: 0=post-effects, 1=pre-effects
+    kFeedbackPolarityInvert, // Feedback polarity: 0=normal, 1=inverted
     // Tempo sync parameters - added at end to maintain compatibility
     kTempoSyncMode,      // Toggle: 0=Free, 1=Synced
     kSyncDivision,       // Sync division: 1/64 to 8 bars

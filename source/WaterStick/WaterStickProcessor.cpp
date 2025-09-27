@@ -2040,6 +2040,12 @@ WaterStickProcessor::WaterStickProcessor()
     mFeedbackSubMixerL = 0.0f;
     mFeedbackSubMixerR = 0.0f;
 
+    mFeedbackSubMixerPreEffectsL = 0.0f;
+    mFeedbackSubMixerPreEffectsR = 0.0f;
+
+    // Initialize enhanced feedback system
+    initializeFeedbackSystem();
+
     // Initialize discrete parameters and smoothing
     mSmoothingCoeff = 0.999f; // Very smooth for audio-rate control
     for (int i = 0; i < 24; i++) {
@@ -2205,9 +2211,11 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
     float sumL = 0.0f;
     float sumR = 0.0f;
 
-    // Clear feedback sub-mixer for this sample
+    // Clear feedback sub-mixers for this sample
     mFeedbackSubMixerL = 0.0f;
     mFeedbackSubMixerR = 0.0f;
+    mFeedbackSubMixerPreEffectsL = 0.0f;
+    mFeedbackSubMixerPreEffectsR = 0.0f;
 
     // Phase 5: Use decoupled delay + pitch architecture for bulletproof operation
     if (mUseDecoupledArchitecture) {
@@ -2228,6 +2236,11 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
 
                 float tapOutputL = tapOutputsL[tap] * historicParams.level;
                 float tapOutputR = tapOutputsR[tap] * historicParams.level;
+
+                // Capture pre-effects feedback signal (before filtering and pitch processing)
+                float preEffectsFeedbackSend = historicParams.feedbackSend;
+                mFeedbackSubMixerPreEffectsL += tapOutputL * preEffectsFeedbackSend;
+                mFeedbackSubMixerPreEffectsR += tapOutputR * preEffectsFeedbackSend;
 
                 // Apply filtering
                 mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
@@ -2311,6 +2324,11 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
                 tapOutputL *= historicParams.level;
                 tapOutputR *= historicParams.level;
 
+                // Capture pre-effects feedback signal (before filtering and pitch processing)
+                float preEffectsFeedbackSend = historicParams.feedbackSend;
+                mFeedbackSubMixerPreEffectsL += tapOutputL * preEffectsFeedbackSend;
+                mFeedbackSubMixerPreEffectsR += tapOutputR * preEffectsFeedbackSend;
+
                 mTapFiltersL[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
                 mTapFiltersR[tap].setParameters(historicParams.filterCutoff, historicParams.filterResonance, historicParams.filterType);
                 tapOutputL = static_cast<float>(mTapFiltersL[tap].process(tapOutputL));
@@ -2369,9 +2387,33 @@ void WaterStickProcessor::processDelaySection(float inputL, float inputR, float&
         }
     }
 
-    // Store the feedback sub-mixer output (instead of raw tap outputs)
-    mFeedbackBufferL = mFeedbackSubMixerL;
-    mFeedbackBufferR = mFeedbackSubMixerR;
+    // ENHANCED FEEDBACK PROCESSING
+    // ===========================
+
+    // Get feedback signal (either pre-effects or post-effects based on routing)
+    float feedbackL, feedbackR;
+
+    if (mFeedbackPreEffects) {
+        // PRE-EFFECTS ROUTING: Use tap outputs before filtering and pitch shifting
+        // This creates a more direct, punchy feedback character with less coloration
+        feedbackL = mFeedbackSubMixerPreEffectsL;
+        feedbackR = mFeedbackSubMixerPreEffectsR;
+    } else {
+        // POST-EFFECTS ROUTING: Use tap outputs after all processing (current behavior)
+        // This creates a more diffuse, processed feedback character with filter/pitch coloration
+        feedbackL = mFeedbackSubMixerL;
+        feedbackR = mFeedbackSubMixerR;
+    }
+
+    // Apply high-frequency damping for natural decay
+    processFeedbackDamping(feedbackL, feedbackR);
+
+    // Apply polarity inversion if enabled (for creative effects)
+    applyFeedbackPolarity(feedbackL, feedbackR);
+
+    // Store the processed feedback signal
+    mFeedbackBufferL = feedbackL;
+    mFeedbackBufferR = feedbackR;
 
     // Delay section is always 100% wet now
     float dryGain = 0.0f;
@@ -2638,6 +2680,20 @@ tresult PLUGIN_API WaterStickProcessor::process(Vst::ProcessData& data)
                         case kFeedback:
                             mFeedback = ParameterConverter::convertFeedback(value);
                             break;
+                        case kFeedbackDamping:
+                            mFeedbackDamping = static_cast<float>(value);
+                            updateFeedbackDampingCoefficients();
+                            break;
+                        case kFeedbackDampingCutoff:
+                            mFeedbackDampingCutoff = static_cast<float>(value);
+                            updateFeedbackDampingCoefficients();
+                            break;
+                        case kFeedbackPreEffects:
+                            mFeedbackPreEffects = value > 0.5f;
+                            break;
+                        case kFeedbackPolarityInvert:
+                            mFeedbackPolarityInvert = value > 0.5f;
+                            break;
                         case kTempoSyncMode:
                             mTempoSyncMode = value > 0.5; // Toggle: >0.5 = synced
                             break;
@@ -2793,6 +2849,10 @@ tresult PLUGIN_API WaterStickProcessor::getState(IBStream* state)
     streamer.writeFloat(mOutputGain);
     streamer.writeFloat(mDelayTime);
     streamer.writeFloat(mFeedback);
+    streamer.writeFloat(mFeedbackDamping);
+    streamer.writeFloat(mFeedbackDampingCutoff);
+    streamer.writeBool(mFeedbackPreEffects);
+    streamer.writeBool(mFeedbackPolarityInvert);
     streamer.writeBool(mTempoSyncMode);
     streamer.writeInt32(mSyncDivision);
     streamer.writeInt32(mGrid);
@@ -2853,6 +2913,24 @@ tresult WaterStickProcessor::readLegacyProcessorState(IBStream* state)
     streamer.readFloat(mOutputGain);
     streamer.readFloat(mDelayTime);
     streamer.readFloat(mFeedback);
+
+    // Read enhanced feedback parameters (with defaults for backward compatibility)
+    if (!streamer.readFloat(mFeedbackDamping)) {
+        mFeedbackDamping = 0.2f;  // Default moderate damping
+    }
+    if (!streamer.readFloat(mFeedbackDampingCutoff)) {
+        mFeedbackDampingCutoff = 0.7f;  // Default ~8kHz cutoff
+    }
+    if (!streamer.readBool(mFeedbackPreEffects)) {
+        mFeedbackPreEffects = false;  // Default post-effects
+    }
+    if (!streamer.readBool(mFeedbackPolarityInvert)) {
+        mFeedbackPolarityInvert = false;  // Default normal polarity
+    }
+
+    // Update filter coefficients after loading parameters
+    updateFeedbackDampingCoefficients();
+
     streamer.readBool(mTempoSyncMode);
     streamer.readInt32(mSyncDivision);
     streamer.readInt32(mGrid);
@@ -3596,6 +3674,101 @@ bool WaterStickProcessor::checkParameterChangesOptimized()
     }
 
     return false;
+}
+
+//=============================================================================
+// ENHANCED FEEDBACK SYSTEM IMPLEMENTATION
+// Professional-grade feedback processing with damping, routing, and polarity
+//=============================================================================
+
+void WaterStickProcessor::initializeFeedbackSystem()
+{
+    // Initialize feedback enhancement parameters to professional defaults
+    mFeedbackDamping = 0.2f;             // Moderate damping by default
+    mFeedbackDampingCutoff = 0.7f;       // ~8kHz cutoff (mid-high frequency)
+    mFeedbackPreEffects = false;         // Post-effects routing (more common)
+    mFeedbackPolarityInvert = false;     // Normal polarity
+
+    // Initialize high-frequency damping filter state
+    mDampingFilterStateL = 0.0f;
+    mDampingFilterStateR = 0.0f;
+
+    // Calculate initial coefficients
+    updateFeedbackDampingCoefficients();
+}
+
+void WaterStickProcessor::updateFeedbackDampingCoefficients()
+{
+    // Calculate damping filter coefficient based on cutoff frequency
+    // Uses one-pole lowpass with exponential decay characteristic
+    mDampingCoeffTarget = calculateDampingCoefficient(mFeedbackDampingCutoff);
+
+    // Smooth coefficient changes to prevent audio artifacts (5ms time constant)
+    const float smoothingTime = 0.005f; // 5ms
+    const float smoothingCoeff = std::exp(-1.0f / (smoothingTime * static_cast<float>(mSampleRate)));
+
+    mDampingCoeffSmoothed = mDampingCoeffSmoothed * smoothingCoeff +
+                           mDampingCoeffTarget * (1.0f - smoothingCoeff);
+
+    // Set actual filter coefficient and gain
+    mDampingFilterCoeff = mDampingCoeffSmoothed;
+    mDampingFilterGain = 1.0f - mDampingFilterCoeff; // Maintain unity gain at DC
+}
+
+void WaterStickProcessor::processFeedbackDamping(float& feedbackL, float& feedbackR)
+{
+    // Apply high-frequency damping using one-pole lowpass filter
+    // Form: y[n] = a * x[n] + b * y[n-1], where a = gain, b = coeff
+
+    if (mFeedbackDamping > 0.001f) { // Only process if damping is enabled
+        // Left channel damping
+        mDampingFilterStateL = mDampingFilterGain * feedbackL +
+                              mDampingFilterCoeff * mDampingFilterStateL;
+
+        // Right channel damping
+        mDampingFilterStateR = mDampingFilterGain * feedbackR +
+                              mDampingFilterCoeff * mDampingFilterStateR;
+
+        // Blend dampened and original signal based on damping amount
+        feedbackL = feedbackL * (1.0f - mFeedbackDamping) +
+                   mDampingFilterStateL * mFeedbackDamping;
+        feedbackR = feedbackR * (1.0f - mFeedbackDamping) +
+                   mDampingFilterStateR * mFeedbackDamping;
+    }
+}
+
+void WaterStickProcessor::applyFeedbackPolarity(float& feedbackL, float& feedbackR)
+{
+    // Apply polarity inversion if enabled
+    if (mFeedbackPolarityInvert) {
+        feedbackL = -feedbackL;
+        feedbackR = -feedbackR;
+    }
+}
+
+float WaterStickProcessor::calculateDampingCoefficient(float cutoffNormalized) const
+{
+    // Convert normalized cutoff (0.0-1.0) to coefficient for one-pole lowpass
+    // Uses exponential mapping for musical response
+    float cutoffHz = mapCutoffFrequency(cutoffNormalized);
+    float omega = 2.0f * M_PI * cutoffHz / static_cast<float>(mSampleRate);
+
+    // Clamp omega to prevent instability
+    omega = std::min(omega, static_cast<float>(M_PI * 0.99f));
+
+    // Calculate coefficient using exponential method for steep rolloff
+    return std::exp(-omega);
+}
+
+float WaterStickProcessor::mapCutoffFrequency(float normalized) const
+{
+    // Map 0.0-1.0 to 20Hz-20kHz with logarithmic scaling for musical response
+    // This provides fine control in the mid-frequency range where most content lives
+    const float minFreq = 20.0f;
+    const float maxFreq = 20000.0f;
+
+    // Logarithmic mapping for musical frequency response
+    return minFreq * std::pow(maxFreq / minFreq, normalized);
 }
 
 } // namespace WaterStick

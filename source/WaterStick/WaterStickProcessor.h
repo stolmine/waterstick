@@ -607,6 +607,15 @@ private:
     void checkBypassStateChanges();
     void processDelaySection(float inputL, float inputR, float& outputL, float& outputR);
 
+    // ENHANCED FEEDBACK SYSTEM METHODS
+    // ================================
+    void initializeFeedbackSystem();
+    void updateFeedbackDampingCoefficients();
+    void processFeedbackDamping(float& feedbackL, float& feedbackR);
+    void applyFeedbackPolarity(float& feedbackL, float& feedbackR);
+    float calculateDampingCoefficient(float cutoffNormalized) const;
+    float mapCutoffFrequency(float normalized) const;  // Maps 0.0-1.0 to 20Hz-20kHz
+
     // State versioning methods
     Steinberg::tresult readLegacyProcessorState(Steinberg::IBStream* state);
     Steinberg::tresult readVersionedProcessorState(Steinberg::IBStream* state, Steinberg::int32 version);
@@ -718,13 +727,42 @@ private:
     ThreeSistersFilter mTapFiltersL[NUM_TAPS];  // Left channel filters
     ThreeSistersFilter mTapFiltersR[NUM_TAPS];  // Right channel filters
 
-    // Feedback storage for tanh limiting
+    // ENHANCED FEEDBACK SYSTEM ARCHITECTURE
+    // =================================
+
+    // Core feedback storage for tanh limiting
     float mFeedbackBufferL;
     float mFeedbackBufferR;
 
     // Feedback sub-mixer for per-tap sends
     float mFeedbackSubMixerL;
     float mFeedbackSubMixerR;
+
+    // Pre-effects feedback capture (before filters and pitch processing)
+    float mFeedbackSubMixerPreEffectsL;
+    float mFeedbackSubMixerPreEffectsR;
+
+    // PROFESSIONAL FEEDBACK ENHANCEMENT PARAMETERS
+    // ============================================
+
+    // High-frequency damping parameters
+    float mFeedbackDamping;              // Amount of high-frequency damping (0.0-1.0)
+    float mFeedbackDampingCutoff;        // Damping filter cutoff frequency (0.0-1.0, mapped to 20Hz-20kHz)
+
+    // Feedback routing parameters
+    bool mFeedbackPreEffects;            // true = pre-effects, false = post-effects
+    bool mFeedbackPolarityInvert;        // true = inverted polarity, false = normal
+
+    // High-frequency damping filter state (one-pole lowpass for each channel)
+    // Using y[n] = a * x[n] + b * y[n-1] form for efficiency
+    float mDampingFilterStateL;          // Previous output sample (left)
+    float mDampingFilterStateR;          // Previous output sample (right)
+    float mDampingFilterCoeff;           // Filter coefficient (calculated from cutoff)
+    float mDampingFilterGain;            // Input gain to maintain unity at DC
+
+    // Smooth parameter changes to prevent audio artifacts
+    float mDampingCoeffSmoothed;         // Smoothed damping coefficient
+    float mDampingCoeffTarget;           // Target damping coefficient
 
 
     // Parameter change tracking for tempo sync optimization
