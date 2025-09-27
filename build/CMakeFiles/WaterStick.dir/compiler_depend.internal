@@ -5227,6 +5227,9 @@ CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o
  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stddef_rsize_t.h
  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stddef_size_t.h
  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stddef_wchar_t.h
+ /Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_bf16.h
+ /Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_neon.h
+ /Library/Developer/CommandLineTools/usr/lib/clang/17/include/arm_vector_types.h
  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/limits.h
  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/ptrcheck.h
  /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stdarg.h
@@ -6206,7 +6209,6 @@ CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o
  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/__wctype.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/__xlocale.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_abort.h
- /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_bounds.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctermid.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctype.h

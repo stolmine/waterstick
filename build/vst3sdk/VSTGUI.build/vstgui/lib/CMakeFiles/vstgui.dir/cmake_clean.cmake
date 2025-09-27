@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../lib/libvstgui.a"
-  "../../../../lib/libvstgui.pdb"
+  "../../../../lib/Release/libvstgui.a"
+  "../../../../lib/Release/libvstgui.pdb"
   "CMakeFiles/vstgui.dir/animation/animations.cpp.o"
   "CMakeFiles/vstgui.dir/animation/animations.cpp.o.d"
   "CMakeFiles/vstgui.dir/animation/animator.cpp.o"

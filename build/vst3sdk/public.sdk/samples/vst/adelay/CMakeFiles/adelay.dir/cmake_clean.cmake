@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/adelay.vst3/Contents/MacOS/adelay"
-  "../../../../../VST3/adelay.vst3/Contents/MacOS/adelay.pdb"
+  "../../../../../VST3/Release/adelay.vst3/Contents/MacOS/adelay"
+  "../../../../../VST3/Release/adelay.vst3/Contents/MacOS/adelay.pdb"
   "CMakeFiles/adelay.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/adelay.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/adelay.dir/__/__/__/source/vst/utility/test/ringbuffertest.cpp.o"

@@ -138,35 +138,32 @@ pitch__names_OBJECTS = \
 # External object files for target pitch-names
 pitch__names_EXTERNAL_OBJECTS =
 
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/source/factory.cpp.o
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/source/pitchnames.cpp.o
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/source/pitchnamesdatabrowsersource.cpp.o
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/__/__/__/source/main/macmain.cpp.o
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/build.make
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libvstgui_support.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libsdk.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libvstgui.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libvstgui_uidescription.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libsdk_common.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libbase.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: lib/libpluginterfaces.a
-VST3/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/pitch-names.vst3/Contents/MacOS/pitch-names"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//pitch-names.vst3/Contents/Resources
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/source/factory.cpp.o
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/source/pitchnames.cpp.o
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/source/pitchnamesdatabrowsersource.cpp.o
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/build.make
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libvstgui_support.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libsdk.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libvstgui.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libvstgui_uidescription.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libsdk_common.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libbase.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: lib/Release/libpluginterfaces.a
+VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names: vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/pitch-names.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/pitch-names.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//pitch-names.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//pitch-names.vst3 -output /Users/why/repos/waterstick/build/VST3//pitch-names.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//pitch-names.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/pitch-names.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/pitch-names.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/pitch-names.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/pitch-names.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && ln -svfF /Users/why/repos/waterstick/build/VST3//pitch-names.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/pitch-names.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/pitchnames && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/pitch-names.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/pitch-names.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/build: VST3/pitch-names.vst3/Contents/MacOS/pitch-names
+vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/build: VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names
 .PHONY : vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/build
 
 vst3sdk/public.sdk/samples/vst/pitchnames/CMakeFiles/pitch-names.dir/clean:

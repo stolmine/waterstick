@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../bin/moduleinfotool"
-  "../../../../../bin/moduleinfotool.pdb"
+  "../../../../../bin/Release/moduleinfotool"
+  "../../../../../bin/Release/moduleinfotool.pdb"
   "CMakeFiles/moduleinfotool.dir/__/__/__/source/vst/hosting/module_mac.mm.o"
   "CMakeFiles/moduleinfotool.dir/__/__/__/source/vst/hosting/module_mac.mm.o.d"
   "CMakeFiles/moduleinfotool.dir/__/__/__/source/vst/moduleinfo/moduleinfocreator.cpp.o"

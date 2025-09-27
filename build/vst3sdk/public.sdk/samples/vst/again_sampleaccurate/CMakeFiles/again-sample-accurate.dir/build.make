@@ -183,35 +183,32 @@ again__sample__accurate_OBJECTS = \
 # External object files for target again-sample-accurate
 again__sample__accurate_EXTERNAL_OBJECTS =
 
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/agsa_controller.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/agsa_factory.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/agsa_processor.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/tutorial.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/__/__/__/source/vst/utility/test/sampleaccuratetest.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/__/__/__/source/vst/utility/test/rttransfertest.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/__/__/__/source/main/macmain.cpp.o
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build.make
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/libsdk_hosting.a
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/libsdk.a
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/libsdk_common.a
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/libbase.a
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/libpluginterfaces.a
-VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX CFBundle shared module ../../../../../VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//again-sample-accurate.vst3/Contents/Resources
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/agsa_controller.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/agsa_factory.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/agsa_processor.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/source/tutorial.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/__/__/__/source/vst/utility/test/sampleaccuratetest.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/__/__/__/source/vst/utility/test/rttransfertest.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build.make
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/Release/libsdk_hosting.a
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/Release/libsdk.a
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/Release/libsdk_common.a
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/Release/libbase.a
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: lib/Release/libpluginterfaces.a
+VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate: vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX CFBundle shared module ../../../../../VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/again-sample-accurate.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/again-sample-accurate.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//again-sample-accurate.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//again-sample-accurate.vst3 -output /Users/why/repos/waterstick/build/VST3//again-sample-accurate.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//again-sample-accurate.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/again-sample-accurate.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/again-sample-accurate.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/again-sample-accurate.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/again-sample-accurate.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && ln -svfF /Users/why/repos/waterstick/build/VST3//again-sample-accurate.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/again-sample-accurate.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/again_sampleaccurate && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/again-sample-accurate.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/again-sample-accurate.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build: VST3/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate
+vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build: VST3/Release/again-sample-accurate.vst3/Contents/MacOS/again-sample-accurate
 .PHONY : vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/build
 
 vst3sdk/public.sdk/samples/vst/again_sampleaccurate/CMakeFiles/again-sample-accurate.dir/clean:

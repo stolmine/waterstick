@@ -138,31 +138,28 @@ sync__delay_OBJECTS = \
 # External object files for target sync-delay
 sync__delay_EXTERNAL_OBJECTS =
 
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/source/syncdelaycontroller.cpp.o
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/source/syncdelayfactory.cpp.o
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/source/syncdelayprocessor.cpp.o
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/__/__/__/source/main/macmain.cpp.o
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/build.make
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: lib/libsdk.a
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: lib/libsdk_common.a
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: lib/libbase.a
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: lib/libpluginterfaces.a
-VST3/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/sync-delay.vst3/Contents/MacOS/sync-delay"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//sync-delay.vst3/Contents/Resources
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/source/syncdelaycontroller.cpp.o
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/source/syncdelayfactory.cpp.o
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/source/syncdelayprocessor.cpp.o
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/__/__/__/source/main/macmain.cpp.o
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/build.make
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: lib/Release/libsdk.a
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: lib/Release/libsdk_common.a
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: lib/Release/libbase.a
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: lib/Release/libpluginterfaces.a
+VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay: vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/sync-delay.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/sync-delay.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//sync-delay.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//sync-delay.vst3 -output /Users/why/repos/waterstick/build/VST3//sync-delay.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//sync-delay.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/sync-delay.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/sync-delay.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/sync-delay.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/sync-delay.vst3/Contents/Resources/moduleinfo.json
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && ln -svfF /Users/why/repos/waterstick/build/VST3//sync-delay.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/sync-delay.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/syncdelay && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/sync-delay.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/sync-delay.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/build: VST3/sync-delay.vst3/Contents/MacOS/sync-delay
+vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/build: VST3/Release/sync-delay.vst3/Contents/MacOS/sync-delay
 .PHONY : vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/build
 
 vst3sdk/public.sdk/samples/vst/syncdelay/CMakeFiles/sync-delay.dir/clean:

@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../lib/libsdk_common.a"
-  "../../lib/libsdk_common.pdb"
+  "../../lib/Release/libsdk_common.a"
+  "../../lib/Release/libsdk_common.pdb"
   "CMakeFiles/sdk_common.dir/source/common/commoniids.cpp.o"
   "CMakeFiles/sdk_common.dir/source/common/commoniids.cpp.o.d"
   "CMakeFiles/sdk_common.dir/source/common/commonstringconvert.cpp.o"

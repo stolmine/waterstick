@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../lib/libsdk.a"
-  "../../lib/libsdk.pdb"
+  "../../lib/Release/libsdk.a"
+  "../../lib/Release/libsdk.pdb"
   "CMakeFiles/sdk.dir/source/common/pluginview.cpp.o"
   "CMakeFiles/sdk.dir/source/common/pluginview.cpp.o.d"
   "CMakeFiles/sdk.dir/source/main/moduleinit.cpp.o"

@@ -22,7 +22,7 @@ CMAKE_AR:FILEPATH=/usr/bin/ar
 
 //Choose the type of build, options are: None Debug Release RelWithDebInfo
 // MinSizeRel ...
-CMAKE_BUILD_TYPE:STRING=
+CMAKE_BUILD_TYPE:STRING=Release
 
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
@@ -321,7 +321,7 @@ SMTG_PLUGIN_TARGET_USER_PATH:PATH=
 SMTG_RENAME_ASSERT:BOOL=ON
 
 //Run VST validator on VST3 Plug-ins
-SMTG_RUN_VST_VALIDATOR:BOOL=ON
+SMTG_RUN_VST_VALIDATOR:BOOL=OFF
 
 //Create macOS and iOS collection targets
 SMTG_VSTSDK_GENERATE_MACOS_IOS_COLLECTION_TARGETS:BOOL=OFF

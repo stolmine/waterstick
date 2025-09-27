@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../bin/validator"
-  "../../../../../bin/validator.pdb"
+  "../../../../../bin/Release/validator"
+  "../../../../../bin/Release/validator.pdb"
   "CMakeFiles/validator.dir/__/__/__/source/common/memorystream.cpp.o"
   "CMakeFiles/validator.dir/__/__/__/source/common/memorystream.cpp.o.d"
   "CMakeFiles/validator.dir/__/__/__/source/main/moduleinit.cpp.o"

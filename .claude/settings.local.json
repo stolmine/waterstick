@@ -139,10 +139,3 @@
       "Bash(./validator:*)",
       "Bash(/Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator/validator -e /Library/Audio/Plug-Ins/VST3/WaterStick.vst3)",
       "Bash(/Users/why/repos/waterstick/build/bin/validator:*)",
-      "Bash(git submodule:*)"
-    ],
-    "deny": [],
-    "ask": []
-  },
-  "outputStyle": "dsp-subagent"
-}

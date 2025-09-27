@@ -9,9 +9,6 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-<<<<<<< HEAD
-#include <memory>
-=======
 #include <chrono>
 #include <string>
 #include <atomic>
@@ -67,7 +64,6 @@ private:
 
     static const size_t MAX_PROFILE_HISTORY = 10000;
 };
->>>>>>> V4.2.1_pitchUpdate
 
 namespace WaterStick {
 
@@ -99,7 +95,129 @@ private:
     static const float sDivisionValues[kNumSyncDivisions];
 };
 
-// Lock-Free Parameter Manager for atomic parameter updates
+// PHASE 3: PERFORMANCE OPTIMIZATION - Lock-Free & SIMD-Accelerated Parameter System
+
+// Memory Pool for parameter update objects to avoid real-time allocations
+template<typename T, size_t PoolSize = 64>
+class LockFreeMemoryPool {
+public:
+    LockFreeMemoryPool() : mFreeList(nullptr), mHead(0) {
+        for (size_t i = 0; i < PoolSize; ++i) {
+            mPool[i].next = &mPool[i + 1];
+        }
+        mPool[PoolSize - 1].next = nullptr;
+        mFreeList.store(&mPool[0], std::memory_order_relaxed);
+    }
+
+    T* acquire() {
+        Node* node = mFreeList.load(std::memory_order_acquire);
+        while (node != nullptr) {
+            if (mFreeList.compare_exchange_weak(node, node->next, std::memory_order_release, std::memory_order_acquire)) {
+                return &node->data;
+            }
+        }
+        return nullptr; // Pool exhausted
+    }
+
+    void release(T* obj) {
+        Node* node = reinterpret_cast<Node*>(reinterpret_cast<char*>(obj) - offsetof(Node, data));
+        Node* oldHead = mFreeList.load(std::memory_order_relaxed);
+        do {
+            node->next = oldHead;
+        } while (!mFreeList.compare_exchange_weak(oldHead, node, std::memory_order_release, std::memory_order_relaxed));
+    }
+
+private:
+    struct Node {
+        T data;
+        std::atomic<Node*> next;
+        Node() : next(nullptr) {}
+    };
+
+    alignas(64) Node mPool[PoolSize];
+    std::atomic<Node*> mFreeList;
+    std::atomic<size_t> mHead;
+};
+
+// Cache-aligned parameter update structure for SIMD processing
+struct alignas(32) MacroParameterBatch {
+    float values[8];        // 8 macro knob values
+    float curves[8];        // 8 curve evaluations
+    float targets[16];      // 16 tap parameter targets
+    uint32_t dirtyFlags;    // Bit flags for changed parameters
+    uint64_t version;       // Parameter version for consistency
+};
+
+// SIMD-accelerated macro curve evaluator
+class SIMDMacroCurveEvaluator {
+public:
+    SIMDMacroCurveEvaluator();
+    ~SIMDMacroCurveEvaluator();
+
+    void evaluateBatch(const float* inputs, float* outputs, int curveType, int count);
+    void evaluateAllCurves(MacroParameterBatch& batch);
+
+private:
+    // SIMD curve evaluation functions
+    void evaluateLinearSIMD(const float* inputs, float* outputs, int count);
+    void evaluateRampUpSIMD(const float* inputs, float* outputs, int count);
+    void evaluateRampDownSIMD(const float* inputs, float* outputs, int count);
+    void evaluateSCurveSIMD(const float* inputs, float* outputs, int count);
+    void evaluateExpUpSIMD(const float* inputs, float* outputs, int count);
+    void evaluateExpDownSIMD(const float* inputs, float* outputs, int count);
+
+    // Platform-specific SIMD implementations
+    #if defined(__SSE4_1__) && (defined(__x86_64__) || defined(__i386__))
+    void evaluateSSE(const float* inputs, float* outputs, int curveType, int count);
+    #endif
+    #ifdef __ARM_NEON__
+    void evaluateNEON(const float* inputs, float* outputs, int curveType, int count);
+    #endif
+
+    alignas(32) float mScratchBuffer[32];
+};
+
+// Cache-optimized parameter lookup with dirty flag tracking
+class CacheOptimizedParameterLookup {
+public:
+    CacheOptimizedParameterLookup();
+    ~CacheOptimizedParameterLookup();
+
+    void initialize(int numTaps);
+    void markDirty(int tapIndex, int parameterType);
+    bool isDirty(int tapIndex, int parameterType) const;
+    void clearDirty(int tapIndex, int parameterType);
+    void clearAllDirty();
+
+    // Cache-friendly parameter access
+    float getTapParameter(int tapIndex, int parameterType) const;
+    void setTapParameter(int tapIndex, int parameterType, float value);
+
+    // Batch operations for better cache utilization
+    void getTapParametersBatch(int tapIndex, float* outParams, int count) const;
+    void setTapParametersBatch(int tapIndex, const float* params, int count);
+
+    // Version access for optimization
+    uint64_t getGlobalVersion() const;
+
+private:
+    static constexpr int CACHE_LINE_SIZE = 64;
+    static constexpr int PARAMS_PER_TAP = 8; // Level, Pan, FilterCutoff, FilterResonance, FilterType, PitchShift, FeedbackSend, Enable
+
+    // Cache-aligned parameter storage (one cache line per tap)
+    struct alignas(CACHE_LINE_SIZE) TapParameterCache {
+        float parameters[PARAMS_PER_TAP];
+        uint32_t dirtyFlags;
+        uint64_t version;
+        char padding[CACHE_LINE_SIZE - sizeof(float) * PARAMS_PER_TAP - sizeof(uint32_t) - sizeof(uint64_t)];
+    };
+
+    std::vector<TapParameterCache> mTapCache;
+    std::atomic<uint64_t> mGlobalVersion{0};
+    int mNumTaps;
+};
+
+// Enhanced Lock-Free Parameter Manager with SIMD and caching
 class LockFreeParameterManager {
 public:
     struct ParameterState {
@@ -126,12 +244,21 @@ public:
     void getAudioThreadParameters(ParameterState& outState);
     bool hasParametersChanged(uint64_t lastVersion) const;
 
+    // PHASE 3: Advanced parameter management
+    void updateMacroParametersBatch(const MacroParameterBatch& batch);
+    bool getMacroParametersBatch(MacroParameterBatch& outBatch);
+
 private:
     static constexpr int NUM_BUFFERS = 3;
     ParameterState mParameterBuffers[NUM_BUFFERS];
     std::atomic<int> mWriteIndex{0};
     std::atomic<int> mReadIndex{0};
     std::atomic<uint64_t> mGlobalVersion{0};
+
+    // PHASE 3: Macro parameter triple buffering
+    MacroParameterBatch mMacroBatches[NUM_BUFFERS];
+    std::atomic<int> mMacroWriteIndex{0};
+    std::atomic<int> mMacroReadIndex{0};
 
     void calculatePitchRatio(ParameterState& state);
     int getNextIndex(int currentIndex) const;
@@ -305,22 +432,12 @@ protected:
     int calculateCrossfadeLength(float delayTime);
 };
 
-<<<<<<< HEAD
-// Forward declaration for embedded GranularPitchShifter
-class GranularPitchShifter;
-
-class MSpitchDelayLine : public DualDelayLine {
-public:
-    MSpitchDelayLine();
-    ~MSpitchDelayLine();
-=======
 // LEGACY SYSTEM: Kept for emergency fallback only
 // Production system now uses UnifiedPitchDelayLine (47.9x performance improvement)
 class SpeedBasedDelayLine : public DualDelayLine {
 public:
     SpeedBasedDelayLine();
     ~SpeedBasedDelayLine();
->>>>>>> V4.2.1_pitchUpdate
 
     void initialize(double sampleRate, double maxDelaySeconds);
     void processSample(float input, float& output);
@@ -330,20 +447,6 @@ public:
     bool isPitchShiftActive() const { return mPitchSemitones != 0; }
 
 private:
-<<<<<<< HEAD
-    int mPitchSemitones;      // -12 to +12 semitones
-    float mPitchRatio;        // Current smoothed pitch ratio
-    float mTargetPitchRatio;  // Target pitch ratio for smoothing
-    float mSmoothingCoeff;    // Smoothing coefficient for parameter automation
-
-    // Embedded MSpitchAlgo implementation
-    std::unique_ptr<GranularPitchShifter> mPitchShifter;
-
-    // VST parameter smoothing
-    void updatePitchRatio();
-    void updateSmoothingCoeff();
-    void updatePitchRatioSmoothing();
-=======
     // Speed-based pitch shifting parameters
     int mPitchSemitones;         // -12 to +12 semitones
     float mPitchRatio;           // Current smoothed pitch ratio (speed)
@@ -391,7 +494,6 @@ private:
 public:
     // Public diagnostic methods
     void logProcessingStats() const;
->>>>>>> V4.2.1_pitchUpdate
 };
 
 class STKDelayLine {
@@ -527,6 +629,29 @@ private:
     // Macro curve parameters
     int mMacroCurveTypes[4];
 
+    // Macro knob values (8 macro knobs)
+    float mMacroKnobValues[8];
+
+    // Macro system state tracking for conditional evaluation
+    bool mMacroSystemActive[8];           // Track which macro knobs are actively controlling parameters
+    bool mMacroInfluenceActive;           // Global flag to control macro system activation
+    bool mParameterModifiedByUser[1024];  // Track which parameters have been manually modified
+    float mPreviousMacroKnobValues[8];    // Track previous macro knob values for change detection
+
+    // PHASE 3: Performance optimization components
+    std::unique_ptr<SIMDMacroCurveEvaluator> mSIMDCurveEvaluator;
+    std::unique_ptr<CacheOptimizedParameterLookup> mParameterCache;
+    std::unique_ptr<LockFreeMemoryPool<MacroParameterBatch>> mParameterUpdatePool;
+
+    // Lock-free macro parameter state
+    MacroParameterBatch mCurrentMacroBatch;
+    std::atomic<uint64_t> mMacroParameterVersion{0};
+    std::atomic<bool> mMacroParametersNeedUpdate{false};
+
+    // Parameter change detection with dirty flags
+    std::atomic<uint32_t> mTapParameterDirtyFlags[16];
+    std::atomic<uint64_t> mLastParameterUpdateVersion{0};
+
     float mGlobalDryWet;
     bool mDelayBypass;
 
@@ -572,10 +697,6 @@ private:
 
     // Multi-tap delay lines (16 taps, stereo)
     static const int NUM_TAPS = 16;
-<<<<<<< HEAD
-    MSpitchDelayLine mTapDelayLinesL[NUM_TAPS];  // Left channel delay lines
-    MSpitchDelayLine mTapDelayLinesR[NUM_TAPS];  // Right channel delay lines
-=======
     SpeedBasedDelayLine mTapDelayLinesL[NUM_TAPS];  // LEGACY: Emergency fallback only
     SpeedBasedDelayLine mTapDelayLinesR[NUM_TAPS];  // LEGACY: Emergency fallback only
 
@@ -588,7 +709,6 @@ private:
     DecoupledDelaySystem mDecoupledDelaySystemL;             // Left channel decoupled system (PRIMARY)
     DecoupledDelaySystem mDecoupledDelaySystemR;             // Right channel decoupled system (PRIMARY)
     bool mUseDecoupledArchitecture;                          // Feature flag for decoupled system
->>>>>>> V4.2.1_pitchUpdate
 
     TempoSync mTempoSync;
     TapDistribution mTapDistribution;
@@ -639,6 +759,38 @@ private:
     void applyCurveEvaluation();
     void applyParameterSmoothing();
     float evaluateMacroCurve(int curveType, float input) const;
+
+    // PHASE 3: Optimized parameter update methods
+    void updateParametersOptimized();
+    void updateMacroParametersBatch();
+    void processMacroParameterUpdate(const MacroParameterBatch& batch);
+    void applyParameterCacheUpdates();
+    bool checkParameterChangesOptimized();
+
+    // Processor-side macro curve evaluation system
+    void applyMacroCurvesToTapParameters();
+    float getGlobalCurveValueForTap(int discretePosition, int tapIndex) const;
+    float getGlobalCurveValueForTapContinuous(float continuousValue, int tapIndex) const;
+    void applyMacroKnobToTapParameter(int macroKnobIndex, int tapContext);
+    void applyMacroKnobToAllTaps(int macroKnobIndex, int tapContext);
+
+    // Rainmaker curve evaluation (matching controller implementation)
+    float evaluateRampUp(float x) const;
+    float evaluateRampDown(float x) const;
+    float evaluateSigmoidSCurve(float x) const;
+    float evaluateInverseSigmoid(float x) const;
+    float evaluateExpUp(float x) const;
+    float evaluateExpDown(float x) const;
+
+    // Current tap context for macro curve application (matches controller state)
+    int mCurrentTapContext;
+
+    // Parameter source priority methods
+    void detectUserParameterChanges();
+    void markParameterAsUserModified(int paramId);
+    void clearMacroInfluenceForParameter(int paramId);
+    void enableMacroControlForParameter(int paramId);
+    bool isParameterUnderMacroInfluence(int paramId) const;
 
 public:
     // Access discrete parameters with smoothing

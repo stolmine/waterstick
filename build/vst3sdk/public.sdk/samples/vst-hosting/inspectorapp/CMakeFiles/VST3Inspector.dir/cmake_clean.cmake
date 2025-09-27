@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "../../../../../bin/VST3Inspector.app/Contents/MacOS/VST3Inspector"
-  "../../../../../bin/VST3Inspector.app/Contents/Resources/window.uidesc"
-  "../../../../../bin/VST3Inspector.pdb"
+  "../../../../../bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector"
+  "../../../../../bin/Release/VST3Inspector.app/Contents/Resources/window.uidesc"
+  "../../../../../bin/Release/VST3Inspector.pdb"
   "CMakeFiles/VST3Inspector.dir/__/__/__/__/pluginterfaces/base/coreiids.cpp.o"
   "CMakeFiles/VST3Inspector.dir/__/__/__/__/pluginterfaces/base/coreiids.cpp.o.d"
   "CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/hosting/module_mac.mm.o"

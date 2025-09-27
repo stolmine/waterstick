@@ -786,6 +786,9 @@ void MacroCurveSystem::applyGlobalMacroCurveContinuous(float continuousValue, in
             curveValue = std::max(0.0f, std::min(1.0f, curveValue));
             controller->setParamNormalized(paramId, curveValue);
 
+            // Notify editor of parameter change for real-time GUI updates
+            controller->notifyEditorParameterChanged(paramId, curveValue);
+
             // DETAILED LOGGING: After setParamNormalized call
             {
                 std::ostringstream oss;
@@ -2486,6 +2489,185 @@ void WaterStickController::applyParameterSmoothing()
             mDiscreteParameters[i] = curvedValue;
         }
     }
+}
+
+//========================================================================
+// Editor Notification System Implementation
+//========================================================================
+
+void WaterStickController::registerEditor(WaterStickEditor* editor)
+{
+    mRegisteredEditor = editor;
+    WS_LOG_INFO("[EditorNotification] Editor registered for parameter notifications");
+}
+
+void WaterStickController::unregisterEditor(WaterStickEditor* editor)
+{
+    if (mRegisteredEditor == editor) {
+        mRegisteredEditor = nullptr;
+        WS_LOG_INFO("[EditorNotification] Editor unregistered from parameter notifications");
+    }
+}
+
+void WaterStickController::notifyEditorParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
+{
+    if (mRegisteredEditor) {
+        mRegisteredEditor->onParameterChanged(paramId, value);
+    }
+}
+
+//========================================================================
+// Phase 2 Enhancement: Multi-Editor Notification System Implementation
+//========================================================================
+void WaterStickController::registerEditorAdvanced(WaterStickEditor* editor)
+{
+    mCrossContextNotificationSystem.registerEditor(editor);
+    WS_LOG_INFO("[CrossContextNotification] Editor registered for advanced multi-context notifications");
+}
+
+void WaterStickController::unregisterEditorAdvanced(WaterStickEditor* editor)
+{
+    mCrossContextNotificationSystem.unregisterEditor(editor);
+    WS_LOG_INFO("[CrossContextNotification] Editor unregistered from advanced notifications");
+}
+
+void WaterStickController::notifyAllEditorsParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
+{
+    mCrossContextNotificationSystem.notifyAllEditorsParameterChanged(paramId, value);
+}
+
+void WaterStickController::notifyAllEditorsMacroUpdate(Steinberg::Vst::ParamID macroParamId, Steinberg::Vst::ParamValue value)
+{
+    mCrossContextNotificationSystem.notifyAllEditorsMacroUpdate(macroParamId, value, mCurrentTapContext);
+}
+
+//========================================================================
+// CrossContextNotificationSystem Implementation
+//========================================================================
+CrossContextNotificationSystem::CrossContextNotificationSystem() :
+    mTotalNotifications(0)
+{
+}
+
+CrossContextNotificationSystem::~CrossContextNotificationSystem()
+{
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+    mRegisteredEditors.clear();
+}
+
+void CrossContextNotificationSystem::registerEditor(WaterStickEditor* editor)
+{
+    if (!editor) return;
+
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+
+    // Check if editor is already registered
+    auto it = std::find(mRegisteredEditors.begin(), mRegisteredEditors.end(), editor);
+    if (it == mRegisteredEditors.end()) {
+        mRegisteredEditors.push_back(editor);
+        WS_LOG_INFO("[CrossContextNotification] Editor registered, total editors: " + std::to_string(mRegisteredEditors.size()));
+    }
+}
+
+void CrossContextNotificationSystem::unregisterEditor(WaterStickEditor* editor)
+{
+    if (!editor) return;
+
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+
+    auto it = std::find(mRegisteredEditors.begin(), mRegisteredEditors.end(), editor);
+    if (it != mRegisteredEditors.end()) {
+        mRegisteredEditors.erase(it);
+        WS_LOG_INFO("[CrossContextNotification] Editor unregistered, remaining editors: " + std::to_string(mRegisteredEditors.size()));
+    }
+}
+
+void CrossContextNotificationSystem::notifyAllEditorsParameterChanged(Steinberg::Vst::ParamID paramId, Steinberg::Vst::ParamValue value)
+{
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+
+    // Clean up stale editors before notification
+    cleanupStaleEditors();
+
+    for (auto editor : mRegisteredEditors) {
+        if (isValidEditor(editor)) {
+            editor->onParameterChanged(paramId, value);
+            mTotalNotifications.fetch_add(1, std::memory_order_relaxed);
+        }
+    }
+
+    // Trigger platform-specific immediate updates after notifications
+    triggerPlatformSpecificInvalidation();
+}
+
+void CrossContextNotificationSystem::notifyAllEditorsMacroUpdate(Steinberg::Vst::ParamID macroParamId, Steinberg::Vst::ParamValue value, int currentTapContext)
+{
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+
+    cleanupStaleEditors();
+
+    for (auto editor : mRegisteredEditors) {
+        if (isValidEditor(editor)) {
+            // Enhanced macro update notification with context information
+            editor->onParameterChanged(macroParamId, value);
+
+            // Platform-specific immediate updates for macro synchronization
+            editor->forceInvalidateAllContextViews();
+
+            mTotalNotifications.fetch_add(1, std::memory_order_relaxed);
+        }
+    }
+
+    triggerImmediateUpdates();
+}
+
+void CrossContextNotificationSystem::triggerImmediateUpdates()
+{
+    // Trigger immediate visual updates bypassing VSTGUI batching
+    // This is crucial for macro synchronization
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+
+    for (auto editor : mRegisteredEditors) {
+        if (isValidEditor(editor)) {
+            editor->forceInvalidateAllContextViews();
+        }
+    }
+}
+
+void CrossContextNotificationSystem::triggerPlatformSpecificInvalidation()
+{
+#ifdef __APPLE__
+    // macOS-specific NSView invalidation will be implemented in WaterStickEditor
+    // This triggers immediate updates bypassing VSTGUI batching
+    triggerImmediateUpdates();
+#elif defined(_WIN32)
+    // Windows-specific invalidation
+    triggerImmediateUpdates();
+#else
+    // Generic fallback
+    triggerImmediateUpdates();
+#endif
+}
+
+void CrossContextNotificationSystem::cleanupStaleEditors()
+{
+    // Remove any null editors from the vector
+    mRegisteredEditors.erase(
+        std::remove(mRegisteredEditors.begin(), mRegisteredEditors.end(), nullptr),
+        mRegisteredEditors.end()
+    );
+}
+
+bool CrossContextNotificationSystem::isValidEditor(WaterStickEditor* editor) const
+{
+    return editor != nullptr;
+}
+
+void CrossContextNotificationSystem::getNotificationStats(int& totalNotifications, int& totalEditors) const
+{
+    std::lock_guard<std::mutex> lock(mEditorRegistrationMutex);
+    totalNotifications = mTotalNotifications.load();
+    totalEditors = static_cast<int>(mRegisteredEditors.size());
 }
 
 } // namespace WaterStick

@@ -1,8 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/test_pitch_dropout.dir/test_pitch_dropout.cpp.o"
   "CMakeFiles/test_pitch_dropout.dir/test_pitch_dropout.cpp.o.d"
-  "bin/test_pitch_dropout"
-  "bin/test_pitch_dropout.pdb"
+  "bin/Release/test_pitch_dropout"
+  "bin/Release/test_pitch_dropout.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

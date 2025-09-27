@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../lib/libbase.a"
-  "../../lib/libbase.pdb"
+  "../../lib/Release/libbase.a"
+  "../../lib/Release/libbase.pdb"
   "CMakeFiles/base.dir/source/baseiids.cpp.o"
   "CMakeFiles/base.dir/source/baseiids.cpp.o.d"
   "CMakeFiles/base.dir/source/fbuffer.cpp.o"

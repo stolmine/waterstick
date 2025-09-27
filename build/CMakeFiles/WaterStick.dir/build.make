@@ -198,39 +198,36 @@ WaterStick_OBJECTS = \
 # External object files for target WaterStick
 WaterStick_EXTERNAL_OBJECTS =
 
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/build.make
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libsdk.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libvstgui_support.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libsdk_common.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libpluginterfaces.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libbase.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libvstgui.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: lib/libvstgui_uidescription.a
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX CFBundle shared module VST3/WaterStick.vst3/Contents/MacOS/WaterStick"
-	/opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//WaterStick.vst3/Contents/Resources
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickEditor.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickProcessor.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/build.make
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libsdk.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libvstgui_support.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libsdk_common.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libpluginterfaces.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libbase.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libvstgui.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: lib/Release/libvstgui_uidescription.a
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick: CMakeFiles/WaterStick.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX CFBundle shared module VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick"
+	/opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3/Contents/Resources
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/WaterStick.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//WaterStick.vst3
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 1.0.0 -path /Users/why/repos/waterstick/build/VST3//WaterStick.vst3 -output /Users/why/repos/waterstick/build/VST3//WaterStick.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//WaterStick.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
-	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3
+	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 1.0.0 -path /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3/Contents/Resources/moduleinfo.json
 	/opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	ln -svfF /Users/why/repos/waterstick/build/VST3//WaterStick.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/WaterStick.vst3
+	ln -svfF /Users/why/repos/waterstick/build/VST3/Release/WaterStick.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/WaterStick.vst3
 
 # Rule to build all files generated by this target.
-CMakeFiles/WaterStick.dir/build: VST3/WaterStick.vst3/Contents/MacOS/WaterStick
+CMakeFiles/WaterStick.dir/build: VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick
 .PHONY : CMakeFiles/WaterStick.dir/build
 
 CMakeFiles/WaterStick.dir/clean:

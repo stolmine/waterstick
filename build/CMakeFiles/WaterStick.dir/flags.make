@@ -6,7 +6,7 @@ CXX_DEFINES = -DRELEASE=1 -DVSTGUI_ENABLE_DEPRECATED_METHODS=1 -DWaterStick_EXPO
 
 CXX_INCLUDES = -I/Users/why/repos/waterstick/include/WaterStick -I/Users/why/repos/waterstick/source/WaterStick -I/Users/why/repos/waterstick/vst3sdk -I/Users/why/repos/waterstick/vst3sdk/public.sdk/.. -I/Users/why/repos/waterstick/vst3sdk/base/.. -I/Users/why/repos/waterstick/vst3sdk/pluginterfaces/.. -I/Users/why/repos/waterstick/vst3sdk/vstgui4
 
-CXX_FLAGSarm64 = -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -stdlib=libc++
+CXX_FLAGSarm64 = -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++
 
-CXX_FLAGS = -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -stdlib=libc++
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -fPIC -Wall -Wextra -Wpedantic -DRELEASE=1 -stdlib=libc++
 
