@@ -193,7 +193,7 @@ struct ParameterConverter {
 
     static float convertFeedback(double value) {
         float normalizedValue = static_cast<float>(value);
-        return normalizedValue * normalizedValue * normalizedValue;
+        return std::sqrt(normalizedValue);
     }
 
     static int convertPitchShift(double value) {
