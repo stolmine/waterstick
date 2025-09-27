@@ -511,7 +511,7 @@ void WaterStick::WaterStickEditor::createModeButtons(VSTGUI::CViewContainer* con
     // Add labels below mode buttons with optimized spacing
     const char* modeLabels[] = {"Mutes", "Level", "Pan", "Cutoff", "Res", "Type", "Pitch", "FB Send"};
     const int labelHeight = 20; // Match global control labels
-    const int labelY = modeButtonY + buttonSize + 12; // Reduced gap for tighter layout while maintaining clearance
+    const int labelY = modeButtonY + buttonSize + 5; // Match global control spacing (5px standard)
 
     for (int i = 0; i < 8; i++) {
         const int modeButtonX = gridLeft + i * (buttonSize + buttonSpacing);
