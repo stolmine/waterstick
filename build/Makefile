@@ -130,6 +130,19 @@ WaterStick/fast:
 .PHONY : WaterStick/fast
 
 #=============================================================================
+# Target rules for targets named test_pitch_dropout
+
+# Build rule for target.
+test_pitch_dropout: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_pitch_dropout
+.PHONY : test_pitch_dropout
+
+# fast build rule for target.
+test_pitch_dropout/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_pitch_dropout.dir/build.make CMakeFiles/test_pitch_dropout.dir/build
+.PHONY : test_pitch_dropout/fast
+
+#=============================================================================
 # Target rules for targets named vstgui_support
 
 # Build rule for target.
@@ -595,6 +608,30 @@ source/WaterStick/ControlFactory.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.s
 .PHONY : source/WaterStick/ControlFactory.cpp.s
 
+source/WaterStick/DecoupledDelayArchitecture.o: source/WaterStick/DecoupledDelayArchitecture.cpp.o
+.PHONY : source/WaterStick/DecoupledDelayArchitecture.o
+
+# target to build an object file
+source/WaterStick/DecoupledDelayArchitecture.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.o
+.PHONY : source/WaterStick/DecoupledDelayArchitecture.cpp.o
+
+source/WaterStick/DecoupledDelayArchitecture.i: source/WaterStick/DecoupledDelayArchitecture.cpp.i
+.PHONY : source/WaterStick/DecoupledDelayArchitecture.i
+
+# target to preprocess a source file
+source/WaterStick/DecoupledDelayArchitecture.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.i
+.PHONY : source/WaterStick/DecoupledDelayArchitecture.cpp.i
+
+source/WaterStick/DecoupledDelayArchitecture.s: source/WaterStick/DecoupledDelayArchitecture.cpp.s
+.PHONY : source/WaterStick/DecoupledDelayArchitecture.s
+
+# target to generate assembly for a file
+source/WaterStick/DecoupledDelayArchitecture.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.s
+.PHONY : source/WaterStick/DecoupledDelayArchitecture.cpp.s
+
 source/WaterStick/ThreeSistersFilter.o: source/WaterStick/ThreeSistersFilter.cpp.o
 .PHONY : source/WaterStick/ThreeSistersFilter.o
 
@@ -739,6 +776,30 @@ source/WaterStick/moduleentry.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/WaterStick.dir/build.make CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.s
 .PHONY : source/WaterStick/moduleentry.cpp.s
 
+test_pitch_dropout.o: test_pitch_dropout.cpp.o
+.PHONY : test_pitch_dropout.o
+
+# target to build an object file
+test_pitch_dropout.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_pitch_dropout.dir/build.make CMakeFiles/test_pitch_dropout.dir/test_pitch_dropout.cpp.o
+.PHONY : test_pitch_dropout.cpp.o
+
+test_pitch_dropout.i: test_pitch_dropout.cpp.i
+.PHONY : test_pitch_dropout.i
+
+# target to preprocess a source file
+test_pitch_dropout.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_pitch_dropout.dir/build.make CMakeFiles/test_pitch_dropout.dir/test_pitch_dropout.cpp.i
+.PHONY : test_pitch_dropout.cpp.i
+
+test_pitch_dropout.s: test_pitch_dropout.cpp.s
+.PHONY : test_pitch_dropout.s
+
+# target to generate assembly for a file
+test_pitch_dropout.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_pitch_dropout.dir/build.make CMakeFiles/test_pitch_dropout.dir/test_pitch_dropout.cpp.s
+.PHONY : test_pitch_dropout.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -776,6 +837,7 @@ help:
 	@echo "... sdk_common"
 	@echo "... sdk_hosting"
 	@echo "... sync-delay"
+	@echo "... test_pitch_dropout"
 	@echo "... utf16-name"
 	@echo "... validator"
 	@echo "... vstgui"
@@ -785,6 +847,9 @@ help:
 	@echo "... source/WaterStick/ControlFactory.o"
 	@echo "... source/WaterStick/ControlFactory.i"
 	@echo "... source/WaterStick/ControlFactory.s"
+	@echo "... source/WaterStick/DecoupledDelayArchitecture.o"
+	@echo "... source/WaterStick/DecoupledDelayArchitecture.i"
+	@echo "... source/WaterStick/DecoupledDelayArchitecture.s"
 	@echo "... source/WaterStick/ThreeSistersFilter.o"
 	@echo "... source/WaterStick/ThreeSistersFilter.i"
 	@echo "... source/WaterStick/ThreeSistersFilter.s"
@@ -803,6 +868,9 @@ help:
 	@echo "... source/WaterStick/moduleentry.o"
 	@echo "... source/WaterStick/moduleentry.i"
 	@echo "... source/WaterStick/moduleentry.s"
+	@echo "... test_pitch_dropout.o"
+	@echo "... test_pitch_dropout.i"
+	@echo "... test_pitch_dropout.s"
 .PHONY : help
 
 

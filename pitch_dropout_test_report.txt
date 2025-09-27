@@ -1,0 +1,43 @@
+WaterStick Pitch Shifting Dropout Test Report
+Generated: Sep 25 2025 22:43:08
+
+Test: Extreme Pitch Changes
+  Timeouts: 2
+  Loop Preventions: 0
+  Emergency Bypasses: 0
+  Avg Processing: 0.649504 μs
+  Max Processing: 688.542 μs
+  Dropout Detected: NO
+
+Test: Rapid Parameter Updates
+  Timeouts: 1
+  Loop Preventions: 0
+  Emergency Bypasses: 0
+  Avg Processing: 0.604357 μs
+  Max Processing: 218.959 μs
+  Dropout Detected: NO
+
+Test: Long Delay + Pitch Shift
+  Timeouts: 12
+  Loop Preventions: 0
+  Emergency Bypasses: 0
+  Avg Processing: 0.677133 μs
+  Max Processing: 1077.17 μs
+  Dropout Detected: NO
+
+Test: All Taps Simultaneous
+  Timeouts: 1
+  Loop Preventions: 0
+  Emergency Bypasses: 0
+  Avg Processing: 0.604794 μs
+  Max Processing: 117.666 μs
+  Dropout Detected: NO
+
+Test: Stress Test - Random
+  Timeouts: 1
+  Loop Preventions: 0
+  Emergency Bypasses: 0
+  Avg Processing: 0.603554 μs
+  Max Processing: 230.125 μs
+  Dropout Detected: NO
+

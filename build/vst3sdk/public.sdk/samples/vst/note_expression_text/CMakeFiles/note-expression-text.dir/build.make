@@ -72,9 +72,9 @@ include vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expr
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/codegen:
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/codegen
 
-VST3/Release/note-expression-text.vst3/Contents/Resources/plug.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_text/resource/plug.uidesc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/Release/note-expression-text.vst3/Contents/Resources/plug.uidesc"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_text/resource/plug.uidesc VST3/Release/note-expression-text.vst3/Contents/Resources/plug.uidesc
+VST3/note-expression-text.vst3/Contents/Resources/plug.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_text/resource/plug.uidesc
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content VST3/note-expression-text.vst3/Contents/Resources/plug.uidesc"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_text/resource/plug.uidesc VST3/note-expression-text.vst3/Contents/Resources/plug.uidesc
 
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plug.cpp.o: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/flags.make
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plug.cpp.o: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst/note_expression_text/source/plug.cpp
@@ -142,36 +142,36 @@ note__expression__text_OBJECTS = \
 # External object files for target note-expression-text
 note__expression__text_EXTERNAL_OBJECTS =
 
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plug.cpp.o
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plugcontroller.cpp.o
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plugentry.cpp.o
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/__/__/__/source/main/macmain.cpp.o
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build.make
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libvstgui_support.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libsdk.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libvstgui.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libvstgui_uidescription.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libsdk_common.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libbase.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/Release/libpluginterfaces.a
-VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3/Contents/Resources
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plug.cpp.o
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plugcontroller.cpp.o
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/source/plugentry.cpp.o
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/__/__/__/source/main/macmain.cpp.o
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build.make
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libvstgui_support.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libsdk.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libvstgui.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libvstgui_uidescription.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libsdk_common.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libbase.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: lib/libpluginterfaces.a
+VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text: vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//note-expression-text.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/note-expression-text.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/validator  /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//note-expression-text.vst3
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//note-expression-text.vst3 -output /Users/why/repos/waterstick/build/VST3//note-expression-text.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//note-expression-text.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/note-expression-text.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/note-expression-text.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/note_expression_text && ln -svfF /Users/why/repos/waterstick/build/VST3//note-expression-text.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/note-expression-text.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build: VST3/Release/note-expression-text.vst3/Contents/MacOS/note-expression-text
-vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build: VST3/Release/note-expression-text.vst3/Contents/Resources/plug.uidesc
+vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build: VST3/note-expression-text.vst3/Contents/MacOS/note-expression-text
+vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build: VST3/note-expression-text.vst3/Contents/Resources/plug.uidesc
 .PHONY : vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/build
 
 vst3sdk/public.sdk/samples/vst/note_expression_text/CMakeFiles/note-expression-text.dir/clean:

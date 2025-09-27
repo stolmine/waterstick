@@ -1,0 +1,36 @@
+#!/bin/bash
+# Unified Delay System Test Build and Run Script
+
+echo "=== Building Unified Delay System Test ==="
+
+# Compilation flags
+CXX_FLAGS="-std=c++17 -O2 -I./vst3sdk -I. -DDEBUG=1"
+LINK_FLAGS="-framework CoreFoundation -framework AudioToolbox -framework AudioUnit"
+
+# Compile the test
+clang++ $CXX_FLAGS test_unified_delay_system.cpp \
+    source/WaterStick/WaterStickProcessor.cpp \
+    source/WaterStick/ThreeSistersFilter.cpp \
+    $LINK_FLAGS \
+    -o test_unified_delay_system
+
+if [ $? -eq 0 ]; then
+    echo "✓ Build successful"
+    echo ""
+    echo "=== Running Unified Delay System Test ==="
+    ./test_unified_delay_system
+
+    TEST_RESULT=$?
+    if [ $TEST_RESULT -eq 0 ]; then
+        echo ""
+        echo "✓ All tests passed - Phase 2 implementation validated!"
+    else
+        echo ""
+        echo "✗ Tests failed - Additional work needed"
+    fi
+
+    exit $TEST_RESULT
+else
+    echo "✗ Build failed"
+    exit 1
+fi

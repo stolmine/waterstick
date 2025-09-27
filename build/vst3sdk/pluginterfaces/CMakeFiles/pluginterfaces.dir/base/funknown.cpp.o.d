@@ -344,6 +344,7 @@ vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/base/funknown.cpp.o: \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stdarg___va_copy.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/__stdarg_va_copy.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/assert.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_static_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/ctype.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/ctype.h \

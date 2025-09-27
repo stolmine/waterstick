@@ -72,9 +72,9 @@ include vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspe
 vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/codegen:
 .PHONY : vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/codegen
 
-bin/Release/VST3Inspector.app/Contents/Resources/window.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/resource/window.uidesc
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content bin/Release/VST3Inspector.app/Contents/Resources/window.uidesc"
-	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/resource/window.uidesc bin/Release/VST3Inspector.app/Contents/Resources/window.uidesc
+bin/VST3Inspector.app/Contents/Resources/window.uidesc: /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/resource/window.uidesc
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Copying OS X content bin/VST3Inspector.app/Contents/Resources/window.uidesc"
+	$(CMAKE_COMMAND) -E copy /Users/why/repos/waterstick/vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/resource/window.uidesc bin/VST3Inspector.app/Contents/Resources/window.uidesc
 
 vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/__/pluginterfaces/base/coreiids.cpp.o: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/flags.make
 vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/__/pluginterfaces/base/coreiids.cpp.o: /Users/why/repos/waterstick/vst3sdk/pluginterfaces/base/coreiids.cpp
@@ -172,28 +172,28 @@ VST3Inspector_OBJECTS = \
 # External object files for target VST3Inspector
 VST3Inspector_EXTERNAL_OBJECTS =
 
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/__/pluginterfaces/base/coreiids.cpp.o
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/moduleinfo/moduleinfocreator.cpp.o
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/moduleinfo/moduleinfoparser.cpp.o
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/source/app.cpp.o
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/source/window.cpp.o
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/hosting/module_mac.mm.o
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build.make
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libvstgui.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libvstgui_uidescription.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libvstgui_standalone.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libsdk_hosting.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libsdk_common.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libbase.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/Release/libpluginterfaces.a
-bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable ../../../../../bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector"
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/__/pluginterfaces/base/coreiids.cpp.o
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/moduleinfo/moduleinfocreator.cpp.o
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/moduleinfo/moduleinfoparser.cpp.o
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/source/app.cpp.o
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/source/window.cpp.o
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/__/__/__/source/vst/hosting/module_mac.mm.o
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build.make
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libvstgui.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libvstgui_uidescription.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libvstgui_standalone.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libsdk_hosting.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libexpat.tbd
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libsdk_common.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libbase.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: lib/libpluginterfaces.a
+bin/VST3Inspector.app/Contents/MacOS/VST3Inspector: vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable ../../../../../bin/VST3Inspector.app/Contents/MacOS/VST3Inspector"
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/inspectorapp && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/VST3Inspector.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build: bin/Release/VST3Inspector.app/Contents/MacOS/VST3Inspector
-vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build: bin/Release/VST3Inspector.app/Contents/Resources/window.uidesc
+vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build: bin/VST3Inspector.app/Contents/MacOS/VST3Inspector
+vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build: bin/VST3Inspector.app/Contents/Resources/window.uidesc
 .PHONY : vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/build
 
 vst3sdk/public.sdk/samples/vst-hosting/inspectorapp/CMakeFiles/VST3Inspector.dir/clean:

@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o"
   "CMakeFiles/WaterStick.dir/source/WaterStick/ControlFactory.cpp.o.d"
+  "CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.o"
+  "CMakeFiles/WaterStick.dir/source/WaterStick/DecoupledDelayArchitecture.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o"
   "CMakeFiles/WaterStick.dir/source/WaterStick/ThreeSistersFilter.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/WaterStickController.cpp.o"
@@ -13,8 +15,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/WaterStick.dir/source/WaterStick/factory.cpp.o.d"
   "CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o"
   "CMakeFiles/WaterStick.dir/source/WaterStick/moduleentry.cpp.o.d"
-  "VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick"
-  "VST3/Release/WaterStick.vst3/Contents/MacOS/WaterStick.pdb"
+  "VST3/WaterStick.vst3/Contents/MacOS/WaterStick"
+  "VST3/WaterStick.vst3/Contents/MacOS/WaterStick.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

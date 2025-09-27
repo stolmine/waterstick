@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names"
-  "../../../../../VST3/Release/pitch-names.vst3/Contents/MacOS/pitch-names.pdb"
+  "../../../../../VST3/pitch-names.vst3/Contents/MacOS/pitch-names"
+  "../../../../../VST3/pitch-names.vst3/Contents/MacOS/pitch-names.pdb"
   "CMakeFiles/pitch-names.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/pitch-names.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/pitch-names.dir/source/factory.cpp.o"

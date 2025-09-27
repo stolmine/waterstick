@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/prefetchable.vst3/Contents/MacOS/prefetchable"
-  "../../../../../VST3/Release/prefetchable.vst3/Contents/MacOS/prefetchable.pdb"
+  "../../../../../VST3/prefetchable.vst3/Contents/MacOS/prefetchable"
+  "../../../../../VST3/prefetchable.vst3/Contents/MacOS/prefetchable.pdb"
   "CMakeFiles/prefetchable.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/prefetchable.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/prefetchable.dir/source/plug.cpp.o"

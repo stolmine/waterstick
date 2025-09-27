@@ -138,31 +138,31 @@ program__change_OBJECTS = \
 # External object files for target program-change
 program__change_EXTERNAL_OBJECTS =
 
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/source/plug.cpp.o
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/source/plugcontroller.cpp.o
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/source/plugentry.cpp.o
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/__/__/__/source/main/macmain.cpp.o
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/build.make
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: lib/Release/libsdk.a
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: lib/Release/libsdk_common.a
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: lib/Release/libbase.a
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: lib/Release/libpluginterfaces.a
-VST3/Release/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/Release/program-change.vst3/Contents/MacOS/program-change"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3/Contents/Resources
+VST3/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/source/plug.cpp.o
+VST3/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/source/plugcontroller.cpp.o
+VST3/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/source/plugentry.cpp.o
+VST3/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/__/__/__/source/main/macmain.cpp.o
+VST3/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/build.make
+VST3/program-change.vst3/Contents/MacOS/program-change: lib/libsdk.a
+VST3/program-change.vst3/Contents/MacOS/program-change: lib/libsdk_common.a
+VST3/program-change.vst3/Contents/MacOS/program-change: lib/libbase.a
+VST3/program-change.vst3/Contents/MacOS/program-change: lib/libpluginterfaces.a
+VST3/program-change.vst3/Contents/MacOS/program-change: vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX CFBundle shared module ../../../../../VST3/program-change.vst3/Contents/MacOS/program-change"
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && /opt/homebrew/bin/cmake -E make_directory /Users/why/repos/waterstick/build/VST3//program-change.vst3/Contents/Resources
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/program-change.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3 -output /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3/Contents/Resources/moduleinfo.json
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
-	cd /Users/why/repos/waterstick/build/bin/Release && /Users/why/repos/waterstick/build/bin/Release/validator  /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3
-	cd /Users/why/repos/waterstick/build/bin/Release && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/VST3//program-change.vst3
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/moduleinfotool -create -version 3.7.14.0 -path /Users/why/repos/waterstick/build/VST3//program-change.vst3 -output /Users/why/repos/waterstick/build/VST3//program-change.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && codesign -f -s - -v /Users/why/repos/waterstick/build/VST3//program-change.vst3/Contents/Resources/moduleinfo.json
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator started...
+	cd /Users/why/repos/waterstick/build/bin && /Users/why/repos/waterstick/build/bin/validator  
+	cd /Users/why/repos/waterstick/build/bin && /opt/homebrew/bin/cmake -E echo [SMTG] Validator finished.
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && /opt/homebrew/bin/cmake -E make_directory /Users/why/Library/Audio/Plug-Ins/VST3
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && ln -svfF /Users/why/repos/waterstick/build/VST3/Release/program-change.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/program-change.vst3
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst/programchange && ln -svfF /Users/why/repos/waterstick/build/VST3//program-change.vst3 /Users/why/Library/Audio/Plug-Ins/VST3/program-change.vst3
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/build: VST3/Release/program-change.vst3/Contents/MacOS/program-change
+vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/build: VST3/program-change.vst3/Contents/MacOS/program-change
 .PHONY : vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/build
 
 vst3sdk/public.sdk/samples/vst/programchange/CMakeFiles/program-change.dir/clean:

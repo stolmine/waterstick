@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../bin/Release/editorhost.app/Contents/MacOS/editorhost"
-  "../../../../../bin/Release/editorhost.pdb"
+  "../../../../../bin/editorhost.app/Contents/MacOS/editorhost"
+  "../../../../../bin/editorhost.pdb"
   "CMakeFiles/editorhost.dir/__/__/__/source/vst/hosting/module_mac.mm.o"
   "CMakeFiles/editorhost.dir/__/__/__/source/vst/hosting/module_mac.mm.o.d"
   "CMakeFiles/editorhost.dir/__/__/__/source/vst/hosting/plugprovider.cpp.o"

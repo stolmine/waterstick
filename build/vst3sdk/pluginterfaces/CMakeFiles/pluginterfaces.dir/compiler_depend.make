@@ -1139,6 +1139,7 @@ vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/base/funknown.cpp.o: /Users
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/MacTypes.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_abort.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_bounds.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctermid.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctype.h \
@@ -1625,6 +1626,7 @@ vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/base/ustring.cpp.o: /Users/
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/MacTypes.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_abort.h \
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_bounds.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctermid.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctype.h \
@@ -2069,6 +2071,8 @@ vst3sdk/pluginterfaces/CMakeFiles/pluginterfaces.dir/base/ustring.cpp.o: /Users/
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/assert.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/arm/arch.h:
+
+/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/MacTypes.h:
 

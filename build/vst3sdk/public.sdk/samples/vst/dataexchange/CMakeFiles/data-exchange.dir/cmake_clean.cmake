@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/data-exchange.vst3/Contents/MacOS/data-exchange"
-  "../../../../../VST3/Release/data-exchange.vst3/Contents/MacOS/data-exchange.pdb"
-  "../../../../../VST3/Release/data-exchange.vst3/Contents/Resources/editor.uidesc"
+  "../../../../../VST3/data-exchange.vst3/Contents/MacOS/data-exchange"
+  "../../../../../VST3/data-exchange.vst3/Contents/MacOS/data-exchange.pdb"
+  "../../../../../VST3/data-exchange.vst3/Contents/Resources/editor.uidesc"
   "CMakeFiles/data-exchange.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/data-exchange.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/data-exchange.dir/source/3rdparty/MetalNanoVG/src/nanovg_mtl.m.o"

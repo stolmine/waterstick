@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3"
-  "../../../../../VST3/Release/mda-vst3.vst3/Contents/MacOS/mda-vst3.pdb"
+  "../../../../../VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3"
+  "../../../../../VST3/mda-vst3.vst3/Contents/MacOS/mda-vst3.pdb"
   "CMakeFiles/mda-vst3.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/mda-vst3.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/mda-vst3.dir/source/mdaAmbienceController.cpp.o"

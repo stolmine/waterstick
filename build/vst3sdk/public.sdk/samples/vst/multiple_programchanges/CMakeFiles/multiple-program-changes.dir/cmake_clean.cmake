@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../../VST3/Release/multiple-program-changes.vst3/Contents/MacOS/multiple-program-changes"
-  "../../../../../VST3/Release/multiple-program-changes.vst3/Contents/MacOS/multiple-program-changes.pdb"
+  "../../../../../VST3/multiple-program-changes.vst3/Contents/MacOS/multiple-program-changes"
+  "../../../../../VST3/multiple-program-changes.vst3/Contents/MacOS/multiple-program-changes.pdb"
   "CMakeFiles/multiple-program-changes.dir/__/__/__/source/main/macmain.cpp.o"
   "CMakeFiles/multiple-program-changes.dir/__/__/__/source/main/macmain.cpp.o.d"
   "CMakeFiles/multiple-program-changes.dir/source/plug.cpp.o"

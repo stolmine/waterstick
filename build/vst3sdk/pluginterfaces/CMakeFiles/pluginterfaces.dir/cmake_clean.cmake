@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../lib/Release/libpluginterfaces.a"
-  "../../lib/Release/libpluginterfaces.pdb"
+  "../../lib/libpluginterfaces.a"
+  "../../lib/libpluginterfaces.pdb"
   "CMakeFiles/pluginterfaces.dir/base/conststringtable.cpp.o"
   "CMakeFiles/pluginterfaces.dir/base/conststringtable.cpp.o.d"
   "CMakeFiles/pluginterfaces.dir/base/coreiids.cpp.o"

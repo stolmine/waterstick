@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../../../lib/Release/libvstgui_uidescription.a"
-  "../../../../lib/Release/libvstgui_uidescription.pdb"
+  "../../../../lib/libvstgui_uidescription.a"
+  "../../../../lib/libvstgui_uidescription.pdb"
   "CMakeFiles/vstgui_uidescription.dir/compresseduidescription.cpp.o"
   "CMakeFiles/vstgui_uidescription.dir/compresseduidescription.cpp.o.d"
   "CMakeFiles/vstgui_uidescription.dir/cstream.cpp.o"

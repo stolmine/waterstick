@@ -828,70 +828,70 @@ validator_OBJECTS = \
 # External object files for target validator
 validator_EXTERNAL_OBJECTS =
 
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/common/memorystream.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/main/moduleinit.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/moduleinfo/moduleinfoparser.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/connectionproxytest.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/eventlisttest.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/hostclassestest.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/parameterchangestest.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/pluginterfacesupporttest.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/processdatatest.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/plugprovider.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/busactivation.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/busconsistency.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/businvalidindex.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/checkaudiobusarrangement.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/scanbusses.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/sidechainarrangement.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/editorclasses.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/midilearn.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/midimapping.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/plugcompat.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/scanparameters.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/suspendresume.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/terminit.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/noteexpression/keyswitch.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/noteexpression/noteexpression.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/automation.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/process.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processcontextrequirements.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processformat.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processinputoverwriting.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processtail.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processthreaded.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/silenceflags.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/silenceprocessing.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/speakerarrangement.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/variableblocksize.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/bypasspersistence.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/invalidstatetransition.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/repeatidenticalstatetransition.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/validstatetransition.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/testbase.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/unit/checkunitstructure.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/unit/scanprograms.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/unit/scanunits.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/vsttestsuite.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/utility/testing.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source/main.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source/usediids.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source/validator.cpp.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/module_mac.mm.o
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/build.make
-bin/Release/validator: lib/Release/libsdk_hosting.a
-bin/Release/validator: lib/Release/libsdk_common.a
-bin/Release/validator: lib/Release/libbase.a
-bin/Release/validator: lib/Release/libpluginterfaces.a
-bin/Release/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Linking CXX executable ../../../../../bin/Release/validator"
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/common/memorystream.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/main/moduleinit.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/moduleinfo/moduleinfoparser.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/connectionproxytest.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/eventlisttest.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/hostclassestest.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/parameterchangestest.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/pluginterfacesupporttest.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/test/processdatatest.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/plugprovider.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/busactivation.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/busconsistency.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/businvalidindex.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/checkaudiobusarrangement.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/scanbusses.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/bus/sidechainarrangement.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/editorclasses.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/midilearn.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/midimapping.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/plugcompat.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/scanparameters.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/suspendresume.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/general/terminit.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/noteexpression/keyswitch.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/noteexpression/noteexpression.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/automation.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/process.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processcontextrequirements.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processformat.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processinputoverwriting.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processtail.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/processthreaded.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/silenceflags.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/silenceprocessing.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/speakerarrangement.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/processing/variableblocksize.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/bypasspersistence.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/invalidstatetransition.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/repeatidenticalstatetransition.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/state/validstatetransition.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/testbase.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/unit/checkunitstructure.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/unit/scanprograms.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/unit/scanunits.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/testsuite/vsttestsuite.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/utility/testing.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source/main.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source/usediids.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/source/validator.cpp.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/__/__/__/source/vst/hosting/module_mac.mm.o
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/build.make
+bin/validator: lib/libsdk_hosting.a
+bin/validator: lib/libsdk_common.a
+bin/validator: lib/libbase.a
+bin/validator: lib/libpluginterfaces.a
+bin/validator: vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/why/repos/waterstick/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Linking CXX executable ../../../../../bin/validator"
 	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/validator.dir/link.txt --verbose=$(VERBOSE)
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold "[SMTG] Adhoc codesign workaround for Xcode 15"
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/bin/Release/validator
-	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator && ../../../../../bin/Release/validator -selftest
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator && codesign --force --verbose --sign - /Users/why/repos/waterstick/build/bin/validator
+	cd /Users/why/repos/waterstick/build/vst3sdk/public.sdk/samples/vst-hosting/validator && ../../../../../bin/validator -selftest
 
 # Rule to build all files generated by this target.
-vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/build: bin/Release/validator
+vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/build: bin/validator
 .PHONY : vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/build
 
 vst3sdk/public.sdk/samples/vst-hosting/validator/CMakeFiles/validator.dir/clean:

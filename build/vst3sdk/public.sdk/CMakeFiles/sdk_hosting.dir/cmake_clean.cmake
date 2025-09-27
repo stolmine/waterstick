@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "../../lib/Release/libsdk_hosting.a"
-  "../../lib/Release/libsdk_hosting.pdb"
+  "../../lib/libsdk_hosting.a"
+  "../../lib/libsdk_hosting.pdb"
   "CMakeFiles/sdk_hosting.dir/source/vst/hosting/connectionproxy.cpp.o"
   "CMakeFiles/sdk_hosting.dir/source/vst/hosting/connectionproxy.cpp.o.d"
   "CMakeFiles/sdk_hosting.dir/source/vst/hosting/eventlist.cpp.o"
